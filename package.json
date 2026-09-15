@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test:compat": "node scripts/compat-selfcheck.mjs",
+    "test:engine": "node scripts/engine-compat-check.mjs",
+    "check": "npm run lint && npm run test:compat && npm run build",
     "preview": "vite preview"
   },
   "dependencies": {
