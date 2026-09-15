@@ -66,9 +66,7 @@ export class TextEditorService {
 
     textarea.style.removeProperty('height');
     textarea.style.setProperty('height', 'auto', 'important');
-    if (textarea.scrollHeight) {
-      textarea.style.setProperty('height', `${textarea.scrollHeight}px`, 'important');
-    }
+    if (textarea.scrollHeight) textarea.style.setProperty('height', `${textarea.scrollHeight}px`, 'important');
     if (parent) parent.style.removeProperty('height');
 
     const nextStart = savedSel.start;
@@ -119,9 +117,9 @@ export class TextEditorService {
       redo: [...historyStore[mid].redo],
     };
 
-    let targetText = '';
-    let targetStart = 0;
-    let targetEnd = 0;
+    let targetText;
+    let targetStart;
+    let targetEnd;
 
     if (type === 'undo' && history.undo.length > 0) {
       const item = history.undo.shift();
@@ -151,12 +149,13 @@ export class TextEditorService {
     setHistoryData(mid, history.undo, history.redo);
     textarea.focus({ preventScroll: true });
     textarea.setSelectionRange(targetStart, targetEnd);
+    const selectedText = textarea.value.substring(targetStart, targetEnd);
     setSelection({
       ...savedSel,
       start: targetStart,
       end: targetEnd,
-      text: textarea.value.substring(targetStart, targetEnd),
-      rawText: textarea.value.substring(targetStart, targetEnd),
+      text: selectedText,
+      rawText: selectedText,
     });
     showToast(`Applied ${type}`, 'ok');
     return true;
