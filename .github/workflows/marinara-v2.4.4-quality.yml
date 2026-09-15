@@ -1,0 +1,64 @@
+name: Marinara v2.4.4 Quality Gate
+
+on:
+  push:
+    branches:
+      - upgrade/marinara-v2.4.4-hardening
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Rewrite Assistant
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Rewrite compatibility self-check
+        run: npm run test:compat
+
+      - name: Production build
+        run: npm run build
+
+      - name: Checkout pinned Marinara Engine v2.4.4 source
+        uses: actions/checkout@v4
+        with:
+          repository: Pasta-Devs/Marinara-Engine
+          ref: 1a299369ac7025028c3ce1b80cc59f47b7b0691b
+          path: vendor/marinara-engine
+
+      - name: Cross-check pinned Engine contract
+        run: node scripts/engine-compat-check.mjs vendor/marinara-engine
+
+      - name: Verify packaged manifest and bundle
+        shell: bash
+        run: |
+          test -f dist/manifest.json
+          test -f dist/r-w-a-v2-3_react.js
+          node -e "const m=require('./dist/manifest.json'); if(m.config.runtime!=='client'||JSON.stringify(m.config.capabilities)!=='[\"full_page_access\"]'||m.config.jsPath!=='r-w-a-v2-3_react.js') process.exit(1)"
+
+      - name: Upload verified build
+        uses: actions/upload-artifact@v4
+        with:
+          name: rewrite-assistant-marinara-v2.4.4
+          path: |
+            dist/manifest.json
+            dist/r-w-a-v2-3_react.js
+          if-no-files-found: error
