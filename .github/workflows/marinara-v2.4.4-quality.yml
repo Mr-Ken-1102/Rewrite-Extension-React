@@ -28,6 +28,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Runtime dependency security gate
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Full dependency advisory report
+        run: npm audit --audit-level=critical
+
       - name: Lint
         run: npm run lint
 
