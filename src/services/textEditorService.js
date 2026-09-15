@@ -1,134 +1,164 @@
 import { DOMUtils } from '../utils/domUtils';
 
-export class TextEditorService {
-  
-  // [BẢN VÁ LỖI CO TEXTAREA X2 LỚP]: Khóa chặt DOM trước khi bơm text, sau đó dãn dòng với cờ !important
-  static applyTextToTextarea(ta, newText, savedSel, lastClickedMid, showToast, onDone) {
-    const parent = ta.parentElement;
+function editorForMessage(messageId) {
+  if (!messageId) return null;
+  return Array.from(document.querySelectorAll('textarea'))
+    .find((textarea) => DOMUtils.isEditTextarea(textarea) && DOMUtils.getMessageId(textarea) === messageId) || null;
+}
 
-    // BƯỚC 1: Xóa bộ đệm chiều cao cũ (nếu có)
-    if (ta.dataset.rwaOrigHeight !== undefined) {
-      ta.style.removeProperty("height");
-      delete ta.dataset.rwaOrigHeight;
+function selectedRangeIsCurrent(textarea, savedSel) {
+  const { start, end } = savedSel || {};
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < start || end > textarea.value.length) {
+    return false;
+  }
+  const expected = typeof savedSel.rawText === 'string'
+    ? savedSel.rawText
+    : (typeof savedSel.text === 'string' ? savedSel.text : null);
+  return expected == null || textarea.value.substring(start, end) === expected;
+}
+
+export class TextEditorService {
+  static applyTextToTextarea(textarea, newText, savedSel, showToast, onDone) {
+    const parent = textarea.parentElement;
+    const replacement = typeof newText === 'string' ? newText : String(newText ?? '');
+
+    if (!DOMUtils.isEditTextarea(textarea)) {
+      DOMUtils.safeCopy(replacement);
+      showToast('⚠️ Message editor is no longer available. Copied output to clipboard.', 'warn');
+      onDone?.();
+      return false;
     }
-    if (parent && parent.dataset.rwaOrigHeight !== undefined) {
-      parent.style.removeProperty("height");
+
+    if (!selectedRangeIsCurrent(textarea, savedSel)) {
+      DOMUtils.safeCopy(replacement);
+      showToast('⚠️ The message changed after selection. Nothing was overwritten; output was copied.', 'warn');
+      onDone?.();
+      return false;
+    }
+
+    if (textarea.dataset.rwaOrigHeight !== undefined) {
+      textarea.style.removeProperty('height');
+      delete textarea.dataset.rwaOrigHeight;
+    }
+    if (parent?.dataset.rwaOrigHeight !== undefined) {
+      parent.style.removeProperty('height');
       delete parent.dataset.rwaOrigHeight;
     }
 
-    ta.dataset.rwaMid = savedSel.mid || lastClickedMid;
-    if (typeof savedSel.start !== 'number' || typeof savedSel.end !== 'number' || savedSel.start === -1) {
-      DOMUtils.safeCopy(newText);
-      showToast("⚠️ Missing insertion target. Copied output to clipboard.", "warn");
-      if (onDone) onDone();
-      return;
+    const messageId = DOMUtils.getMessageId(textarea);
+    if (messageId) textarea.dataset.rwaMid = messageId;
+
+    textarea.style.setProperty('height', `${textarea.offsetHeight}px`, 'important');
+    if (parent) parent.style.setProperty('height', `${parent.offsetHeight}px`, 'important');
+
+    const currentValue = textarea.value || '';
+    const updatedValue = currentValue.substring(0, savedSel.start)
+      + replacement
+      + currentValue.substring(savedSel.end);
+    textarea.focus({ preventScroll: true });
+
+    const nativeSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+    if (nativeSetter) nativeSetter.call(textarea, updatedValue);
+    else textarea.value = updatedValue;
+
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    textarea.dispatchEvent(new Event('change', { bubbles: true }));
+
+    textarea.style.removeProperty('height');
+    textarea.style.setProperty('height', 'auto', 'important');
+    if (textarea.scrollHeight) {
+      textarea.style.setProperty('height', `${textarea.scrollHeight}px`, 'important');
     }
+    if (parent) parent.style.removeProperty('height');
 
-    // BƯỚC 2: KHÓA CHIỀU CAO TRƯỚC KHI BƠM TEXT (Ngăn Marinara co giật)
-    ta.style.setProperty("height", `${ta.offsetHeight}px`, "important");
-    if (parent) parent.style.setProperty("height", `${parent.offsetHeight}px`, "important");
-
-    const currentVal = ta.value || "";
-    const updatedVal = currentVal.substring(0, savedSel.start) + newText + currentVal.substring(savedSel.end);
-    ta.focus({ preventScroll: true });
-
-    // BƯỚC 3: KÍCH HOẠT NATIVE SETTER ĐỂ VƯỢT QUA REACT CỦA MARINARA
-    const nativeSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
-    if (nativeSetter) {
-      nativeSetter.call(ta, updatedVal);
-    } else {
-      ta.value = updatedVal;
-    }
-
-    // BƯỚC 4: BẮN NATIVE EVENTS THỦ CÔNG
-    ta.dispatchEvent(new Event("input", { bubbles: true }));
-    ta.dispatchEvent(new Event("change", { bubbles: true }));
-  
-    // BƯỚC 5: MỞ KHÓA VÀ ÉP DÃN CHIỀU CAO KÈM CỜ !IMPORTANT CHỐNG GHI ĐÈ
-    ta.style.removeProperty("height");
-    ta.style.setProperty("height", "auto", "important"); // Ép tính toán lại
-    
-    if (ta.scrollHeight) {
-      ta.style.setProperty("height", `${ta.scrollHeight}px`, "important"); // Khóa chiều cao mới an toàn
-    }
-    if (parent) parent.style.removeProperty("height"); // Nhả cha ra để tự co dãn theo con
-  
-    ta.setSelectionRange(savedSel.start, savedSel.start + newText.length);
-
-    if (onDone) onDone();
+    const nextStart = savedSel.start;
+    const nextEnd = nextStart + replacement.length;
+    textarea.setSelectionRange(nextStart, nextEnd);
+    onDone?.();
+    return true;
   }
 
   static doCommit(newText, savedSel, lastClickedMid, pushHistory, showToast, onDone) {
-    const resolvedMidForCommit = savedSel.mid || lastClickedMid;
-    let ta = document.querySelector(`textarea[data-rwa-mid="${resolvedMidForCommit}"]`);
-    if (!ta && document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
-      ta = document.activeElement;
+    const resolvedMid = savedSel?.mid || lastClickedMid;
+    let textarea = editorForMessage(resolvedMid);
+
+    if (!textarea && DOMUtils.isEditTextarea(document.activeElement)) {
+      const activeMessageId = DOMUtils.getMessageId(document.activeElement);
+      if (activeMessageId === resolvedMid) textarea = document.activeElement;
     }
 
-    if (ta) {
-      pushHistory(resolvedMidForCommit, ta.value, savedSel.start, savedSel.end);
-      this.applyTextToTextarea(ta, newText, savedSel, lastClickedMid, showToast, onDone);
-    } else {
+    if (!textarea) {
       DOMUtils.safeCopy(newText);
-      showToast("⚠️ Active Editor unavailable. Copied output to clipboard.", "warn");
-      if (onDone) onDone();
+      showToast('⚠️ Active message editor unavailable. Copied output to clipboard.', 'warn');
+      onDone?.();
+      return false;
     }
+
+    if (!selectedRangeIsCurrent(textarea, savedSel)) {
+      DOMUtils.safeCopy(newText);
+      showToast('⚠️ The message changed after selection. Nothing was overwritten; output was copied.', 'warn');
+      onDone?.();
+      return false;
+    }
+
+    pushHistory(resolvedMid, textarea.value, savedSel.start, savedSel.end);
+    return this.applyTextToTextarea(textarea, newText, savedSel, showToast, onDone);
   }
 
-  static doUndoRedo(mid, type, savedSel, historyStore, pushHistory, setHistoryData, setSelection, showToast) {
-    if (!mid || !historyStore[mid]) return;
-    let ta = document.querySelector(`textarea[data-rwa-mid="${mid}"]`);
-    if (!ta && document.activeElement && document.activeElement.tagName === 'TEXTAREA') {
-      ta = document.activeElement;
+  static doUndoRedo(mid, type, savedSel, historyStore, setHistoryData, setSelection, showToast) {
+    if (!mid || !historyStore[mid]) return false;
+    let textarea = editorForMessage(mid);
+    if (!textarea && DOMUtils.isEditTextarea(document.activeElement) && DOMUtils.getMessageId(document.activeElement) === mid) {
+      textarea = document.activeElement;
     }
-    if (!ta) return;
+    if (!textarea) return false;
 
-    const currentVal = ta.value;
-    const h = { 
-      undo: [...historyStore[mid].undo], 
-      redo: [...historyStore[mid].redo] 
+    const currentValue = textarea.value;
+    const history = {
+      undo: [...historyStore[mid].undo],
+      redo: [...historyStore[mid].redo],
     };
 
-    let targetText = "";
+    let targetText = '';
     let targetStart = 0;
     let targetEnd = 0;
 
-    if (type === "undo" && h.undo.length > 0) {
-      const item = h.undo.shift();
+    if (type === 'undo' && history.undo.length > 0) {
+      const item = history.undo.shift();
       targetText = typeof item === 'object' ? item.text : item;
       targetStart = typeof item === 'object' ? item.start : 0;
       targetEnd = typeof item === 'object' ? item.end : targetText.length;
-
-      h.redo.unshift({ text: currentVal, start: savedSel.start, end: savedSel.end });
-    } else if (type === "redo" && h.redo.length > 0) {
-      const item = h.redo.shift();
+      history.redo.unshift({ text: currentValue, start: savedSel.start, end: savedSel.end });
+    } else if (type === 'redo' && history.redo.length > 0) {
+      const item = history.redo.shift();
       targetText = typeof item === 'object' ? item.text : item;
       targetStart = typeof item === 'object' ? item.start : 0;
       targetEnd = typeof item === 'object' ? item.end : targetText.length;
-
-      h.undo.unshift({ text: currentVal, start: savedSel.start, end: savedSel.end });
+      history.undo.unshift({ text: currentValue, start: savedSel.start, end: savedSel.end });
     } else {
-      return;
+      return false;
     }
 
-    // Cập nhật lại History Store
-    setHistoryData(mid, h.undo, h.redo);
+    const applied = this.applyTextToTextarea(
+      textarea,
+      targetText,
+      { start: 0, end: currentValue.length, mid },
+      showToast,
+      null,
+    );
+    if (!applied) return false;
 
-    // Ghi đè toàn cục để đổi text
-    this.applyTextToTextarea(ta, targetText, { start: 0, end: currentVal.length, mid }, mid, showToast, null);
-
-    // KHÓA VÙNG CHỌN CHUẨN XÁC
-    ta.focus({ preventScroll: true });
-    ta.setSelectionRange(targetStart, targetEnd);
-
-    // Cập nhật Runtime Selection state
-    setSelection({ 
-      ...savedSel, 
-      start: targetStart, 
-      end: targetEnd, 
-      text: ta.value.substring(targetStart, targetEnd) 
+    setHistoryData(mid, history.undo, history.redo);
+    textarea.focus({ preventScroll: true });
+    textarea.setSelectionRange(targetStart, targetEnd);
+    setSelection({
+      ...savedSel,
+      start: targetStart,
+      end: targetEnd,
+      text: textarea.value.substring(targetStart, targetEnd),
+      rawText: textarea.value.substring(targetStart, targetEnd),
     });
-    
-    showToast(`Applied ${type}`, "ok");
+    showToast(`Applied ${type}`, 'ok');
+    return true;
   }
 }
