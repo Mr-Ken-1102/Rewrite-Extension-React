@@ -1,74 +1,83 @@
 export const DOMUtils = {
-  getChatId(config) {
-    const fromStore = localStorage.getItem("marinara-active-chat-id");
+  getChatId() {
+    const fromStore = localStorage.getItem('marinara-active-chat-id');
     if (fromStore) return fromStore;
-    const el = document.querySelector('[data-chat-id][class*="sidebar-accent"]');
-    return el ? el.getAttribute("data-chat-id") : null;
+    const element = document.querySelector('[data-chat-id][class*="sidebar-accent"]');
+    return element ? element.getAttribute('data-chat-id') : null;
   },
 
-  isEditTextarea(t) {
-    if (!t || t.tagName !== 'TEXTAREA') return false;
-    const id = (t.id || "").toLowerCase();
-    if (id === "chat-input" || id === "main-input" || id === "send_textarea") return false;
-    const className = (t.className || "").toLowerCase();
-    if (className.includes("send_textarea") || className.includes("chat-input")) return false;
-    if (t.offsetWidth === 0 && t.offsetHeight === 0) return false;
+  getMessageElement(target) {
+    if (!(target instanceof Element)) return null;
+    return target.closest('[data-message-id]');
+  },
+
+  getMessageId(target) {
+    return this.getMessageElement(target)?.getAttribute('data-message-id') || null;
+  },
+
+  getMessageRole(target) {
+    const role = this.getMessageElement(target)?.getAttribute('data-message-role');
+    return role === 'user' || role === 'assistant' ? role : null;
+  },
+
+  isEditTextarea(target) {
+    if (!(target instanceof HTMLTextAreaElement)) return false;
+    if (target.matches('[data-chat-composer]') || target.closest('[data-chat-composer]')) return false;
+    if (!this.getMessageElement(target)) return false;
+    if (target.disabled || target.readOnly) return false;
+    if (target.offsetWidth === 0 && target.offsetHeight === 0) return false;
     return true;
   },
 
-  getSelectionData(targetEl, config, lastClickedMid) {
+  getSelectionData(targetEl) {
     let active = null;
-    if (targetEl) {
-      if (this.isEditTextarea(targetEl)) {
-        active = targetEl;
-      } else {
-        const nearestTa = targetEl.closest('textarea');
-        if (nearestTa && this.isEditTextarea(nearestTa)) {
-          active = nearestTa;
-        }
-      }
+    if (this.isEditTextarea(targetEl)) {
+      active = targetEl;
+    } else if (targetEl instanceof Element) {
+      const nearestTextarea = targetEl.closest('textarea');
+      if (this.isEditTextarea(nearestTextarea)) active = nearestTextarea;
     }
-    if (!active) active = document.activeElement;
 
-    const isTa = this.isEditTextarea(active);
-    if (!isTa) return null;
-
-    const txt = active.value.substring(active.selectionStart, active.selectionEnd).trim();
-    if (!txt || txt.length < 2) return null;
-
-    let mid = active.dataset.rwaMid;
-    let parentMsg = active.closest('.mari-message, .message, [data-message-id]');
-    
-    if (!mid && parentMsg) {
-      mid = parentMsg.getAttribute("data-message-id") || parentMsg.getAttribute("mesid") || parentMsg.id;
+    if (!active && this.isEditTextarea(document.activeElement)) {
+      active = document.activeElement;
     }
-    if (!mid) {
-      mid = lastClickedMid || "temp-mid-" + Math.random().toString(36).substr(2, 9);
-    }
+    if (!active) return null;
+
+    const start = active.selectionStart;
+    const end = active.selectionEnd;
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end <= start) return null;
+
+    const rawText = active.value.substring(start, end);
+    if (rawText.trim().length < 2) return null;
+
+    const mid = this.getMessageId(active);
+    if (!mid) return null;
     active.dataset.rwaMid = mid;
 
-    // [BẢN VÁ]: Trả kiến trúc về nguyên bản gốc. KHÔNG gán cứng detectedRole ở đây.
-    // Việc xác định Role sẽ được PopupMain nhường quyền cho API ngầm quét.
-    return { 
-      text: txt, 
-      mid, 
-      cid: this.getChatId(config), 
-      isTa: true, 
-      start: active.selectionStart, 
-      end: active.selectionEnd, 
-      el: active
+    return {
+      text: rawText,
+      rawText,
+      mid,
+      cid: this.getChatId(),
+      isTa: true,
+      start,
+      end,
+      el: active,
+      detectedRole: this.getMessageRole(active),
     };
   },
-  
-  safeCopy(txt) {
-    try { navigator.clipboard.writeText(txt); } 
-    catch (e) {
-      const temp = document.createElement("textarea");
-      temp.value = txt;
+
+  safeCopy(text) {
+    try {
+      const result = navigator.clipboard.writeText(text);
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+    } catch {
+      const temp = document.createElement('textarea');
+      temp.value = text;
       document.body.appendChild(temp);
       temp.select();
-      document.execCommand("copy");
+      document.execCommand('copy');
       temp.remove();
     }
-  }
+  },
 };
