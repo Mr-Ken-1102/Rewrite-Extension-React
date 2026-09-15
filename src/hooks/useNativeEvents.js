@@ -5,23 +5,23 @@ import { useToastStore } from '../store/useToastStore';
 import { DOMUtils } from '../utils/domUtils';
 
 export const useNativeEvents = () => {
-  const hostElement = useRuntimeStore.getState().hostElement;
   const setHistoryData = usePersistentStore((state) => state.setHistoryData);
   const showToast = useToastStore((state) => state.showToast);
 
   useEffect(() => {
-    if (!hostElement) return undefined;
-
     const syncTheme = () => {
+      const targetHost = useRuntimeStore.getState().hostElement;
+      if (!targetHost) return;
+
       const htmlClass = document.documentElement.className || '';
       const bodyClass = document.body.className || '';
       const themeAttr = document.documentElement.getAttribute('data-theme')
         || document.body.getAttribute('data-theme')
         || '';
 
-      hostElement.className = `${htmlClass} ${bodyClass}`.trim();
-      if (themeAttr) hostElement.setAttribute('data-theme', themeAttr);
-      else hostElement.removeAttribute('data-theme');
+      targetHost.className = `${htmlClass} ${bodyClass}`.trim();
+      if (themeAttr) targetHost.setAttribute('data-theme', themeAttr);
+      else targetHost.removeAttribute('data-theme');
     };
 
     const themeObserver = new MutationObserver(syncTheme);
@@ -30,7 +30,7 @@ export const useNativeEvents = () => {
     syncTheme();
 
     return () => themeObserver.disconnect();
-  }, [hostElement]);
+  }, []);
 
   useEffect(() => {
     const activeListeners = [];
