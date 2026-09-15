@@ -5,181 +5,166 @@ import { useToastStore } from '../store/useToastStore';
 import { DOMUtils } from '../utils/domUtils';
 
 export const useNativeEvents = () => {
-  // [TỐI ƯU HÓA TẬN GỐC]: Chỉ subscribe hostElement phản ứng khi khởi tạo, cắt bỏ hoàn toàn việc lắng nghe biến biến động chuột
   const hostElement = useRuntimeStore((state) => state.hostElement);
   const setHistoryData = usePersistentStore((state) => state.setHistoryData);
   const showToast = useToastStore((state) => state.showToast);
 
-  // =========================================================================
-  // [BẢN VÁ QUAN TRỌNG]: Phục hồi MutationObserver để đồng bộ Giao diện Sáng/Tối
-  // =========================================================================
   useEffect(() => {
-    if (!hostElement) return;
+    if (!hostElement) return undefined;
 
     const syncTheme = () => {
       const htmlClass = document.documentElement.className || '';
       const bodyClass = document.body.className || '';
-      const themeAttr = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme') || '';
-      
+      const themeAttr = document.documentElement.getAttribute('data-theme')
+        || document.body.getAttribute('data-theme')
+        || '';
+
       hostElement.className = `${htmlClass} ${bodyClass}`.trim();
-      if (themeAttr) {
-        hostElement.setAttribute('data-theme', themeAttr);
-      } else {
-        hostElement.removeAttribute('data-theme');
-      }
+      if (themeAttr) hostElement.setAttribute('data-theme', themeAttr);
+      else hostElement.removeAttribute('data-theme');
     };
 
     const themeObserver = new MutationObserver(syncTheme);
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
     themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
-
-    syncTheme(); // Kích hoạt đồng bộ ngay lần đầu mount
+    syncTheme();
 
     return () => themeObserver.disconnect();
   }, [hostElement]);
 
-  // =========================================================================
-  // Xử lý Sự kiện Toàn cục (Chuột & Bàn phím) - Dùng getState() để triệt tiêu lỗi nhấp nháy render
-  // =========================================================================
   useEffect(() => {
     const activeListeners = [];
+    const scheduledTimers = new Map();
 
     const addManagedListener = (target, event, handler, options = false) => {
       target.addEventListener(event, handler, options);
       activeListeners.push({ target, event, handler, options });
     };
 
-    addManagedListener(document, "mousemove", (e) => {
-      // Cập nhật tọa độ ngầm tĩnh, không làm App.jsx bị ép re-render liên hồi
-      useRuntimeStore.getState().setMousePos(e.clientX, e.clientY);
+    const schedule = (callback, delay) => {
+      const marinara = useRuntimeStore.getState().marinara;
+      const setTimer = marinara && typeof marinara.setTimeout === 'function'
+        ? marinara.setTimeout.bind(marinara)
+        : window.setTimeout.bind(window);
+      const clearTimer = marinara && typeof marinara.clearTimeout === 'function'
+        ? marinara.clearTimeout.bind(marinara)
+        : window.clearTimeout.bind(window);
+      const timerId = setTimer(() => {
+        scheduledTimers.delete(timerId);
+        callback();
+      }, delay);
+      scheduledTimers.set(timerId, clearTimer);
+      return timerId;
+    };
+
+    addManagedListener(document, 'mousemove', (event) => {
+      useRuntimeStore.getState().setMousePos(event.clientX, event.clientY);
     });
 
-    addManagedListener(document, "click", (e) => {
-      const btn = e.target.closest('button[title*="Edit" i], .message-action-edit, [class*="edit"]');
-      if (btn) {
-        const msgEl = btn.closest('[data-message-id], [mesid], .mari-message, .message, .chat-message, .mes');
-        if (msgEl) {
-          const mid = msgEl.getAttribute('data-message-id') || msgEl.getAttribute('mesid') || msgEl.id;
-          useRuntimeStore.getState().setLastClickedMid(mid);
-        }
-      }
+    addManagedListener(document, 'click', (event) => {
+      if (!(event.target instanceof Element)) return;
+      const button = event.target.closest('button[title*="edit" i], button[aria-label*="edit" i], .message-action-edit');
+      const message = button?.closest('[data-message-id]');
+      const messageId = message?.getAttribute('data-message-id');
+      if (messageId) useRuntimeStore.getState().setLastClickedMid(messageId);
     }, true);
 
-    addManagedListener(document, "mouseup", (e) => {
+    addManagedListener(document, 'mouseup', (event) => {
       const runtime = useRuntimeStore.getState();
       const config = usePersistentStore.getState().config;
-      
-      if (runtime.isDragging) return;
-      if (runtime.hostElement && e.composedPath().includes(runtime.hostElement)) return;
+      if (runtime.isDragging || config.onlyAltR) return;
+      if (runtime.hostElement && event.composedPath().includes(runtime.hostElement)) return;
 
-      const clickX = e.clientX || runtime.mouseX;
-      const clickY = e.clientY || runtime.mouseY;
+      const clickX = event.clientX || runtime.mouseX;
+      const clickY = event.clientY || runtime.mouseY;
+      const target = event.target;
 
-      // Giữ nguyên khoảng trễ 50ms để DOM cập nhật vùng chọn
-      setTimeout(() => {
-        const savedSel = DOMUtils.getSelectionData(e.target, config, runtime.lastClickedMid);
-        if (!savedSel) return;
-
-        const popupPosition = { left: clickX, top: clickY - 20, right: clickX, bottom: clickY };
-        runtime.setSelection(savedSel);
-        runtime.setPopupPosition(popupPosition);
+      schedule(() => {
+        const savedSelection = DOMUtils.getSelectionData(target);
+        if (!savedSelection) return;
+        runtime.setLastClickedMid(savedSelection.mid);
+        runtime.setSelection(savedSelection);
+        runtime.setPopupPosition({ left: clickX, top: clickY - 20, right: clickX, bottom: clickY });
       }, 50);
     }, true);
 
-    addManagedListener(document, "keydown", (e) => {
+    addManagedListener(document, 'keydown', (event) => {
       const runtime = useRuntimeStore.getState();
-      const config = usePersistentStore.getState().config;
-      
-      if (e.ctrlKey && e.shiftKey && e.code === "KeyD") {
-        e.preventDefault();
+
+      if (event.ctrlKey && event.shiftKey && event.code === 'KeyD') {
+        event.preventDefault();
         return;
       }
 
-      // --- HỒI SINH PHÍM TẤT ALT + R ---
-      if (e.altKey && e.code === "KeyR") {
-        e.preventDefault(); 
-        
-        let savedSel = DOMUtils.getSelectionData(null, config, runtime.lastClickedMid);
-        
-        // Nếu không bôi đen chữ, tạo một vùng chọn trống thay vì chặn
-        if (!savedSel) {
-          savedSel = {
-            text: "",
-            mid: runtime.lastClickedMid || "temp-mid-" + Math.random().toString(36).substr(2, 9),
-            cid: DOMUtils.getChatId(config),
+      if (event.altKey && event.code === 'KeyR') {
+        event.preventDefault();
+        let savedSelection = DOMUtils.getSelectionData(null);
+
+        if (!savedSelection) {
+          savedSelection = {
+            text: '',
+            rawText: '',
+            mid: runtime.lastClickedMid || '',
+            cid: DOMUtils.getChatId(),
             isTa: false,
             start: -1,
             end: -1,
             el: null,
-            detectedRole: null
+            detectedRole: null,
           };
         }
-        savedSel.forced = true;
-
-        const popupPosition = { 
-          left: runtime.mouseX, 
-          top: runtime.mouseY - 20, 
-          right: runtime.mouseX, 
-          bottom: runtime.mouseY 
-        };
-        runtime.setSelection(savedSel);
-        runtime.setPopupPosition(popupPosition);
+        savedSelection.forced = true;
+        runtime.setSelection(savedSelection);
+        runtime.setPopupPosition({
+          left: runtime.mouseX,
+          top: runtime.mouseY - 20,
+          right: runtime.mouseX,
+          bottom: runtime.mouseY,
+        });
       }
     }, true);
 
-    addManagedListener(document, "mousedown", (e) => {
+    addManagedListener(document, 'mousedown', (event) => {
       const runtime = useRuntimeStore.getState();
-      const path = e.composedPath();
-      if (runtime.hostElement && path.includes(runtime.hostElement)) {
-        return; 
-      }
-      if (runtime.popupPosition || runtime.activeModal) {
-        runtime.reset();
-      }
+      const path = event.composedPath();
+      if (runtime.hostElement && path.includes(runtime.hostElement)) return;
+      if (runtime.popupPosition || runtime.activeModal) runtime.reset();
     }, true);
 
-    // Xử lý nút Save/Cancel của Native DOM (dọn dẹp history khi lưu/hủy)
-    addManagedListener(document, "click", (e) => {
+    addManagedListener(document, 'click', (event) => {
       const runtime = useRuntimeStore.getState();
+      if (runtime.hostElement && event.composedPath().includes(runtime.hostElement)) return;
+      if (!(event.target instanceof Element)) return;
+
+      const button = event.target.closest('button');
+      if (!button) return;
+      const activeTextarea = DOMUtils.isEditTextarea(document.activeElement) ? document.activeElement : null;
+      if (!activeTextarea) return;
+
+      const buttonMessageId = DOMUtils.getMessageId(button);
+      const activeMessageId = DOMUtils.getMessageId(activeTextarea);
+      if (!buttonMessageId || buttonMessageId !== activeMessageId) return;
+
+      const label = `${button.title || ''} ${button.getAttribute('aria-label') || ''} ${button.textContent || ''}`.toLowerCase();
+      const isSave = /\b(save|lưu|apply|confirm)\b/i.test(label);
+      const isCancel = /\b(cancel|close|hủy|huỷ)\b/i.test(label);
+      if (!isSave && !isCancel) return;
+
       const historyStore = usePersistentStore.getState().history;
-      if (runtime.hostElement && e.composedPath().includes(runtime.hostElement)) return;
-
-      const btn = e.target.closest("button");
-      if (!btn) return;
-      
-      const isEditAction = btn.className.includes("save") || btn.className.includes("cancel") || btn.querySelector('.ph-check, .fa-check, .ph-x, .fa-times') || btn.title;
-      if (!isEditAction) return;
-
-      const activeTa = document.activeElement && document.activeElement.tagName === "TEXTAREA" && DOMUtils.isEditTextarea(document.activeElement) ? document.activeElement : null;
-      if (!activeTa) return;
-
-      const titleTxt = (btn.title || "").toLowerCase();
-      const innerTxt = (btn.textContent || "").toLowerCase();
-
-      const isSave = btn.querySelector('.ph-check, .fa-check') || titleTxt.includes("save") || innerTxt.includes("save") || innerTxt.includes("lưu");
-      const isCancel = btn.querySelector('.ph-x, .fa-times') || titleTxt.includes("cancel") || titleTxt.includes("close") || innerTxt.includes("cancel") || innerTxt.includes("hủy");
-
-      if (isSave && activeTa.dataset.rwaMid) {
-        const mid = activeTa.dataset.rwaMid;
-        if (historyStore[mid]) {
-           setHistoryData(mid, [], []); 
-        }
-        showToast("Saved successfully", "ok");
-        runtime.reset();
-      } else if (isCancel && activeTa.dataset.rwaMid) {
-        const midC = activeTa.dataset.rwaMid;
-        if (historyStore[midC]) {
-           setHistoryData(midC, [], []);
-        }
-        showToast("Edit cancelled", "err");
-        runtime.reset();
+      if (activeMessageId && historyStore[activeMessageId]) {
+        setHistoryData(activeMessageId, [], []);
       }
+
+      showToast(isSave ? 'Saved successfully' : 'Edit cancelled', isSave ? 'ok' : 'err');
+      runtime.reset();
     }, true);
 
     return () => {
       activeListeners.forEach(({ target, event, handler, options }) => {
         target.removeEventListener(event, handler, options);
       });
+      for (const [timerId, clearTimer] of scheduledTimers) clearTimer(timerId);
+      scheduledTimers.clear();
     };
-  }, []); 
+  }, [setHistoryData, showToast]);
 };
