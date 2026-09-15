@@ -1,219 +1,293 @@
 import { usePersistentStore } from '../store/usePersistentStore';
-import { useRuntimeStore } from '../store/useRuntimeStore';
+import { apiJson, fetchJson, SIDECAR_PROMPT_MAX_CHARS } from './marinaraBridge';
 
-const ENDPOINTS = {
-  tracker: "/sidecar/tracker",
-  chats: "/chats",
-  chars: "/characters",
-  personas: "/personas"
-};
+const MAX_CHARACTER_CONTEXT = 8;
+const MAX_CHARACTER_PERSONALITY = 800;
+const MAX_CHARACTER_DESCRIPTION = 1_200;
+const MAX_TARGET_CHARS = 10_000;
+const MAX_PROFILE_PROMPT_CHARS = 5_000;
+const CUSTOM_PROVIDER_PROMPT_MAX_CHARS = 32_000;
 
-// [BẢN VÁ TỐI THƯỢNG]: Mở rộng Selector để tương thích 100% với SillyTavern và các UI khác
-const SELECTORS = {
-  message: '.mari-message, .message, .mes, [data-message-id]',
-  userMessage: '.message-user, .mes_user, [is_user="true"], [data-is-user="true"]',
-  avatar: '.user-avatar'
-};
+const ENDPOINTS = Object.freeze({
+  tracker: '/sidecar/tracker',
+  chats: '/chats',
+  characters: '/characters',
+  personas: '/characters/personas',
+});
 
-const deadPersonasCache = new Set();
+function throwIfAborted(signal) {
+  if (!signal?.aborted) return;
+  const error = signal.reason instanceof Error ? signal.reason : new Error('cancelled');
+  if (!error.name) error.name = 'AbortError';
+  throw error;
+}
+
+function parseJsonObject(value) {
+  if (!value) return {};
+  if (typeof value === 'object') return value;
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function parseCharacterIds(value) {
+  let parsed = value;
+  if (typeof value === 'string') {
+    try { parsed = JSON.parse(value); } catch { parsed = []; }
+  }
+  if (!Array.isArray(parsed)) return [];
+  return [...new Set(parsed.filter((id) => typeof id === 'string' && id.trim()).map((id) => id.trim()))]
+    .slice(0, MAX_CHARACTER_CONTEXT);
+}
+
+function extractRecordData(record) {
+  if (!record || typeof record !== 'object') return {};
+  return { ...record, ...parseJsonObject(record.data) };
+}
+
+function findMessageElement(messageId) {
+  if (!messageId) return null;
+  return Array.from(document.querySelectorAll('[data-message-id]'))
+    .find((element) => element.getAttribute('data-message-id') === messageId) || null;
+}
+
+function normalizeMessages(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.messages)) return payload.messages;
+  return [];
+}
+
+function truncateWithMarker(value, maxChars) {
+  if (value.length <= maxChars) return value;
+  if (maxChars <= 1) return value.slice(0, maxChars);
+  return `${value.slice(0, maxChars - 1)}…`;
+}
+
+function composeBoundedPrompt(profile, cardContext, historyContext, targetText, config, maxChars) {
+  const profilePrompt = truncateWithMarker(String(profile?.prompt || '').trim(), MAX_PROFILE_PROMPT_CHARS);
+  const core = `[CORE INSTRUCTION]:\n${profilePrompt}`;
+  const pct = Number(config.lengthPct) || 0;
+  const constraints = config.lengthEnabled && pct !== 0
+    ? (pct < 0
+      ? `\n\n[CONSTRAINT]: Make the final rewritten output approximately ${Math.abs(pct)}% shorter (more concise) than the original text.`
+      : `\n\n[CONSTRAINT]: Make the final rewritten output approximately ${pct}% longer (more detailed) than the original text.`)
+    : '';
+  const target = truncateWithMarker(String(targetText || ''), MAX_TARGET_CHARS);
+  const targetBlock = `\n\n[TARGET TEXT TO REWRITE]:\n${target}`;
+  const context = [cardContext, historyContext].map((value) => String(value || '').trim()).filter(Boolean).join('\n\n');
+  const base = `${core}${constraints}${targetBlock}`;
+
+  if (!Number.isFinite(maxChars) || maxChars <= 0) {
+    return context ? `${core}${constraints}\n\n[CONTEXT DATA]:\n${context}${targetBlock}` : base;
+  }
+
+  if (base.length >= maxChars) {
+    const reserved = `${constraints}${targetBlock}`;
+    const coreBudget = Math.max(0, maxChars - reserved.length);
+    return `${truncateWithMarker(core, coreBudget)}${reserved}`.slice(0, maxChars);
+  }
+
+  if (!context) return base;
+  const prefix = `${core}${constraints}\n\n[CONTEXT DATA]:\n`;
+  const contextBudget = Math.max(0, maxChars - prefix.length - targetBlock.length);
+  return `${prefix}${truncateWithMarker(context, contextBudget)}${targetBlock}`.slice(0, maxChars);
+}
 
 export class APIService {
-  
-  static fetchWithTimeout(url, options, timeoutMs = 25000) {
-    const controller = new AbortController();
-    if (!options.signal) options.signal = controller.signal;
-    
-    const marinara = useRuntimeStore.getState().marinara;
-    const timerFn = (marinara && typeof marinara.setTimeout === 'function') ? marinara.setTimeout : window.setTimeout;
-    
-    const timeout = timerFn(() => controller.abort(), timeoutMs);
-    
-    return fetch(url, options)
-      .then((res) => { clearTimeout(timeout); return res; })
-      .catch((err) => { clearTimeout(timeout); throw err; });
+  static async fetchChat(chatId, signal) {
+    if (!chatId) return null;
+    throwIfAborted(signal);
+    const chat = await apiJson(`${ENDPOINTS.chats}/${encodeURIComponent(chatId)}`, { signal });
+    throwIfAborted(signal);
+    return chat && typeof chat === 'object' ? chat : null;
   }
 
-  static fetchCharCard(cid, signal) {
-    const marinara = useRuntimeStore.getState().marinara;
-    if (!cid || !marinara) return Promise.resolve("");
-    return marinara.apiFetch(`${ENDPOINTS.chats}/${cid}`)
-      .then((chat) => {
-        if (signal && signal.aborted) throw new Error("cancelled");
-        let ids = [];
-        try { ids = typeof chat.characterIds === "string" ? JSON.parse(chat.characterIds) : chat.characterIds || []; } catch (e) {}
-        if (!ids.length) return "";
-        return marinara.apiFetch(`${ENDPOINTS.chars}/${ids[0]}`).then((char) => {
-          if (signal && signal.aborted) throw new Error("cancelled");
-          let data = {};
-          try { data = typeof char.data === "string" ? JSON.parse(char.data) : char.data || {}; } catch (e) {}
-          const name = data.name || char.name || "";
-          const personality = data.personality || char.personality || "";
-          const description = data.description || char.description || "";
-          const parts = [];
-          if (name) parts.push(`Character: ${name}`);
-          if (personality) parts.push(`Personality: ${personality.slice(0, 300)}`);
-          if (description) parts.push(`Description: ${description.slice(0, 200)}`);
-          return parts.length ? `\n\n[Speaker Profile: CHARACTER (${name})]\n${parts.join("\n")}` : "";
-        });
-      })
-      .catch((e) => { if (e.message !== "cancelled") return ""; else throw e; });
+  static async fetchCharacterContext(chat, signal) {
+    const ids = parseCharacterIds(chat?.characterIds);
+    if (ids.length === 0) return '';
+
+    const records = await Promise.allSettled(
+      ids.map((id) => apiJson(`${ENDPOINTS.characters}/${encodeURIComponent(id)}`, { signal })),
+    );
+    throwIfAborted(signal);
+
+    const blocks = records.flatMap((result) => {
+      if (result.status !== 'fulfilled') return [];
+      const data = extractRecordData(result.value);
+      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      const personality = typeof data.personality === 'string'
+        ? truncateWithMarker(data.personality.trim(), MAX_CHARACTER_PERSONALITY)
+        : '';
+      const description = typeof data.description === 'string'
+        ? truncateWithMarker(data.description.trim(), MAX_CHARACTER_DESCRIPTION)
+        : '';
+      if (!name && !personality && !description) return [];
+
+      const lines = [];
+      if (name) lines.push(`Character: ${name}`);
+      if (personality) lines.push(`Personality: ${personality}`);
+      if (description) lines.push(`Description: ${description}`);
+      return [`[CHARACTER PROFILE${name ? `: ${name}` : ''}]\n${lines.join('\n')}`];
+    });
+
+    return blocks.length ? `\n\n${blocks.join('\n\n')}` : '';
   }
 
-  static fetchUserPersona(cid, signal) {
-    const marinara = useRuntimeStore.getState().marinara;
-    const defaultPersona = "\n\n[Speaker Profile: USER (Author/Editor)]\nCRITICAL DIRECTIVE: You are editing the AUTHOR'S text. You are completely independent from the story's characters. DO NOT use character voices, DO NOT roleplay, and DO NOT add conversational commentary.";
-    
-    if (!cid || !marinara) return Promise.resolve(defaultPersona);
-    
-    return marinara.apiFetch(`${ENDPOINTS.chats}/${cid}`)
-      .then((chat) => {
-        if (signal && signal.aborted) throw new Error("cancelled");
-        if (!chat.personaId) throw new Error("No persona");
-        
-        if (deadPersonasCache.has(chat.personaId)) {
-          throw new Error("dead_persona_cache"); 
-        }
+  static async fetchUserPersona(chat, signal) {
+    const fallback = '\n\n[USER / AUTHOR CONTEXT]\nThe selected prose belongs to the author/editor. Do not roleplay as story characters and do not add conversational commentary.';
+    const personaId = typeof chat?.personaId === 'string' ? chat.personaId.trim() : '';
+    if (!personaId) return fallback;
 
-        return marinara.apiFetch(`${ENDPOINTS.personas}/${chat.personaId}`)
-          .catch((err) => {
-            deadPersonasCache.add(chat.personaId);
-            throw err;
-          });
-      })
-      .then((persona) => {
-        if (signal && signal.aborted) throw new Error("cancelled");
-        let data = {};
-        try { data = typeof persona.data === "string" ? JSON.parse(persona.data) : persona.data || {}; } catch (e) {}
-        const name = data.name || persona.name || "User";
-        const desc = data.description || persona.description || "";
-        if (!desc) throw new Error("Empty persona");
-        return `\n\n[Speaker Profile: USER (${name})]\n${desc}\n(Note: Maintain an objective editor tone, do not roleplay as story characters.)`;
-      })
-      .catch((e) => { 
-        if (e.message !== "cancelled") return defaultPersona; 
-        else throw e; 
-      });
-  }
-
-  static getChatHistoryContext(targetMid, depth) {
-    if (depth <= 0) return "";
-    const msgs = Array.from(document.querySelectorAll(SELECTORS.message));
-    const targetIdx = msgs.findIndex((m) => (m.getAttribute('data-message-id') || m.id) === targetMid);
-    if (targetIdx <= 0) return "";
-
-    const startIdx = Math.max(0, targetIdx - depth);
-    const historyText = [];
-    for (let i = startIdx; i < targetIdx; i++) {
-      const el = msgs[i];
-      const isUserClass = el.matches(SELECTORS.userMessage) || el.closest(SELECTORS.userMessage);
-      const isUser = isUserClass || el.querySelector(SELECTORS.avatar);
-      const role = isUser ? "User" : "Character";
-
-      const clone = el.cloneNode(true);
-      clone.querySelectorAll('.message-actions, button, textarea, input, .rwa').forEach((b) => b.remove());
-
-      const cleanText = clone.innerText.trim();
-      if (cleanText && cleanText.length > 2) {
-        historyText.push(`${role}: ${cleanText.substring(0, 400)}`);
-      }
+    try {
+      const persona = await apiJson(`${ENDPOINTS.personas}/${encodeURIComponent(personaId)}`, { signal });
+      throwIfAborted(signal);
+      const data = extractRecordData(persona);
+      const name = typeof data.name === 'string' && data.name.trim() ? data.name.trim() : 'User';
+      const description = typeof data.description === 'string' ? data.description.trim() : '';
+      const personality = typeof data.personality === 'string' ? data.personality.trim() : '';
+      const details = [description, personality].filter(Boolean).join('\n');
+      if (!details) return fallback;
+      return `\n\n[USER / AUTHOR PERSONA: ${name}]\n${truncateWithMarker(details, 2_000)}\nUse this only as author context. Do not roleplay as story characters.`;
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      return fallback;
     }
-    return historyText.length > 0 ? `\n\n[RECENT STORY CONTEXT]\n${historyText.join("\n\n")}` : "";
   }
 
-  static composePrompt(profile, cardCtx, historyCtx, targetText, config) {
-    const core = `[CORE INSTRUCTION]:\n${profile.prompt.trim()}`;
-    let constraints = "";
-    if (config.lengthEnabled && config.lengthPct !== 0) {
-      const pct = config.lengthPct;
-      constraints = pct < 0
-        ? `\n\n[CONSTRAINT]: Make the final rewritten output approximately ${Math.abs(pct)}% shorter (more concise) than the original text.`
-        : `\n\n[CONSTRAINT]: Make the final rewritten output approximately ${pct}% longer (more detailed) than the original text.`;
+  static async fetchMessageContext(chatId, targetMessageId, depth, signal) {
+    const requestedDepth = Math.max(0, Math.min(20, Number.parseInt(depth, 10) || 0));
+    if (!chatId || !targetMessageId || requestedDepth === 0) return { history: '', targetRole: null };
+
+    try {
+      const payload = await apiJson(`${ENDPOINTS.chats}/${encodeURIComponent(chatId)}/messages`, { signal });
+      throwIfAborted(signal);
+      const messages = normalizeMessages(payload);
+      const targetIndex = messages.findIndex((message) => message?.id === targetMessageId);
+      if (targetIndex < 0) return { history: '', targetRole: null };
+
+      const targetRole = typeof messages[targetIndex]?.role === 'string' ? messages[targetIndex].role : null;
+      const history = messages
+        .slice(Math.max(0, targetIndex - requestedDepth), targetIndex)
+        .map((message) => {
+          const content = typeof message?.content === 'string' ? message.content.trim() : '';
+          if (!content) return null;
+          const role = message.role === 'user' ? 'User' : (message.role === 'assistant' ? 'Character' : 'System');
+          return `${role}: ${truncateWithMarker(content, 800)}`;
+        })
+        .filter(Boolean);
+
+      return {
+        history: history.length ? `\n\n[RECENT STORY CONTEXT]\n${history.join('\n\n')}` : '',
+        targetRole,
+      };
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      return { history: '', targetRole: null };
     }
-    const context = [cardCtx, historyCtx].map(c => c.trim()).filter(Boolean).join("\n\n");
-    const contextBlock = context ? `\n\n[CONTEXT DATA]:\n${context}` : "";
-    return `${core}${constraints}${contextBlock}\n\n[TARGET TEXT TO REWRITE]:\n${targetText}`;
+  }
+
+  static resolveDomRole(messageId) {
+    const element = findMessageElement(messageId);
+    const role = element?.getAttribute('data-message-role');
+    return role === 'user' || role === 'assistant' ? role : null;
   }
 
   static async fetchAIResponse(profile, savedSel, signal) {
     const config = usePersistentStore.getState().config;
-    const marinara = useRuntimeStore.getState().marinara;
-    const resolvedMidForLogic = savedSel.mid;
-    
-    let isUser = savedSel.detectedRole === 'user';
-    let isAssistant = savedSel.detectedRole === 'assistant';
+    const messageId = savedSel?.mid || '';
+    const chatId = savedSel?.cid || '';
+    throwIfAborted(signal);
 
-    // [BẢN VÁ TỐI THƯỢNG]: Logic dò tìm Vai trò chính xác 100% qua DOM
-    if (!savedSel.detectedRole) {
-      const msgEl = document.querySelector(`[data-message-id="${resolvedMidForLogic}"]`) || document.getElementById(resolvedMidForLogic);
-      
-      if (msgEl) {
-        const isInputField = msgEl.tagName === 'TEXTAREA' || msgEl.tagName === 'INPUT';
-        const isUserClass = msgEl.matches(SELECTORS.userMessage) || msgEl.closest(SELECTORS.userMessage);
-        
-        if (isInputField || isUserClass || msgEl.querySelector(SELECTORS.avatar)) {
-          isUser = true;
-        } else {
-          isAssistant = true;
-        }
-      } else {
-        isUser = true; // Fallback an toàn
+    const [chat, messageContext] = await Promise.all([
+      this.fetchChat(chatId, signal).catch((error) => {
+        if (signal?.aborted) throw error;
+        return null;
+      }),
+      this.fetchMessageContext(chatId, messageId, config.contextDepth, signal),
+    ]);
+    throwIfAborted(signal);
+
+    const role = savedSel?.detectedRole
+      || this.resolveDomRole(messageId)
+      || messageContext.targetRole;
+
+    let speakerContext = '';
+    if (!config.freeMode) {
+      if (role === 'user' && config.injectUser) {
+        speakerContext = await this.fetchUserPersona(chat, signal);
+      } else if (role === 'assistant' && config.injectChar) {
+        speakerContext = await this.fetchCharacterContext(chat, signal);
       }
     }
+    throwIfAborted(signal);
 
-    let cardCtx = "";
-    if (!config.freeMode) {
-      if (isUser && config.injectUser) cardCtx = await this.fetchUserPersona(savedSel.cid, signal);
-      else if (isAssistant && config.injectChar) cardCtx = await this.fetchCharCard(savedSel.cid, signal);
-    }
-
-    if (signal.aborted) throw new Error("cancelled");
-
-    const safeText = savedSel.text.length > 10000 ? `${savedSel.text.slice(0, 10000)}…` : savedSel.text;
-    const userPrompt = this.composePrompt(profile, cardCtx, this.getChatHistoryContext(resolvedMidForLogic, config.contextDepth), safeText, config);
-    
-    const sysP = `You are a NEUTRAL, objective writing assistant transforming text for an author.
+    const targetText = truncateWithMarker(String(savedSel?.text || ''), MAX_TARGET_CHARS);
+    const systemPrompt = `You are a neutral, objective writing assistant transforming text for an author.
 Rules:
-- Follow the requested operation exactly.
-- STRICT ROLE ISOLATION (CRITICAL): You are an editing tool, NOT a character in the story. DO NOT roleplay. DO NOT adopt the persona, emotions, pronouns (like I, me, my, Em, Anh), or speaking style of any characters found in the Recent Story Context.
-- STRICT LANGUAGE LOCK: Identify and match the language of the user's input text Auditorily and Structurally. Output the transformed prose in the EXACT SAME LANGUAGE. Do NOT translate the text.
-- LINGUISTIC & GRAMMAR FIDELITY: Adapt perfectly to the natural grammatical flow and cultural nuances inherent to the input text's language. Preserve the original narrative perspective.
-- NARRATIVE CONTINUITY: Preserve established story facts. Use the Recent Story Context ONLY for factual reference, NEVER to mimic the characters' voices.
-- OUTPUT FORMAT: Output ONLY the transformed prose. Absolutely no introduction, no chat commentary, no explanations, and no surrounding quotes.
-- Preserve wrapping markdown or punctuation (like *...*, (...), "...") ONLY IF they exist in the original text.`;
+- Follow the requested rewrite operation exactly.
+- ROLE ISOLATION: You are an editing tool, not a character in the story. Never roleplay or adopt a character's identity merely because that character appears in context.
+- LANGUAGE LOCK: Preserve the language of the selected input unless the rewrite instruction explicitly requests translation.
+- GRAMMATICAL FIDELITY: Use natural grammar, register, and cultural conventions for that language while preserving the original narrative perspective.
+- NARRATIVE CONTINUITY: Use context only to preserve established facts and references.
+- OUTPUT FORMAT: Return only the transformed prose, with no introduction, explanation, or surrounding quotation marks.
+- Preserve wrapping markdown or punctuation only when it belongs to the selected source text.`;
 
-    if (config.ollamaModel && config.ollamaModel.trim() !== "") {
-      const url = (config.ollamaUrl || "http://127.0.0.1:11434/v1").replace(/\/$/, "");
-      return this.fetchWithTimeout(`${url}/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: config.ollamaModel.trim(),
-          messages: [
-            { role: "system", content: sysP },
-            { role: "user", content: userPrompt }
-          ],
-          temperature: 0.7
-        }),
-        signal: signal 
-      }, 25000)
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-          return res.json();
-        })
-        .then((data) => {
-          if (data.error) return { error: data.error.message || data.error };
-          if (!data.choices || !data.choices[0]) return { error: "No response from language model" };
-          return { result: data.choices[0].message.content };
-        });
-    } else {
-      if (!marinara) throw new Error("Marinara instance is missing, unable to route to default sidecar.");
-      return marinara.apiFetch(ENDPOINTS.tracker, {
-        method: "POST",
-        body: JSON.stringify({ systemPrompt: sysP, userPrompt }),
-      }).then(res => {
-        if (signal.aborted) throw new Error("cancelled");
-        return res;
-      });
+    const customProvider = typeof config.ollamaModel === 'string' && config.ollamaModel.trim();
+    const maxUserPrompt = customProvider ? CUSTOM_PROVIDER_PROMPT_MAX_CHARS : SIDECAR_PROMPT_MAX_CHARS;
+    const userPrompt = composeBoundedPrompt(
+      profile,
+      speakerContext,
+      messageContext.history,
+      targetText,
+      config,
+      maxUserPrompt,
+    );
+
+    if (customProvider) {
+      const url = (config.ollamaUrl || 'http://127.0.0.1:11434/v1').replace(/\/$/, '');
+      const data = await fetchJson(
+        `${url}/chat/completions`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: customProvider,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt },
+            ],
+            temperature: 0.7,
+          }),
+          signal,
+        },
+        25_000,
+      );
+      if (data?.error) return { error: data.error.message || data.error };
+      const content = data?.choices?.[0]?.message?.content;
+      return typeof content === 'string' && content.trim()
+        ? { result: content }
+        : { error: 'No response from language model' };
     }
+
+    const sidecarResult = await apiJson(
+      ENDPOINTS.tracker,
+      {
+        method: 'POST',
+        body: {
+          systemPrompt: truncateWithMarker(systemPrompt, SIDECAR_PROMPT_MAX_CHARS),
+          userPrompt: truncateWithMarker(userPrompt, SIDECAR_PROMPT_MAX_CHARS),
+        },
+        signal,
+      },
+      25_000,
+    );
+    throwIfAborted(signal);
+    return sidecarResult && typeof sidecarResult === 'object'
+      ? sidecarResult
+      : { error: 'Invalid response from Marinara Sidecar' };
   }
 }
