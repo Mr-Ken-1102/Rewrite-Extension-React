@@ -5,7 +5,7 @@ import { useToastStore } from '../store/useToastStore';
 import { DOMUtils } from '../utils/domUtils';
 
 export const useNativeEvents = () => {
-  const hostElement = useRuntimeStore((state) => state.hostElement);
+  const hostElement = useRuntimeStore.getState().hostElement;
   const setHistoryData = usePersistentStore((state) => state.setHistoryData);
   const showToast = useToastStore((state) => state.showToast);
 
