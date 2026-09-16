@@ -45,10 +45,10 @@ export function ContextPanel({
         <div className="rwa-token-panel" title={tokenTitle}>
           <span className="rwa-token-total">
             {tokenInfo.loading
-              ? 'Estimated prompt · calculating…'
+              ? 'Selection + context ≈ … tok'
               : tokenInfo.parts
-                ? `Estimated prompt · ≈ ${tokenInfo.parts.total.toLocaleString()} tok`
-                : 'Estimated prompt · —'}
+                ? `Selection + context ≈ ${tokenInfo.parts.total.toLocaleString()} tok`
+                : 'Selection + context ≈ — tok'}
           </span>
         </div>
 
