@@ -25,6 +25,7 @@ export function useContextInspector(selection, rewriteSelection, config) {
   }, [
     rewriteSelection,
     selection?.captureId,
+    selection?.text,
     config.contextDepth,
     config.injectChar,
     config.injectUser,

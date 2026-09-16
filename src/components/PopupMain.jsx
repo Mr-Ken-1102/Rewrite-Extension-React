@@ -11,7 +11,6 @@ import { useContextInspector } from '../hooks/useContextInspector';
 import { useAutoProfileGeneration } from '../hooks/useAutoProfileGeneration';
 import { usePopupDrag } from '../hooks/usePopupDrag';
 import { usePopupPosition } from '../hooks/usePopupPosition';
-import { useGlowPointer } from '../hooks/useGlowPointer';
 import { PopupHeader } from './popup/PopupHeader';
 import { ProfileGrid } from './popup/ProfileGrid';
 import { MultiMessageNotice } from './popup/MultiMessageNotice';
@@ -42,7 +41,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     setContextExclusions({});
     setTrimOpen(false);
     setTrimText(selection?.text || '');
-  }, [selection?.captureId]);
+  }, [selection?.captureId, selection?.text]);
 
   const keepFocus = useCallback(() => {
     if (!selection || selection.source !== 'textarea') return;
@@ -57,8 +56,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     });
   }, [selection]);
 
-  const handleGlowPointerMove = useGlowPointer();
-
   const showTooltip = useCallback((event, text) => {
     const rect = event.currentTarget.getBoundingClientRect();
     let x = rect.right + 10;
@@ -72,6 +69,10 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   }, []);
 
   const colCount = useMemo(() => Math.max(1, config.cols || 3), [config.cols]);
+  const layoutColCount = useMemo(
+    () => config.compact ? Math.min(colCount, 4) : Math.min(colCount, 2),
+    [colCount, config.compact],
+  );
   const sortedProfiles = useMemo(() => profiles
     .filter((profile) => profile.hidden !== true)
     .slice()
@@ -108,7 +109,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     popupPosition,
     selection,
     sortedProfilesLength: sortedProfiles.length,
-    colCount,
+    colCount: layoutColCount,
     rows: config.rows,
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
@@ -167,8 +168,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
       <div
         ref={popupRef}
         className="rwa rwa-popup-main"
-        style={{ minWidth: `${Math.max(200, colCount * 95)}px`, left: finalLeft, top: finalTop, visibility: finalVisibility }}
-        onPointerMove={handleGlowPointerMove}
+        style={{ left: finalLeft, top: finalTop, visibility: finalVisibility }}
       >
         <PopupHeader
           selection={selection}
@@ -180,7 +180,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
 
         {autoProfile && (
           <Button
-            className="rwa-auto-profile rwa-glow-button"
+            className="rwa-auto-profile"
             onMouseEnter={(event) => showTooltip(event, `${autoProfile.name}: ${autoProfile.prompt}`)}
             onMouseLeave={hideTooltip}
             onClick={(event) => { event.stopPropagation(); runProfile(autoProfile); }}
@@ -193,7 +193,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
 
         <ProfileGrid
           profiles={sortedProfiles}
-          colCount={colCount}
+          colCount={layoutColCount}
           rows={config.rows}
           compact={config.compact}
           onRun={runProfile}

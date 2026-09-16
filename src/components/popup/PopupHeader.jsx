@@ -1,10 +1,25 @@
 export function PopupHeader({ selection, pinned, onDragStart, onTrim, onPinToggle }) {
   const multiCount = Array.isArray(selection?.segments) ? selection.segments.length : 0;
+  const iconProps = {
+    width: 14,
+    height: 14,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+  };
+
   return (
     <div className="rwa-header-drag-zone" onPointerDown={onDragStart}>
       <div className="rwa-topbar"></div>
       <div className="rwa-mini-hdr rwa-drag-handle">
-        <span className="rwa-mini-title">REWRITE ASSISTANT v3</span>
+        <div className="rwa-mini-brand">
+          <span className="rwa-mini-title">Rewrite Assistant</span>
+          <span className="rwa-version-badge">V3</span>
+        </div>
         <div className="rwa-mini-actions" onPointerDown={(event) => event.stopPropagation()}>
           <button
             type="button"
@@ -13,14 +28,24 @@ export function PopupHeader({ selection, pinned, onDragStart, onTrim, onPinToggl
             disabled={multiCount > 1}
             title={multiCount > 1 ? 'Trim is available only for a single-message selection' : 'Trim selection before sending'}
             aria-label={multiCount > 1 ? 'Trim unavailable for multi-message selection' : 'Trim selection before sending'}
-          >✂</button>
+          >
+            <svg {...iconProps}>
+              <circle cx="6" cy="7" r="3" />
+              <circle cx="6" cy="17" r="3" />
+              <path d="M8.7 8.4 20 3M8.7 15.6 20 21M9 10l4 2" />
+            </svg>
+          </button>
           <button
             type="button"
             className={`rwa-mini-action ${pinned ? 'rwa-mini-action-active' : ''}`}
             onClick={onPinToggle}
             title={pinned ? 'Unpin popup' : 'Pin popup here'}
             aria-label={pinned ? 'Unpin popup' : 'Pin popup here'}
-          >📌</button>
+          >
+            <svg {...iconProps}>
+              <path d="M8 3h8M9 3v5l-3 4h12l-3-4V3M12 12v9" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>

@@ -7,27 +7,27 @@ export function usePopupPosition({ popupPosition, selection, sortedProfilesLengt
     let finalVisibility = 'hidden';
 
     if (popupPosition && selection) {
+      const panelWidth = Math.min(424, Math.max(200, window.innerWidth - 16));
+
       if (pinnedPos) {
-        const width = Math.max(200, colCount * 95);
-        finalLeft = `${Math.max(10, Math.min(Number(pinnedPos.left) || 10, window.innerWidth - width - 10))}px`;
-        finalTop = `${Math.max(10, Math.min(Number(pinnedPos.top) || 10, window.innerHeight - 60))}px`;
+        finalLeft = `${Math.max(8, Math.min(Number(pinnedPos.left) || 8, window.innerWidth - panelWidth - 8))}px`;
+        finalTop = `${Math.max(8, Math.min(Number(pinnedPos.top) || 8, window.innerHeight - 60))}px`;
         finalVisibility = 'visible';
       } else if (popupPosition.isDragged) {
         finalLeft = `${popupPosition.left}px`;
         finalTop = `${popupPosition.top}px`;
         finalVisibility = 'visible';
       } else {
-        const actualRows = Math.ceil(sortedProfilesLength / colCount);
+        const actualRows = Math.ceil(sortedProfilesLength / Math.max(1, colCount));
         const visibleRows = Math.min(actualRows, Math.max(1, rows || 3));
-        const estimatedWidth = Math.max(200, colCount * 95) + 24;
-        const estimatedHeight = (visibleRows * 42) + 105;
+        const estimatedHeight = Math.min(window.innerHeight - 16, (visibleRows * 42) + 280);
         let top = popupPosition.bottom + 12;
 
         if (popupPos === 'above') top = popupPosition.top - estimatedHeight - 12;
         else if (popupPos !== 'below' && top + estimatedHeight > window.innerHeight) top = popupPosition.top - estimatedHeight - 12;
 
-        finalLeft = `${Math.max(12, Math.min(popupPosition.left, window.innerWidth - estimatedWidth - 12))}px`;
-        finalTop = `${Math.max(12, Math.min(top, window.innerHeight - estimatedHeight - 12))}px`;
+        finalLeft = `${Math.max(8, Math.min(popupPosition.left, window.innerWidth - panelWidth - 8))}px`;
+        finalTop = `${Math.max(8, Math.min(top, window.innerHeight - estimatedHeight - 8))}px`;
         finalVisibility = 'visible';
       }
     }

@@ -3,6 +3,7 @@ import App from './App';
 import { useRuntimeStore } from './store/useRuntimeStore';
 import { RWA_PREMIUM_CSS } from './styles.js';
 import { RWA_BALANCE_CSS } from './styles-balance.js';
+import { RWA_WORLDCLASS_CSS } from './styles-worldclass.js';
 import { diffWorkerInstance } from './services/diffWorkerService';
 import { usePersistentStore } from './store/usePersistentStore';
 import { MarinaraHost } from './services/marinaraHost';
@@ -94,7 +95,7 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
 
     const styleContainer = document.createElement('style');
     styleContainer.id = 'rwa-premium-styles';
-    styleContainer.textContent = `${RWA_PREMIUM_CSS}\n${RWA_BALANCE_CSS}`;
+    styleContainer.textContent = `${RWA_PREMIUM_CSS}\n${RWA_BALANCE_CSS}\n${RWA_WORLDCLASS_CSS}`;
     shadowRoot.appendChild(styleContainer);
 
     if (destroyed) {

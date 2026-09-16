@@ -17,6 +17,15 @@ ok('popup drag has pointer cancel, blur and visibility fail-safe cleanup', () =>
   assert.match(source, /setDragging\(false\)/);
 });
 
+ok('popup drag uses captured-pointer compositor transforms instead of per-frame layout positioning', () => {
+  const source = read('./src/hooks/usePopupDrag.js');
+  assert.match(source, /setPointerCapture/);
+  assert.match(source, /captureTarget\?\.addEventListener\?\.\('pointermove'/);
+  assert.match(source, /translate3d\(/);
+  assert.match(source, /rwa-dragging-active/);
+  assert.doesNotMatch(source, /window\.addEventListener\('pointermove'/);
+});
+
 ok('popup header uses pointer drag instead of mouse-only drag', () => {
   const source = read('./src/components/popup/PopupHeader.jsx');
   assert.match(source, /onPointerDown=\{onDragStart\}/);
@@ -76,9 +85,29 @@ ok('settings expose current-chat connection and balanced footer geometry', () =>
 
 ok('popup context controls use a symmetric four-switch grid', () => {
   const source = read('./src/components/popup/ContextPanel.jsx');
-  const css = read('./src/styles-balance.js');
+  const css = read('./src/styles-worldclass.js');
   assert.match(source, /rwa-context-switch-grid/);
   assert.match(css, /\.rwa-context-switch-grid[\s\S]*grid-template-columns:\s*repeat\(2/);
+});
+
+ok('standard profile palette caps text buttons at two readable columns', () => {
+  const source = read('./src/components/popup/ProfileGrid.jsx');
+  const settings = read('./src/components/modals/settings/TabUI.jsx');
+  assert.match(source, /compact \? Math\.min\(requestedCols, 4\) : Math\.min\(requestedCols, 2\)/);
+  assert.match(settings, /profileColumnMax = config\.compact \? 4 : 2/);
+});
+
+ok('world-class popup layer is loaded last and removes expensive blur while dragging', () => {
+  const main = read('./src/main.jsx');
+  const css = read('./src/styles-worldclass.js');
+  assert.match(main, /RWA_PREMIUM_CSS\}\\n\$\{RWA_BALANCE_CSS\}\\n\$\{RWA_WORLDCLASS_CSS\}/);
+  assert.match(css, /\.rwa-popup-main\.rwa-dragging-active[\s\S]*backdrop-filter:\s*none/);
+  assert.match(css, /width:\s*min\(424px/);
+});
+
+ok('lint policy rejects warnings instead of treating them as clean', () => {
+  const pkg = JSON.parse(read('./package.json'));
+  assert.match(pkg.scripts.lint, /--max-warnings=0/);
 });
 
 ok('diagnostics match current-chat Marinara connection behavior', () => {

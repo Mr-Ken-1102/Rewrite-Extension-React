@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "test": "node selfcheck.mjs && node failuremodecheck.mjs && node propertycheck.mjs",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "check": "npm run verify:source && npm run verify:manifest && npm run test && npm run lint && npm run build",
     "bundle": "node build-extension.mjs",
     "preview": "vite preview",

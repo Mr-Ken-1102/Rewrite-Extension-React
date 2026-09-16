@@ -10,8 +10,9 @@ export function useAutoProfileGeneration({ selection, config, hasProfile, isProc
     const cid = selection?.cid;
     if (!cid) return undefined;
 
+    const attempts = attemptsRef.current;
     const now = Date.now();
-    const previous = attemptsRef.current.get(cid);
+    const previous = attempts.get(cid);
     if (!shouldStartAutoProfile({
       enabled: config.autoProfileEnabled,
       hasProfile,
@@ -28,35 +29,35 @@ export function useAutoProfileGeneration({ selection, config, hasProfile, isProc
     }
 
     const controller = new AbortController();
-    attemptsRef.current.set(cid, { state: 'running', at: now });
+    attempts.set(cid, { state: 'running', at: now });
     APIService.generateAutoProfile(cid, controller.signal, {
       messageId: selection?.mid,
       preferredCharacterIds: config.charCardIds,
     }).then((result) => {
       if (controller.signal.aborted) {
-        const current = attemptsRef.current.get(cid);
-        if (current?.state === 'running') attemptsRef.current.delete(cid);
+        const current = attempts.get(cid);
+        if (current?.state === 'running') attempts.delete(cid);
         return;
       }
       if (result?.profile) {
-        attemptsRef.current.delete(cid);
+        attempts.delete(cid);
         showToast(`Auto-profile ready: ${result.profile.name}`, 'ok');
       } else if (result?.error) {
-        attemptsRef.current.set(cid, { state: 'failed', at: Date.now() });
+        attempts.set(cid, { state: 'failed', at: Date.now() });
         showToast(`Auto-profile skipped: ${result.error}. Retry available in 60 seconds.`, 'warn');
         setRetryTick((value) => value + 1);
       }
     }).catch((error) => {
       if (controller.signal.aborted) return;
-      attemptsRef.current.set(cid, { state: 'failed', at: Date.now() });
+      attempts.set(cid, { state: 'failed', at: Date.now() });
       showToast(`Auto-profile skipped: ${error?.message || String(error)}. Retry available in 60 seconds.`, 'warn');
       setRetryTick((value) => value + 1);
     });
 
     return () => {
       controller.abort();
-      const current = attemptsRef.current.get(cid);
-      if (current?.state === 'running') attemptsRef.current.delete(cid);
+      const current = attempts.get(cid);
+      if (current?.state === 'running') attempts.delete(cid);
     };
   }, [selection?.cid, selection?.mid, config.autoProfileEnabled, config.charCardIds, hasProfile, isProcessing, showToast, retryTick]);
 }

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { usePersistentStore } from '../../../store/usePersistentStore';
 import { useToastStore } from '../../../store/useToastStore';
 import { createPortableExport, parsePortableImport } from '../../../services/portableDataService';
@@ -28,9 +28,9 @@ export const TabData = () => {
   const showToast = useToastStore((s) => s.showToast);
   const importRef = useRef(null);
   const [options, setOptions] = useState({ profiles: true, settings: true, customs: true, autoProfiles: true });
-  const [debugRevision, setDebugRevision] = useState(0);
+  const [, setDebugRevision] = useState(0);
   const [pendingImport, setPendingImport] = useState(null);
-  const debugEntries = useMemo(() => debugLogService.list(), [debugRevision]);
+  const debugEntries = debugLogService.list();
 
   const toggle = (key) => setOptions((current) => ({ ...current, [key]: !current[key] }));
 
@@ -56,7 +56,6 @@ export const TabData = () => {
       showToast(`Import failed: ${err?.message || String(err)}`, 'err');
     }
   };
-
 
   const confirmImport = () => {
     if (!pendingImport?.patch) return;
