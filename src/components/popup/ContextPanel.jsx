@@ -70,7 +70,7 @@ export function ContextPanel({
 
           {contextSources.length > 0 && (
             <div className="rwa-one-shot-context">
-              <span className="rwa-one-shot-label">This rewrite</span>
+              <span className="rwa-one-shot-label">This rewrite:</span>
               {contextSources.map((source) => {
                 const excluded = !!contextExclusions[source.key];
                 return (
