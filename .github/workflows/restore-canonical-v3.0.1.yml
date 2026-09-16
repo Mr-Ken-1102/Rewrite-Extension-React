@@ -29,6 +29,14 @@ jobs:
           chunks = sorted(Path('backup/chunks-v2').glob('part-*.b64'))
           if not chunks:
               raise SystemExit('No canonical archive chunks found')
+          for p in chunks:
+              data = p.read_bytes()
+              compact = re.sub(rb'[\t\n\r\f\v ]+', b'', data)
+              bad = [(i, b) for i, b in enumerate(compact) if b not in b'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=']
+              print(f'{p}: bytes={len(data)} compact={len(compact)} bad={len(bad)}')
+              for i, b in bad[:12]:
+                  lo=max(0,i-50); hi=min(len(compact),i+51)
+                  print(f'  bad@{i}={bytes([b])!r} context={compact[lo:hi]!r}')
           raw = b''.join(p.read_bytes() for p in chunks)
           compact = re.sub(rb'[\t\n\r\f\v ]+', b'', raw)
           invalid = re.findall(rb'[^A-Za-z0-9+/=]', compact)
