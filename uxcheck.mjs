@@ -45,21 +45,51 @@ ok('popup header uses pointer drag instead of mouse-only drag', () => {
   assert.doesNotMatch(source, /onMouseDown=\{onDragStart\}/);
 });
 
-ok('preset reorder avoids native HTML5 drag and owns cancellation cleanup', () => {
-  const source = read('./src/components/modals/settings/TabProfiles.jsx');
-  assert.doesNotMatch(source, /draggable=/);
-  assert.doesNotMatch(source, /onDrag(Start|Over|Enter|End|Drop)/);
-  assert.match(source, /onPointerDown=\{\(event\) => beginPointerDrag/);
+ok('preset reorder delegates gesture work to an isolated pointer hook', () => {
+  const component = read('./src/components/modals/settings/TabProfiles.jsx');
+  const source = read('./src/hooks/useProfileReorder.js');
+  assert.doesNotMatch(component, /draggable=/);
+  assert.doesNotMatch(component, /onDrag(Start|Over|Enter|End|Drop)/);
+  assert.match(component, /useProfileReorder/);
+  assert.match(component, /onPointerDown=\{\(event\) => beginPointerDrag/);
+  assert.match(source, /setPointerCapture/);
   assert.match(source, /lostpointercapture/);
   assert.match(source, /visibilitychange/);
+  assert.doesNotMatch(source, /document\.body\.style/);
 });
 
-ok('preset reorder caches row geometry instead of measuring the whole list per frame', () => {
-  const source = read('./src/components/modals/settings/TabProfiles.jsx');
-  assert.match(source, /const itemCenters = visibleProfiles\.map/);
+ok('preset reorder caches geometry once and uses insertion slots', () => {
+  const source = read('./src/hooks/useProfileReorder.js');
+  assert.match(source, /const itemCenters = orderedProfiles/);
   assert.match(source, /scrollStart:/);
   assert.match(source, /const scrollDelta =/);
   assert.match(source, /current\.itemCenters/);
+  assert.match(source, /insertionIndex/);
+  assert.match(source, /remainingIds\.splice\(slot, 0, current\.draggedId\)/);
+});
+
+ok('preset reorder pointermove stays DOM-only and store commits once on drop', () => {
+  const component = read('./src/components/modals/settings/TabProfiles.jsx');
+  const source = read('./src/hooks/useProfileReorder.js');
+  assert.doesNotMatch(component, /setDraggedId|setDragOverId/);
+
+  const moveMatch = source.match(/const onPointerMove = \(moveEvent\) => \{([\s\S]*?)\n    \};/);
+  assert.ok(moveMatch, 'preset onPointerMove handler must be present');
+  const moveBody = moveMatch[1];
+  assert.doesNotMatch(moveBody, /getBoundingClientRect|offsetWidth|offsetHeight/);
+  assert.doesNotMatch(moveBody, /requestAnimationFrame|setTimeout/);
+  assert.doesNotMatch(moveBody, /onCommit|setState|updateProfiles/);
+  assert.match(moveBody, /updateVisual\(latest\.clientY\)/);
+
+  assert.match(source, /draggedNode\.style\.transform = `translate3d/);
+  assert.equal((source.match(/onCommit\(/g) || []).length, 1);
+});
+
+ok('preset reorder reserves rAF for edge autoscroll only', () => {
+  const source = read('./src/hooks/useProfileReorder.js');
+  assert.match(source, /requestAnimationFrame\(scrollTick\)/);
+  assert.doesNotMatch(source, /requestAnimationFrame\(updateVisual\)/);
+  assert.doesNotMatch(source, /requestAnimationFrame\(onPointerMove\)/);
 });
 
 ok('global pointer tracker stays out of extension drag hot paths', () => {
