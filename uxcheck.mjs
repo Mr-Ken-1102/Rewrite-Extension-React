@@ -153,20 +153,24 @@ ok('profile columns are configurable beyond two on the wide popup', () => {
   assert.doesNotMatch(settings, /Math\.min\(config\.cols \|\| 2, 2\)/);
 });
 
-ok('wide low popup uses a horizontal workbench and matching viewport math', () => {
+ok('popup geometry is delegated to the 688px architecture contract', () => {
   const popup = read('./src/components/PopupMain.jsx');
   const position = read('./src/hooks/usePopupPosition.js');
-  const css = read('./src/styles-performance.js');
+  const geometry = read('./src/popupGeometry.js');
+  const css = read('./src/styles-popup.js');
   assert.match(popup, /rwa-popup-workbench/);
-  assert.match(position, /Math\.min\(620/);
-  assert.match(css, /width:\s*min\(620px/);
-  assert.match(css, /grid-template-columns:\s*minmax\(0, 1\.28fr\)/);
+  assert.match(position, /POPUP_DESKTOP_WIDTH/);
+  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 688/);
+  assert.match(geometry, /POPUP_GRID_COLUMNS = 12/);
+  assert.match(css, /RWA_POPUP_CSS/);
+  assert.match(css, /display:\s*contents\s*!important/);
 });
 
-ok('performance visual layer is loaded last', () => {
+ok('popup geometry layer is loaded after the performance visual layer', () => {
   const main = read('./src/main.jsx');
   assert.match(main, /RWA_PERFORMANCE_CSS/);
-  assert.match(main, /RWA_WORLDCLASS_CSS\}\\n\$\{RWA_PERFORMANCE_CSS\}/);
+  assert.match(main, /RWA_POPUP_CSS/);
+  assert.match(main, /RWA_PERFORMANCE_CSS\}\\n\$\{RWA_POPUP_CSS\}/);
 });
 
 ok('muted amber palette avoids the previous fluorescent primary fill', () => {
