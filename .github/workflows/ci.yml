@@ -39,6 +39,9 @@ jobs:
       - name: Dependency-free manifest gate
         run: node manifestcheck.mjs
 
+      - name: Dependency-free UX lifecycle and connection gate
+        run: node uxcheck.mjs
+
       - name: Install locked dependencies
         run: npm ci
 

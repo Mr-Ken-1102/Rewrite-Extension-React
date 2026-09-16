@@ -6,6 +6,7 @@ import { TabAPI } from './settings/TabAPI';
 import { TabContext } from './settings/TabContext';
 import { TabData } from './settings/TabData';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useGlowPointer } from '../../hooks/useGlowPointer';
 
 export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => {
   const [activeTab, setActiveTab] = useState('profiles');
@@ -24,19 +25,10 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
     if (bodyRef.current) bodyRef.current.scrollTop = scrollPositionsRef.current[activeTab] || 0;
   }, [activeTab]);
 
-  const handleGlowMouseMove = (e) => {
-    const target = e.target.closest(".rwa-glow-button");
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      target.style.setProperty("--x", `${x}px`);
-      target.style.setProperty("--y", `${y}px`);
-    }
-  };
+  const handleGlowPointerMove = useGlowPointer();
 
   return (
-    <div className="rwa-ov" onMouseMove={handleGlowMouseMove}>
+    <div className="rwa-ov" onPointerMove={handleGlowPointerMove}>
       <div ref={dialogRef} className="rwa-win rwa-settings-win" role="dialog" aria-modal="true" aria-label="Rewrite Assistant Settings" tabIndex={-1}>
         <div className="rwa-topbar"></div>
 
@@ -128,7 +120,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
                 <div className="rwa-about-header-zone">
                   <h3 className="rwa-about-title">🚀 REWRITE ASSISTANT V3</h3>
                   <p className="rwa-about-subtitle">
-                    Version 3.0.0<br/>
+                    Version 3.0.1<br/>
                     Developed by <strong>Mr.Kiều.1102</strong>
                   </p>
                   <p className="rwa-about-thanks-to">
@@ -168,7 +160,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
 
         {/* ẨN FOOTER KHÁC KHI MỞ TRANG ABOUT */}
         {!showAbout && (
-          <div className="rwa-foot rwa-settings-foot">
+          <div className={`rwa-foot rwa-settings-foot ${activeTab === 'profiles' ? 'rwa-settings-foot-four' : 'rwa-settings-foot-two'}`}>
             {activeTab === 'profiles' && (
               <>
                 <Button

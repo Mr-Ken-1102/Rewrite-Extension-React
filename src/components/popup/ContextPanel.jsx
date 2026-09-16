@@ -40,13 +40,15 @@ export function ContextPanel({
         </div>
 
         <div className="rwa-panel-box rwa-panel-compact">
-          <div className="rwa-toggle-row">
+          <div className="rwa-context-primary">
             <ToggleSwitch
               label="Free Mode"
               labelStyle={{ fontSize: '11px', fontWeight: '800', color: 'var(--rwa-primary)' }}
               checked={config.freeMode}
               onChange={(value) => { updateConfig({ freeMode: value }); keepFocus(); }}
             />
+          </div>
+          <div className="rwa-context-switch-grid">
             <ToggleSwitch label="Character" checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
             <ToggleSwitch label="Persona" checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
             <ToggleSwitch label="Lore" checked={config.injectLorebook} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectLorebook: value }); keepFocus(); }} />

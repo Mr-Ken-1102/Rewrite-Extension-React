@@ -11,6 +11,7 @@ import { useContextInspector } from '../hooks/useContextInspector';
 import { useAutoProfileGeneration } from '../hooks/useAutoProfileGeneration';
 import { usePopupDrag } from '../hooks/usePopupDrag';
 import { usePopupPosition } from '../hooks/usePopupPosition';
+import { useGlowPointer } from '../hooks/useGlowPointer';
 import { PopupHeader } from './popup/PopupHeader';
 import { ProfileGrid } from './popup/ProfileGrid';
 import { MultiMessageNotice } from './popup/MultiMessageNotice';
@@ -56,13 +57,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     });
   }, [selection]);
 
-  const handleGlowMouseMove = useCallback((event) => {
-    const target = event.target.closest('.rwa-glow-button');
-    if (!target) return;
-    const rect = target.getBoundingClientRect();
-    target.style.setProperty('--x', `${event.clientX - rect.left}px`);
-    target.style.setProperty('--y', `${event.clientY - rect.top}px`);
-  }, []);
+  const handleGlowPointerMove = useGlowPointer();
 
   const showTooltip = useCallback((event, text) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -173,7 +168,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
         ref={popupRef}
         className="rwa rwa-popup-main"
         style={{ minWidth: `${Math.max(200, colCount * 95)}px`, left: finalLeft, top: finalTop, visibility: finalVisibility }}
-        onMouseMove={handleGlowMouseMove}
+        onPointerMove={handleGlowPointerMove}
       >
         <PopupHeader
           selection={selection}

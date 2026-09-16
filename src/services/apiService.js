@@ -22,7 +22,8 @@ import { normalizeProviderFailure } from './policies/providerPolicy.js';
  */
 export class APIService {
   static listConnections(signal) { return ProviderService.listConnections(signal); }
-  static resolveConnectionId(config, signal) { return ProviderService.resolveConnectionId(config, signal); }
+  static resolveConnectionId(config, signal, chatId = '') { return ProviderService.resolveConnectionId(config, signal, chatId); }
+  static resolveMarinaraConnection(config, signal, chatId = '') { return ProviderService.resolveMarinaraConnection(config, signal, chatId); }
   static runInference(systemPrompt, userPrompt, signal, override = {}) {
     return ProviderService.runInference(systemPrompt, userPrompt, signal, override);
   }
@@ -92,7 +93,7 @@ export class APIService {
 
     let response;
     try {
-      response = await this.runInference(`${rewriteSystemPrompt(config)}${suffix}`, promptInfo.prompt, signal);
+      response = await this.runInference(`${rewriteSystemPrompt(config)}${suffix}`, promptInfo.prompt, signal, { chatId: savedSel?.cid || '' });
     } catch (err) {
       if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true, droppedContext: promptInfo.dropped };
       response = normalizeProviderFailure(err);
@@ -123,6 +124,7 @@ export class APIService {
         'Output ONLY a valid JSON object with "name" (1-3 words) and "prompt" (one precise instruction to rewrite text in this character voice). No markdown fences or commentary.',
         `Character reference:\n${card.slice(0, 3000)}`,
         signal,
+        { chatId },
       );
       if (response?.aborted || response?.error) return response;
       const raw = String(response.result || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');

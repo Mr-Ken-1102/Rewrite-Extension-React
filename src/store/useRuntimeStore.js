@@ -47,7 +47,8 @@ export const useRuntimeStore = create((set, get) => ({
     get().abortAll();
     set({
       selection: { source: null, text: '', mid: '', cid: null, start: -1, end: -1, el: null, detectedRole: null },
-      popupPosition: null
+      popupPosition: null,
+      isDragging: false
     });
   }
 }));

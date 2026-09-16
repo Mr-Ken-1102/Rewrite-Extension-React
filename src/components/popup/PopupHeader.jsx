@@ -1,11 +1,11 @@
 export function PopupHeader({ selection, pinned, onDragStart, onTrim, onPinToggle }) {
   const multiCount = Array.isArray(selection?.segments) ? selection.segments.length : 0;
   return (
-    <div className="rwa-header-drag-zone" onMouseDown={onDragStart}>
+    <div className="rwa-header-drag-zone" onPointerDown={onDragStart}>
       <div className="rwa-topbar"></div>
       <div className="rwa-mini-hdr rwa-drag-handle">
         <span className="rwa-mini-title">REWRITE ASSISTANT v3</span>
-        <div className="rwa-mini-actions" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="rwa-mini-actions" onPointerDown={(event) => event.stopPropagation()}>
           <button
             type="button"
             className="rwa-mini-action"

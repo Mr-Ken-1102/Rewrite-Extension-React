@@ -53,6 +53,14 @@ export const useNativeEvents = () => {
       });
     }, { passive: true });
 
+    // Drag interactions must never leave the global selection guard stuck when
+    // the browser cancels a pointer sequence or the tab/window loses focus.
+    add(window, 'pointercancel', () => useRuntimeStore.getState().setDragging(false));
+    add(window, 'blur', () => useRuntimeStore.getState().setDragging(false));
+    add(document, 'visibilitychange', () => {
+      if (document.hidden) useRuntimeStore.getState().setDragging(false);
+    });
+
     add(document, 'click', (event) => {
       const target = event.target instanceof Element ? event.target : null;
       const button = target?.closest('button[title*="Edit" i], .message-action-edit');

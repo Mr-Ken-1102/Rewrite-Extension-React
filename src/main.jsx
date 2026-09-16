@@ -2,6 +2,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { useRuntimeStore } from './store/useRuntimeStore';
 import { RWA_PREMIUM_CSS } from './styles.js';
+import { RWA_BALANCE_CSS } from './styles-balance.js';
 import { diffWorkerInstance } from './services/diffWorkerService';
 import { usePersistentStore } from './store/usePersistentStore';
 import { MarinaraHost } from './services/marinaraHost';
@@ -42,6 +43,9 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
     try { root?.unmount(); } catch { /* noop */ }
     try { hostElement?.remove(); } catch { /* noop */ }
     useRuntimeStore.getState().reset();
+    useRuntimeStore.getState().setDragging(false);
+    useRuntimeStore.getState().setHost(null, null);
+    useRuntimeStore.getState().setMarinara(null);
     MarinaraHost.setHost(null);
     if (window.__rwa_active_instance__?.destroy === destroyInstance) delete window.__rwa_active_instance__;
   };
@@ -90,7 +94,7 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
 
     const styleContainer = document.createElement('style');
     styleContainer.id = 'rwa-premium-styles';
-    styleContainer.textContent = RWA_PREMIUM_CSS;
+    styleContainer.textContent = `${RWA_PREMIUM_CSS}\n${RWA_BALANCE_CSS}`;
     shadowRoot.appendChild(styleContainer);
 
     if (destroyed) {

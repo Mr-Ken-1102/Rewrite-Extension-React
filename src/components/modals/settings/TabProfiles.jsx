@@ -10,15 +10,14 @@ export const TabProfiles = ({ openEditProfile, scrollContainerRef }) => {
   const [query, setQuery] = useState('');
   const [draggedId, setDraggedId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
-  const [isGhostCaptured, setIsGhostCaptured] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
-  const GAP = 6;
-  const ghostTimerRef = useRef(null);
-
-  useEffect(() => () => {
-    if (ghostTimerRef.current !== null) window.clearTimeout(ghostTimerRef.current);
-  }, []);
+  const itemRefs = useRef(new Map());
+  const cleanupDragRef = useRef(null);
+  const moveFrameRef = useRef(0);
+  const scrollFrameRef = useRef(0);
+  const pendingYRef = useRef(0);
+  const dragStateRef = useRef(null);
 
   const sortedProfiles = useMemo(
     () => [...profiles].sort((a, b) => ((a.order || 0) - (b.order || 0)) || String(a.id).localeCompare(String(b.id))),
@@ -31,68 +30,148 @@ export const TabProfiles = ({ openEditProfile, scrollContainerRef }) => {
   }, [normalizedQuery, sortedProfiles]);
   const dragDisabled = !!normalizedQuery;
 
-  const handleDragStart = (event, id) => {
-    if (dragDisabled) {
-      event.preventDefault();
-      return;
-    }
+  useEffect(() => () => {
+    cleanupDragRef.current?.(false);
+    if (moveFrameRef.current) window.cancelAnimationFrame(moveFrameRef.current);
+    if (scrollFrameRef.current) window.cancelAnimationFrame(scrollFrameRef.current);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, []);
+
+  const beginPointerDrag = (event, id) => {
+    if (dragDisabled || (event.button !== undefined && event.button !== 0)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    cleanupDragRef.current?.(false);
+
+    const handle = event.currentTarget;
+    const pointerId = event.pointerId;
+    const container = scrollContainerRef?.current || handle.closest('.rwa-settings-body');
+    const state = { id, targetId: id, pointerId, handle, container, scrollVelocity: 0, finished: false };
+    dragStateRef.current = state;
+    pendingYRef.current = event.clientY;
     setDraggedId(id);
     setDragOverId(id);
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', id);
-    if (ghostTimerRef.current !== null) window.clearTimeout(ghostTimerRef.current);
-    ghostTimerRef.current = window.setTimeout(() => {
-      ghostTimerRef.current = null;
-      setIsGhostCaptured(true);
-    }, 0);
-  };
+    document.body.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+    try { handle.setPointerCapture?.(pointerId); } catch { /* best effort */ }
 
-  const handleDragEnter = (event, id) => {
-    event.preventDefault();
-    if (!dragDisabled && draggedId !== null && dragOverId !== id) setDragOverId(id);
-  };
+    const updateTarget = () => {
+      moveFrameRef.current = 0;
+      const current = dragStateRef.current;
+      if (!current || current.finished) return;
+      const y = pendingYRef.current;
+      let closest = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      for (const profile of visibleProfiles) {
+        const node = itemRefs.current.get(profile.id);
+        if (!node?.isConnected) continue;
+        const rect = node.getBoundingClientRect();
+        const distance = Math.abs(y - (rect.top + rect.height / 2));
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          closest = profile.id;
+        }
+      }
+      if (closest && closest !== current.targetId) {
+        current.targetId = closest;
+        setDragOverId(closest);
+      }
 
-  const handleContainerDragOver = (event) => {
-    if (dragDisabled) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    const container = scrollContainerRef?.current || event.currentTarget.closest('.rwa-settings-body');
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    const buffer = 70;
-    const scrollSpeed = 15;
-    if (event.clientY < rect.top + buffer) container.scrollTop -= scrollSpeed;
-    else if (event.clientY > rect.bottom - buffer) container.scrollTop += scrollSpeed;
-  };
+      const scrollHost = current.container;
+      if (scrollHost) {
+        const rect = scrollHost.getBoundingClientRect();
+        const edge = Math.min(76, Math.max(48, rect.height * 0.14));
+        if (y < rect.top + edge) current.scrollVelocity = -Math.max(4, Math.min(18, (rect.top + edge - y) * 0.24));
+        else if (y > rect.bottom - edge) current.scrollVelocity = Math.max(4, Math.min(18, (y - (rect.bottom - edge)) * 0.24));
+        else current.scrollVelocity = 0;
+      }
+    };
 
-  const handleDragEnd = () => {
-    if (ghostTimerRef.current !== null) {
-      window.clearTimeout(ghostTimerRef.current);
-      ghostTimerRef.current = null;
-    }
-    setDraggedId(null);
-    setDragOverId(null);
-    setIsGhostCaptured(false);
-  };
+    const scheduleTargetUpdate = () => {
+      if (!moveFrameRef.current) moveFrameRef.current = window.requestAnimationFrame(updateTarget);
+    };
 
-  const handleDrop = (event) => {
-    if (dragDisabled) return;
-    event.preventDefault();
-    if (!draggedId || !dragOverId || draggedId === dragOverId) {
-      handleDragEnd();
-      return;
-    }
-    const next = [...sortedProfiles];
-    const from = next.findIndex((profile) => profile.id === draggedId);
-    const to = next.findIndex((profile) => profile.id === dragOverId);
-    if (from < 0 || to < 0) {
-      handleDragEnd();
-      return;
-    }
-    const [dragged] = next.splice(from, 1);
-    next.splice(to, 0, dragged);
-    updateProfiles(next.map((profile, index) => ({ ...profile, order: index })));
-    handleDragEnd();
+    const scrollTick = () => {
+      scrollFrameRef.current = 0;
+      const current = dragStateRef.current;
+      if (!current || current.finished || !current.container || current.scrollVelocity === 0) return;
+      current.container.scrollTop += current.scrollVelocity;
+      updateTarget();
+      scrollFrameRef.current = window.requestAnimationFrame(scrollTick);
+    };
+
+    const ensureScrollLoop = () => {
+      const current = dragStateRef.current;
+      if (current?.scrollVelocity && !scrollFrameRef.current) scrollFrameRef.current = window.requestAnimationFrame(scrollTick);
+    };
+
+    const onPointerMove = (moveEvent) => {
+      const current = dragStateRef.current;
+      if (!current || (pointerId !== undefined && moveEvent.pointerId !== pointerId)) return;
+      moveEvent.preventDefault();
+      pendingYRef.current = moveEvent.clientY;
+      scheduleTargetUpdate();
+      window.requestAnimationFrame(ensureScrollLoop);
+    };
+
+    const cleanup = (commit) => {
+      const current = dragStateRef.current;
+      if (!current || current.finished) return;
+      current.finished = true;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      window.removeEventListener('blur', onWindowBlur);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      current.handle?.removeEventListener?.('lostpointercapture', onLostPointerCapture);
+      if (moveFrameRef.current) {
+        window.cancelAnimationFrame(moveFrameRef.current);
+        moveFrameRef.current = 0;
+      }
+      if (scrollFrameRef.current) {
+        window.cancelAnimationFrame(scrollFrameRef.current);
+        scrollFrameRef.current = 0;
+      }
+      try {
+        if (pointerId !== undefined && current.handle?.hasPointerCapture?.(pointerId)) current.handle.releasePointerCapture(pointerId);
+      } catch { /* best effort */ }
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+
+      if (commit && current.id && current.targetId && current.id !== current.targetId) {
+        const next = [...sortedProfiles];
+        const from = next.findIndex((profile) => profile.id === current.id);
+        const to = next.findIndex((profile) => profile.id === current.targetId);
+        if (from >= 0 && to >= 0) {
+          const [moved] = next.splice(from, 1);
+          next.splice(to, 0, moved);
+          updateProfiles(next.map((profile, index) => ({ ...profile, order: index })));
+        }
+      }
+
+      dragStateRef.current = null;
+      cleanupDragRef.current = null;
+      setDraggedId(null);
+      setDragOverId(null);
+    };
+
+    const onPointerUp = (upEvent) => {
+      if (pointerId !== undefined && upEvent.pointerId !== pointerId) return;
+      cleanup(true);
+    };
+    const onPointerCancel = () => cleanup(false);
+    const onWindowBlur = () => cleanup(false);
+    const onVisibilityChange = () => { if (document.hidden) cleanup(false); };
+    const onLostPointerCapture = () => cleanup(false);
+
+    cleanupDragRef.current = cleanup;
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
+    window.addEventListener('blur', onWindowBlur);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    handle.addEventListener?.('lostpointercapture', onLostPointerCapture, { once: true });
   };
 
   const handleDelete = () => {
@@ -113,98 +192,57 @@ export const TabProfiles = ({ openEditProfile, scrollContainerRef }) => {
 
   return (
     <>
-      <div style={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--rwa-primary)', marginBottom: '10px' }}>
-        Profiles List — Drag ≡ to Reorder Presets
-      </div>
+      <div className="rwa-section-kicker">Profiles List — Drag ≡ to Reorder Presets</div>
 
       <input
         type="search"
-        className="rwa-inp"
+        className="rwa-inp rwa-profile-search"
         placeholder="Search profiles…"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         aria-label="Search profiles"
-        style={{ margin: '0 0 8px', fontSize: '12px' }}
       />
-      <div style={{ fontSize: '10px', opacity: 0.55, marginBottom: '10px' }}>
+      <div className="rwa-profile-summary">
         {visibleProfiles.length}/{profiles.length} shown. Hidden profiles stay editable here but do not appear in the rewrite popup.
         {dragDisabled ? ' Clear search to reorder.' : ''}
       </div>
 
-      <div
-        style={{ display: 'flex', flexDirection: 'column', paddingBottom: '20px', minHeight: '50px' }}
-        onDragOver={handleContainerDragOver}
-        onDrop={handleDrop}
-      >
+      <div className="rwa-profile-list">
         {visibleProfiles.map((profile) => {
-          const globalIndex = sortedProfiles.findIndex((item) => item.id === profile.id);
-          const draggedIndex = sortedProfiles.findIndex((item) => item.id === draggedId);
-          const dragOverIndex = sortedProfiles.findIndex((item) => item.id === dragOverId);
           const isDraggingThis = draggedId === profile.id;
-          let translateY = '0px';
-
-          if (!dragDisabled && draggedIndex >= 0 && dragOverIndex >= 0 && !isDraggingThis) {
-            if (draggedIndex < dragOverIndex && globalIndex > draggedIndex && globalIndex <= dragOverIndex) {
-              translateY = `calc(-100% - ${GAP}px)`;
-            } else if (draggedIndex > dragOverIndex && globalIndex < draggedIndex && globalIndex >= dragOverIndex) {
-              translateY = `calc(100% + ${GAP}px)`;
-            }
-          }
-
+          const isDropTarget = dragOverId === profile.id && draggedId !== profile.id;
           return (
             <div
               key={profile.id}
-              className="rwa-item"
-              draggable={!dragDisabled}
-              onDragStart={(event) => handleDragStart(event, profile.id)}
-              onDragEnter={(event) => handleDragEnter(event, profile.id)}
-              onDragEnd={handleDragEnd}
-              style={{
-                transform: `translateY(${translateY})`,
-                transition: isDraggingThis ? 'none' : 'transform 0.3s cubic-bezier(0.2, 1, 0.2, 1)',
-                opacity: (isDraggingThis && isGhostCaptured) ? 0.3 : (profile.hidden ? 0.55 : 1),
-                borderStyle: isDraggingThis ? 'dashed' : 'solid',
-                borderColor: isDraggingThis ? 'var(--rwa-primary)' : 'rgba(255, 255, 255, 0.05)',
-                background: isDraggingThis ? 'rgba(255, 140, 0, 0.03)' : 'transparent',
-                zIndex: isDraggingThis ? 2 : 1,
-                position: 'relative',
-                marginBottom: `${GAP}px`,
-                padding: '8px 12px',
+              ref={(node) => {
+                if (node) itemRefs.current.set(profile.id, node);
+                else itemRefs.current.delete(profile.id);
               }}
+              className={`rwa-item rwa-profile-row ${isDraggingThis ? 'rwa-profile-row-dragging' : ''} ${isDropTarget ? 'rwa-profile-row-target' : ''}`}
+              style={{ opacity: profile.hidden ? 0.55 : 1 }}
             >
-              <div className="rwa-hnd" title={dragDisabled ? 'Clear search to reorder' : 'Drag to reorder'}>≡</div>
+              <button
+                type="button"
+                className="rwa-hnd rwa-profile-drag-handle"
+                title={dragDisabled ? 'Clear search to reorder' : 'Drag to reorder'}
+                aria-label={`Reorder ${profile.name}`}
+                disabled={dragDisabled}
+                onPointerDown={(event) => beginPointerDrag(event, profile.id)}
+              >≡</button>
 
-              <div style={{ flex: 1, overflow: 'hidden', pointerEvents: 'none' }}>
-                <div style={{ fontSize: '13.5px', fontWeight: '700', color: profile.color || 'var(--rwa-primary)', marginBottom: '4px' }}>
+              <div className="rwa-profile-copy">
+                <div className="rwa-profile-row-name" style={{ color: profile.color || 'var(--rwa-primary)' }}>
                   {profile.name}{profile.hidden ? ' · hidden' : ''}
                 </div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {profile.prompt}
-                </div>
+                <div className="rwa-profile-row-prompt">{profile.prompt}</div>
               </div>
 
-              <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                <Button
-                  onClick={() => toggleHidden(profile.id)}
-                  title={profile.hidden ? 'Show this profile in the popup' : 'Hide this profile from the popup'}
-                  aria-label={`${profile.hidden ? 'Show' : 'Hide'} ${profile.name} in popup`}
-                  style={{ fontSize: '10.5px', padding: '4px 9px', borderRadius: '6px' }}
-                >
+              <div className="rwa-profile-actions">
+                <Button onClick={() => toggleHidden(profile.id)} title={profile.hidden ? 'Show this profile in the popup' : 'Hide this profile from the popup'} aria-label={`${profile.hidden ? 'Show' : 'Hide'} ${profile.name} in popup`}>
                   {profile.hidden ? 'Show' : 'Hide'}
                 </Button>
-                <Button
-                  onClick={() => openEditProfile(profile)}
-                  style={{ fontSize: '10.5px', padding: '4px 9px', borderRadius: '6px' }}
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="rwa-dng"
-                  onClick={() => setDeleteConfirmId(profile.id)}
-                  style={{ fontSize: '10.5px', padding: '4px 9px', borderRadius: '6px' }}
-                >
-                  Delete
-                </Button>
+                <Button onClick={() => openEditProfile(profile)}>Edit</Button>
+                <Button variant="rwa-dng" onClick={() => setDeleteConfirmId(profile.id)}>Delete</Button>
               </div>
             </div>
           );

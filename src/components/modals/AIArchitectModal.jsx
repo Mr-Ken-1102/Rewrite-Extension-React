@@ -3,6 +3,8 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { usePersistentStore } from '../../store/usePersistentStore';
 import { APIService } from '../../services/apiService';
+import { DOMUtils } from '../../utils/domUtils';
+import { useGlowPointer } from '../../hooks/useGlowPointer';
 
 const ARCHITECT_SYSTEM_PROMPT = `You design concise rewrite presets for a writing assistant.
 Return ONLY one valid JSON object with exactly these string keys:
@@ -55,6 +57,7 @@ export const AIArchitectModal = ({ onClose, onDone }) => {
         ARCHITECT_SYSTEM_PROMPT,
         `Create a rewrite style for this request:\n<request>\n${description.replace(/<\/?request>/gi, '[request]')}\n</request>`,
         controller.signal,
+        { chatId: DOMUtils.getChatId() || '' },
       );
       if (response?.aborted || controller.signal.aborted) return;
       if (response?.error) throw new Error(response.error);
@@ -93,16 +96,10 @@ export const AIArchitectModal = ({ onClose, onDone }) => {
     onDone?.();
   };
 
-  const handleGlowMouseMove = (event) => {
-    const target = event.target.closest('.rwa-glow-button');
-    if (!target) return;
-    const rect = target.getBoundingClientRect();
-    target.style.setProperty('--x', `${event.clientX - rect.left}px`);
-    target.style.setProperty('--y', `${event.clientY - rect.top}px`);
-  };
+  const handleGlowPointerMove = useGlowPointer();
 
   return (
-    <div onMouseMove={handleGlowMouseMove}>
+    <div onPointerMove={handleGlowPointerMove}>
       <Modal title="✨ AI Prompt Architect" onClose={handleClose} width="640px">
         <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', lineHeight: '1.55' }}>
           Describe the rewrite tone or editing behavior. The architect uses the same model connection configured in API &amp; LLM.

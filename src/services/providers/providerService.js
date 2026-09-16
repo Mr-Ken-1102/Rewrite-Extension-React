@@ -7,6 +7,7 @@ const ENDPOINTS = {
   tracker: '/sidecar/tracker',
   connections: '/connections',
   generateRaw: '/generate/raw',
+  chats: '/chats',
 };
 
 function normalizeConnectionList(payload) {
@@ -24,22 +25,79 @@ export class ProviderService {
     return normalizeConnectionList(result);
   }
 
-  static async resolveConnectionId(config, signal) {
+  static async resolveMarinaraConnection(config, signal, chatId = '') {
     const list = await this.listConnections(signal);
-    if (config.connectionId && list.some((item) => item.id === config.connectionId)) return config.connectionId;
+    const requestedChatId = String(chatId || '').trim();
+
+    if (requestedChatId) {
+      let chat;
+      try {
+        chat = await MarinaraHost.apiFetch(`${ENDPOINTS.chats}/${encodeURIComponent(requestedChatId)}`, { signal }, 15000);
+      } catch (err) {
+        if (signal?.aborted || MarinaraHost.isAbortError(err)) throw err;
+        return {
+          connectionId: '',
+          connection: null,
+          source: 'chat',
+          chatId: requestedChatId,
+          error: `Could not read the current chat connection from Marinara: ${err?.message || String(err)}`,
+        };
+      }
+
+      const chatConnectionId = typeof chat?.connectionId === 'string' ? chat.connectionId.trim() : '';
+      if (chatConnectionId) {
+        const connection = list.find((item) => item.id === chatConnectionId) || null;
+        if (!connection) {
+          return {
+            connectionId: '',
+            connection: null,
+            source: 'chat',
+            chatId: requestedChatId,
+            error: 'The current chat references a Marinara connection that is no longer available. Choose a valid connection in the chat settings first.',
+          };
+        }
+        return { connectionId: chatConnectionId, connection, source: 'chat', chatId: requestedChatId, error: '' };
+      }
+    }
+
+    const fallbackId = String(config.connectionId || '').trim();
+    if (config.connectionId && list.some((item) => item.id === config.connectionId)) {
+      const connection = list.find((item) => item.id === fallbackId) || null;
+      return { connectionId: fallbackId, connection, source: 'fallback', chatId: requestedChatId, error: '' };
+    }
     if (config.connectionId) usePersistentStore.getState().updateConfig({ connectionId: '' });
-    return '';
+
+    return {
+      connectionId: '',
+      connection: null,
+      source: requestedChatId ? 'chat-empty' : 'fallback-empty',
+      chatId: requestedChatId,
+      error: requestedChatId
+        ? 'The current chat has no Marinara connection. Choose a connection in the chat settings, or configure a fallback connection in Rewrite Assistant.'
+        : 'No Marinara connection is available for this request.',
+    };
+  }
+
+  static async resolveConnectionId(config, signal, chatId = '') {
+    const resolved = await this.resolveMarinaraConnection(config, signal, chatId);
+    return resolved.connectionId;
   }
 
   static async runInference(systemPrompt, userPrompt, signal, override = {}) {
     const config = { ...usePersistentStore.getState().config, ...override };
     const mode = ['marinara', 'sidecar', 'direct', 'extender'].includes(config.connMode) ? config.connMode : 'marinara';
-    const timeout = Math.max(5000, Math.min(180000, Number(config.requestTimeoutMs) || 45000));
+    const configuredTimeout = Math.max(5000, Math.min(180000, Number(config.requestTimeoutMs) || 45000));
+    // /generate/raw is deliberately non-streaming. Cold local models can take
+    // longer than 45s to return their first complete response, so Marinara mode
+    // gets a transparent 90s floor while Direct/Sidecar keep the configured value.
+    const timeout = mode === 'marinara' ? Math.max(90000, configuredTimeout) : configuredTimeout;
     debugLogService.add('inference.request', { mode, systemChars: systemPrompt.length, userChars: userPrompt.length });
 
     if (mode === 'marinara') {
-      const connectionId = await this.resolveConnectionId(config, signal);
-      if (!connectionId) return { error: 'No Marinara connection is configured. Open Settings → API & LLM and choose a connection.' };
+      const resolved = await this.resolveMarinaraConnection(config, signal, override.chatId);
+      if (resolved.error || !resolved.connectionId) return { error: resolved.error || 'No Marinara connection is available.' };
+      const connectionId = resolved.connectionId;
+      debugLogService.add('inference.connection', { mode, source: resolved.source, chatId: resolved.chatId || null });
       const result = await MarinaraHost.apiFetch(ENDPOINTS.generateRaw, {
         method: 'POST',
         body: JSON.stringify({

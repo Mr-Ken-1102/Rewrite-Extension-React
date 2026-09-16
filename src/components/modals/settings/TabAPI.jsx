@@ -3,21 +3,23 @@ import { usePersistentStore } from '../../../store/usePersistentStore';
 import { useToastStore } from '../../../store/useToastStore';
 import { APIService } from '../../../services/apiService';
 import { MarinaraHost } from '../../../services/marinaraHost';
+import { DOMUtils } from '../../../utils/domUtils';
 import { Button } from '../../ui/Button';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
+
+const connectionLabel = (connection) => connection?.name || connection?.label || connection?.provider || connection?.id || 'Unknown connection';
 
 const PresetItem = ({ name, url, updateConfig, showToast }) => (
   <button
     type="button"
-    className="rwa-inp"
+    className="rwa-inp rwa-api-preset"
     onClick={() => {
       updateConfig({ ollamaUrl: url, connMode: 'direct' });
       showToast(`✓ Preset applied: ${name}`, 'ok');
     }}
-    style={{ textAlign: 'left', cursor: 'pointer', padding: '9px 10px', margin: 0 }}
   >
-    <strong style={{ display: 'block', color: 'var(--rwa-primary)', fontSize: '10px' }}>{name}</strong>
-    <span style={{ display: 'block', opacity: 0.6, fontFamily: 'monospace', fontSize: '10px', marginTop: '3px' }}>{url}</span>
+    <strong>{name}</strong>
+    <span>{url}</span>
   </button>
 );
 
@@ -25,8 +27,11 @@ export const TabAPI = () => {
   const { config, updateConfig } = usePersistentStore();
   const showToast = useToastStore((state) => state.showToast);
   const [connections, setConnections] = useState([]);
+  const [chatInfo, setChatInfo] = useState(null);
+  const [connectionLoadError, setConnectionLoadError] = useState('');
   const [models, setModels] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [refreshSeq, setRefreshSeq] = useState(0);
   const actionControllerRef = useRef(null);
 
   useEffect(() => () => actionControllerRef.current?.abort(), []);
@@ -35,21 +40,39 @@ export const TabAPI = () => {
     let alive = true;
     if (config.connMode !== 'marinara') return () => { alive = false; };
     const controller = new AbortController();
-    APIService.listConnections(controller.signal)
-      .then((list) => {
-        if (!alive) return;
-        setConnections(list);
-        const stillExists = list.some((connection) => connection.id === config.connectionId);
-        if (config.connectionId && !stillExists) updateConfig({ connectionId: '' });
-      })
-      .catch(() => { if (alive) setConnections([]); });
-    return () => { alive = false; controller.abort(); };
-  }, [config.connMode, config.connectionId, updateConfig]);
+    const chatId = DOMUtils.getChatId();
+    setConnectionLoadError('');
 
-  const selectedConnection = useMemo(
-    () => connections.find((connection) => connection.id === config.connectionId),
+    Promise.all([
+      APIService.listConnections(controller.signal),
+      chatId ? APIService.fetchChat(chatId, controller.signal) : Promise.resolve(null),
+    ]).then(([list, chat]) => {
+      if (!alive) return;
+      setConnections(list);
+      setChatInfo(chatId ? { id: chatId, ...(chat || {}) } : null);
+      const stillExists = list.some((connection) => connection.id === config.connectionId);
+      if (config.connectionId && !stillExists) updateConfig({ connectionId: '' });
+    }).catch((err) => {
+      if (!alive || controller.signal.aborted) return;
+      setConnections([]);
+      setChatInfo(chatId ? { id: chatId } : null);
+      setConnectionLoadError(err?.message || String(err));
+    });
+
+    return () => { alive = false; controller.abort(); };
+  }, [config.connMode, config.connectionId, refreshSeq, updateConfig]);
+
+  const activeChatId = chatInfo?.id || DOMUtils.getChatId() || '';
+  const chatConnectionId = typeof chatInfo?.connectionId === 'string' ? chatInfo.connectionId.trim() : '';
+  const currentChatConnection = useMemo(
+    () => connections.find((connection) => connection.id === chatConnectionId) || null,
+    [connections, chatConnectionId],
+  );
+  const fallbackConnection = useMemo(
+    () => connections.find((connection) => connection.id === config.connectionId) || null,
     [connections, config.connectionId],
   );
+  const effectiveConnection = chatConnectionId ? currentChatConnection : fallbackConnection;
 
   const directUrlAdvisory = useMemo(() => {
     if (config.connMode !== 'direct' || !config.ollamaUrl) return '';
@@ -76,6 +99,10 @@ export const TabAPI = () => {
         'You are a connection test. Output only the word ok.',
         'Reply with: ok',
         controller.signal,
+        {
+          chatId: activeChatId,
+          requestTimeoutMs: Math.max(90000, Number(config.requestTimeoutMs) || 45000),
+        },
       );
       if (controller.signal.aborted) return;
       if (response?.aborted) {
@@ -83,7 +110,8 @@ export const TabAPI = () => {
         return;
       }
       if (response?.error) throw new Error(response.error);
-      showToast(`✓ Connected${response?.result ? `: ${String(response.result).slice(0, 40)}` : ''}`, 'ok');
+      const suffix = config.connMode === 'marinara' && effectiveConnection ? ` via ${connectionLabel(effectiveConnection)}` : '';
+      showToast(`✓ Connected${suffix}${response?.result ? `: ${String(response.result).slice(0, 40)}` : ''}`, 'ok');
     } catch (err) {
       if (!controller.signal.aborted && !MarinaraHost.isAbortError(err)) {
         showToast(`✕ Connection failed: ${err?.message || String(err)}`, 'err');
@@ -121,16 +149,11 @@ export const TabAPI = () => {
 
   return (
     <>
-      <div className="rwa-lbl" style={{ marginBottom: '16px' }}>MODEL SOURCE</div>
+      <div className="rwa-lbl rwa-settings-section-title">MODEL SOURCE</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '18px' }}>
-        <span style={{ fontSize: '12px' }}>Connection mode</span>
-        <select
-          className="rwa-inp"
-          value={config.connMode || 'marinara'}
-          onChange={(e) => updateConfig({ connMode: e.target.value })}
-          style={{ margin: 0 }}
-        >
+      <div className="rwa-form-row">
+        <span>Connection mode</span>
+        <select className="rwa-inp" value={config.connMode || 'marinara'} onChange={(event) => updateConfig({ connMode: event.target.value })}>
           <option value="marinara">Marinara connection (recommended)</option>
           <option value="sidecar">Marinara local sidecar model</option>
           <option value="direct">Direct OpenAI-compatible API</option>
@@ -139,63 +162,62 @@ export const TabAPI = () => {
       </div>
 
       {config.connMode === 'marinara' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '18px' }}>
-          <span style={{ fontSize: '12px' }}>Marinara connection</span>
-          <select
-            className="rwa-inp"
-            value={config.connectionId || ''}
-            onChange={(e) => updateConfig({ connectionId: e.target.value })}
-            style={{ margin: 0 }}
-          >
-            <option value="">{connections.length ? '— Select connection —' : 'No connections found'}</option>
-            {connections.map((connection) => (
-              <option key={connection.id} value={connection.id}>
-                {connection.name || connection.label || connection.provider || connection.id}
-              </option>
-            ))}
-          </select>
-          <span />
-          <div style={{ fontSize: '10px', opacity: 0.62, lineHeight: 1.45 }}>
-            Recommended: the API key remains on the Marinara server. The extension only stores the selected connection id.
-            {selectedConnection ? ` Selected: ${selectedConnection.name || selectedConnection.provider || selectedConnection.id}.` : ''}
+        <div className="rwa-api-connection-block">
+          <div className={`rwa-connection-card ${chatConnectionId && !currentChatConnection ? 'rwa-connection-card-error' : ''}`}>
+            <div className="rwa-connection-card-head">
+              <div>
+                <div className="rwa-connection-eyebrow">CURRENT CHAT CONNECTION</div>
+                <div className="rwa-connection-name">
+                  {currentChatConnection
+                    ? connectionLabel(currentChatConnection)
+                    : (chatConnectionId ? 'Connection unavailable' : 'No connection selected on this chat')}
+                </div>
+              </div>
+              <Button onClick={() => setRefreshSeq((value) => value + 1)} disabled={busy} className="rwa-connection-refresh">Refresh</Button>
+            </div>
+            <div className="rwa-connection-note">
+              {connectionLoadError
+                ? `Could not read Marinara connection state: ${connectionLoadError}`
+                : currentChatConnection
+                  ? `Rewrite Assistant follows this chat automatically. No separate model selection is required.${chatInfo?.name ? ` Chat: ${chatInfo.name}.` : ''}`
+                  : chatConnectionId
+                    ? 'This chat points to a connection that is no longer present. Fix the chat connection in Marinara before rewriting.'
+                    : 'Choose a connection in Marinara chat settings. The fallback below is used only when the chat itself has no connection.'}
+            </div>
           </div>
+
+          {!chatConnectionId && (
+            <div className="rwa-form-row rwa-form-row-compact">
+              <span>Fallback connection</span>
+              <select className="rwa-inp" value={config.connectionId || ''} onChange={(event) => updateConfig({ connectionId: event.target.value })}>
+                <option value="">{connections.length ? '— Optional fallback —' : 'No connections found'}</option>
+                {connections.map((connection) => (
+                  <option key={connection.id} value={connection.id}>{connectionLabel(connection)}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
 
       {config.connMode === 'sidecar' && (
-        <div className="rwa-prev" style={{ fontSize: '11px', lineHeight: 1.5, marginBottom: '18px' }}>
+        <div className="rwa-prev rwa-api-note">
           Uses Marinara&apos;s downloaded local model. If you never installed the local model, choose a Marinara connection instead.
         </div>
       )}
 
       {config.connMode === 'extender' && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '12px' }}>Extender server</span>
-            <input
-              type="text"
-              className="rwa-inp"
-              value={config.extenderUrl || ''}
-              onChange={(e) => updateConfig({ extenderUrl: e.target.value })}
-              placeholder="http://127.0.0.1:3001"
-              style={{ margin: 0 }}
-            />
-            <span style={{ fontSize: '12px' }}>Temperature</span>
-            <input
-              type="number"
-              className="rwa-inp"
-              min="0"
-              max="2"
-              step="0.1"
-              value={config.directTemp ?? 0.7}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                updateConfig({ directTemp: Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 0.7 });
-              }}
-              style={{ margin: 0 }}
-            />
+          <div className="rwa-form-grid">
+            <span>Extender server</span>
+            <input type="text" className="rwa-inp" value={config.extenderUrl || ''} onChange={(event) => updateConfig({ extenderUrl: event.target.value })} placeholder="http://127.0.0.1:3001" />
+            <span>Temperature</span>
+            <input type="number" className="rwa-inp" min="0" max="2" step="0.1" value={config.directTemp ?? 0.7} onChange={(event) => {
+              const value = Number(event.target.value);
+              updateConfig({ directTemp: Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 0.7 });
+            }} />
           </div>
-          <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '18px' }}>
+          <div className="rwa-prev rwa-api-note">
             Extender mode sends rewrite prompts to the configured Marinara Extender sidecar using its OpenAI-compatible /v1/chat/completions endpoint. The Extender chooses its own model; Rewrite Assistant stores no Extender credential.
           </div>
         </>
@@ -203,95 +225,64 @@ export const TabAPI = () => {
 
       {config.connMode === 'direct' && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '12px' }}>API base URL</span>
-            <input
-              type="text"
-              className="rwa-inp"
-              value={config.ollamaUrl || ''}
-              onChange={(e) => updateConfig({ ollamaUrl: e.target.value })}
-              placeholder="http://127.0.0.1:11434/v1"
-              style={{ margin: 0 }}
-            />
-            <span style={{ fontSize: '12px' }}>Model</span>
+          <div className="rwa-form-grid">
+            <span>API base URL</span>
+            <input type="text" className="rwa-inp" value={config.ollamaUrl || ''} onChange={(event) => updateConfig({ ollamaUrl: event.target.value })} placeholder="http://127.0.0.1:11434/v1" />
+            <span>Model</span>
             {models.length ? (
-              <select className="rwa-inp" value={config.ollamaModel || ''} onChange={(e) => updateConfig({ ollamaModel: e.target.value })} style={{ margin: 0 }}>
+              <select className="rwa-inp" value={config.ollamaModel || ''} onChange={(event) => updateConfig({ ollamaModel: event.target.value })}>
                 <option value="">— Select model —</option>
                 {models.map((model) => <option key={model} value={model}>{model}</option>)}
               </select>
             ) : (
-              <input type="text" className="rwa-inp" value={config.ollamaModel || ''} onChange={(e) => updateConfig({ ollamaModel: e.target.value })} style={{ margin: 0 }} />
+              <input type="text" className="rwa-inp" value={config.ollamaModel || ''} onChange={(event) => updateConfig({ ollamaModel: event.target.value })} />
             )}
-            <span style={{ fontSize: '12px' }}>Temperature</span>
-            <input
-              type="number"
-              className="rwa-inp"
-              min="0"
-              max="2"
-              step="0.1"
-              value={config.directTemp ?? 0.7}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                updateConfig({ directTemp: Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 0.7 });
-              }}
-              style={{ margin: 0 }}
-            />
+            <span>Temperature</span>
+            <input type="number" className="rwa-inp" min="0" max="2" step="0.1" value={config.directTemp ?? 0.7} onChange={(event) => {
+              const value = Number(event.target.value);
+              updateConfig({ directTemp: Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 0.7 });
+            }} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+          <div className="rwa-api-preset-grid">
             <PresetItem name="Ollama" url="http://127.0.0.1:11434/v1" updateConfig={updateConfig} showToast={showToast} />
             <PresetItem name="LM Studio" url="http://127.0.0.1:1234/v1" updateConfig={updateConfig} showToast={showToast} />
             <PresetItem name="llama.cpp" url="http://127.0.0.1:8080/v1" updateConfig={updateConfig} showToast={showToast} />
             <PresetItem name="KoboldCPP" url="http://127.0.0.1:5001/v1" updateConfig={updateConfig} showToast={showToast} />
           </div>
 
-          <Button className="rwa-glow-button" onClick={handleDiscover} disabled={busy} style={{ width: '100%', marginBottom: '12px' }}>
+          <Button className="rwa-glow-button rwa-full-width" onClick={handleDiscover} disabled={busy}>
             {busy ? 'Working…' : 'Discover models'}
           </Button>
-          <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, opacity: 0.8 }}>
+          <div className="rwa-prev rwa-api-note">
             Direct mode sends the selected text and enabled context to the URL above. Prefer loopback/local URLs for private content; use HTTPS for remote servers.
             {directUrlAdvisory ? <><br /><strong>{directUrlAdvisory}</strong></> : null}
           </div>
         </>
       )}
 
-      <div className="rwa-lbl" style={{ marginTop: '24px', marginBottom: '12px' }}>PROMPT ECONOMY</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
+      <div className="rwa-lbl rwa-settings-section-title">PROMPT ECONOMY</div>
+      <div className="rwa-setting-toggle-row">
         <div>
-          <div style={{ fontSize: '12px' }}>Shorter system instructions</div>
-          <div style={{ fontSize: '10px', opacity: 0.6, marginTop: '3px' }}>Useful for smaller local models; output and context safety rules remain intact.</div>
+          <div>Shorter system instructions</div>
+          <small>Useful for smaller local models; output and context safety rules remain intact.</small>
         </div>
         <ToggleSwitch checked={config.conciseSysPrompt} onChange={(value) => updateConfig({ conciseSysPrompt: value })} />
       </div>
 
-      <div className="rwa-lbl" style={{ marginTop: '24px', marginBottom: '12px' }}>REQUEST SAFETY</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-        <span style={{ fontSize: '12px' }}>Timeout (ms)</span>
-        <input
-          type="number"
-          className="rwa-inp"
-          min="5000"
-          max="180000"
-          step="1000"
-          value={config.requestTimeoutMs || 45000}
-          onChange={(e) => updateConfig({ requestTimeoutMs: Math.max(5000, Math.min(180000, Number(e.target.value) || 45000)) })}
-          style={{ margin: 0 }}
-        />
-        <span style={{ fontSize: '12px' }}>Prompt budget (chars)</span>
-        <input
-          type="number"
-          className="rwa-inp"
-          min="8000"
-          max="120000"
-          step="1000"
-          value={config.maxPromptChars || 32000}
-          onChange={(e) => updateConfig({ maxPromptChars: Math.max(8000, Math.min(120000, Number(e.target.value) || 32000)) })}
-          style={{ margin: 0 }}
-        />
+      <div className="rwa-lbl rwa-settings-section-title">REQUEST SAFETY</div>
+      <div className="rwa-form-grid">
+        <span>Timeout (ms)</span>
+        <input type="number" className="rwa-inp" min="5000" max="180000" step="1000" value={config.requestTimeoutMs || 45000} onChange={(event) => updateConfig({ requestTimeoutMs: Math.max(5000, Math.min(180000, Number(event.target.value) || 45000)) })} />
+        <span>Prompt budget (chars)</span>
+        <input type="number" className="rwa-inp" min="8000" max="120000" step="1000" value={config.maxPromptChars || 32000} onChange={(event) => updateConfig({ maxPromptChars: Math.max(8000, Math.min(120000, Number(event.target.value) || 32000)) })} />
       </div>
+      {config.connMode === 'marinara' && (
+        <div className="rwa-request-note">Marinara /generate/raw uses at least a 90-second safety window for cold local models; this field can extend it further.</div>
+      )}
 
-      <Button className="rwa-glow-button" variant="rwa-accept" onClick={handleTest} disabled={busy} style={{ width: '100%' }}>
-        {busy ? 'Testing…' : '⚡ Test connection'}
+      <Button className="rwa-glow-button rwa-full-width" variant="rwa-accept" onClick={handleTest} disabled={busy}>
+        {busy ? 'Testing…' : '⚡ Test effective connection'}
       </Button>
     </>
   );

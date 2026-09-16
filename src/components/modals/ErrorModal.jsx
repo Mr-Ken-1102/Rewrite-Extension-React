@@ -1,23 +1,17 @@
 import { useRef } from 'react';
 import { Button } from '../ui/Button';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useGlowPointer } from '../../hooks/useGlowPointer';
 
 export const ErrorModal = ({ message, onClose }) => {
   const dialogRef = useRef(null);
   useDialogFocusTrap(dialogRef, onClose);
   const stepStyle = { fontSize: "12.5px", color: "rgba(255,255,255,0.7)", marginBottom: "12px", lineHeight: "1.55" };
 
-  const handleGlowMouseMove = (e) => {
-    const target = e.target.closest(".rwa-glow-button");
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      target.style.setProperty("--x", `${e.clientX - rect.left}px`);
-      target.style.setProperty("--y", `${e.clientY - rect.top}px`);
-    }
-  };
+  const handleGlowPointerMove = useGlowPointer();
 
   return (
-    <div className="rwa-ov" style={{ zIndex: 10005 }} onMouseMove={handleGlowMouseMove}>
+    <div className="rwa-ov" style={{ zIndex: 10005 }} onPointerMove={handleGlowPointerMove}>
       <div ref={dialogRef} className="rwa-err-window" role="alertdialog" aria-modal="true" aria-label="Connection diagnostics" tabIndex={-1}>
         
         <div className="rwa-err-hdr" style={{ justifyContent: "space-between" }}>
@@ -46,7 +40,7 @@ export const ErrorModal = ({ message, onClose }) => {
             </div>
             
             <div className="rwa-err-guide-step" style={stepStyle}>
-              <b style={{ color: '#fff' }}>1. Marinara connection:</b> Open Settings → API &amp; LLM and select a configured Marinara connection. This is the recommended mode.
+              <b style={{ color: '#fff' }}>1. Marinara connection:</b> Rewrite Assistant follows the current chat connection automatically. Verify that the active chat has a valid Marinara connection in the chat settings.
             </div>
             
             <div className="rwa-err-guide-step" style={stepStyle}>
