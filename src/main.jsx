@@ -8,7 +8,7 @@ import { MarinaraHost } from './services/marinaraHost';
 import { debugLogService } from './services/debugLogService';
 import { sessionLedgerStore } from './services/advancedRewriteService';
 
-(async function bootstrap(envMarinara) {
+(function bootstrap(envMarinara) {
   'use strict';
 
   const currentMarinara = envMarinara || globalThis.marinara || null;
@@ -52,51 +52,55 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
   // extension while private storage is being read, bootstrap must not late-mount.
   if (typeof currentMarinara.onCleanup === 'function') currentMarinara.onCleanup(destroyInstance);
 
-  try {
-    await usePersistentStore.persist.rehydrate();
-  } catch (error) {
-    console.warn('[Rewrite Assistant] Private state hydration failed; defaults will be used.', error);
+  async function hydrateAndMount() {
+    try {
+      await usePersistentStore.persist.rehydrate();
+    } catch (error) {
+      console.warn('[Rewrite Assistant] Private state hydration failed; defaults will be used.', error);
+    }
+    if (destroyed) return;
+
+    debugLogService.setEnabled(usePersistentStore.getState().config.debugEnabled === true, { clearOnDisable: false });
+    unsubscribeDebug = usePersistentStore.subscribe((state) => {
+      debugLogService.setEnabled(state.config.debugEnabled === true);
+    });
+
+    hostElement = document.createElement('div');
+    hostElement.id = 'rwa-shadow-host';
+    hostElement.style.cssText = 'position:fixed!important;top:0;left:0;width:0;height:0;overflow:visible;z-index:2147483647;display:block;';
+    hostElement.className = `${document.documentElement.className || ''} ${document.body.className || ''}`.trim();
+    document.body.appendChild(hostElement);
+
+    shadowRoot = hostElement.attachShadow({ mode: 'closed' });
+    useRuntimeStore.getState().setHost(hostElement, shadowRoot);
+
+    stopFocusSteal = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const insideUi = target.closest('.rwa, .rwa-tip, .rwa-ov, .rwa-win');
+      if (!insideUi) return;
+      const interactive = target.closest('input, select, textarea, label, button, [draggable], .rwa-tog-wrap, .rwa-item');
+      if (!interactive) event.preventDefault();
+    };
+    shadowRoot.addEventListener('mousedown', stopFocusSteal);
+
+    const reactRootContainer = document.createElement('div');
+    reactRootContainer.id = 'rwa-react-root';
+    shadowRoot.appendChild(reactRootContainer);
+
+    const styleContainer = document.createElement('style');
+    styleContainer.id = 'rwa-premium-styles';
+    styleContainer.textContent = RWA_PREMIUM_CSS;
+    shadowRoot.appendChild(styleContainer);
+
+    if (destroyed) {
+      destroyInstance();
+      return;
+    }
+
+    root = ReactDOM.createRoot(reactRootContainer);
+    root.render(<App />);
   }
-  if (destroyed) return;
 
-  debugLogService.setEnabled(usePersistentStore.getState().config.debugEnabled === true, { clearOnDisable: false });
-  unsubscribeDebug = usePersistentStore.subscribe((state) => {
-    debugLogService.setEnabled(state.config.debugEnabled === true);
-  });
-
-  hostElement = document.createElement('div');
-  hostElement.id = 'rwa-shadow-host';
-  hostElement.style.cssText = 'position:fixed!important;top:0;left:0;width:0;height:0;overflow:visible;z-index:2147483647;display:block;';
-  hostElement.className = `${document.documentElement.className || ''} ${document.body.className || ''}`.trim();
-  document.body.appendChild(hostElement);
-
-  shadowRoot = hostElement.attachShadow({ mode: 'closed' });
-  useRuntimeStore.getState().setHost(hostElement, shadowRoot);
-
-  stopFocusSteal = (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const insideUi = target.closest('.rwa, .rwa-tip, .rwa-ov, .rwa-win');
-    if (!insideUi) return;
-    const interactive = target.closest('input, select, textarea, label, button, [draggable], .rwa-tog-wrap, .rwa-item');
-    if (!interactive) event.preventDefault();
-  };
-  shadowRoot.addEventListener('mousedown', stopFocusSteal);
-
-  const reactRootContainer = document.createElement('div');
-  reactRootContainer.id = 'rwa-react-root';
-  shadowRoot.appendChild(reactRootContainer);
-
-  const styleContainer = document.createElement('style');
-  styleContainer.id = 'rwa-premium-styles';
-  styleContainer.textContent = RWA_PREMIUM_CSS;
-  shadowRoot.appendChild(styleContainer);
-
-  if (destroyed) {
-    destroyInstance();
-    return;
-  }
-
-  root = ReactDOM.createRoot(reactRootContainer);
-  root.render(<App />);
+  void hydrateAndMount();
 })(typeof marinara !== 'undefined' ? marinara : undefined);
