@@ -23,10 +23,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          : > /tmp/rewrite-assistant-canonical.zip
-          for chunk in backup/chunks-v2/part-*.b64; do
-            base64 --decode "$chunk" >> /tmp/rewrite-assistant-canonical.zip
-          done
+          python - <<'PY'
+          from pathlib import Path
+          import base64, re
+          chunks = sorted(Path('backup/chunks-v2').glob('part-*.b64'))
+          if not chunks:
+              raise SystemExit('No canonical archive chunks found')
+          raw = b''.join(p.read_bytes() for p in chunks)
+          compact = re.sub(rb'[\t\n\r\f\v ]+', b'', raw)
+          invalid = re.findall(rb'[^A-Za-z0-9+/=]', compact)
+          if invalid:
+              raise SystemExit(f'Invalid non-base64 bytes present: {sorted(set(invalid))[:20]}')
+          try:
+              decoded = base64.b64decode(compact, validate=True)
+          except Exception as exc:
+              raise SystemExit(f'Canonical archive base64 decode failed: chars={len(compact)} mod4={len(compact)%4}: {exc}')
+          Path('/tmp/rewrite-assistant-canonical.zip').write_bytes(decoded)
+          print(f'Reconstructed {len(decoded)} bytes from {len(chunks)} chunks')
+          PY
           echo '7fb9583bbcdb00bc26e37a9017c09a74eb809112f1908d82460163e0ba413060  /tmp/rewrite-assistant-canonical.zip' | sha256sum -c -
           rm -rf /tmp/rewrite-assistant-canonical
           mkdir -p /tmp/rewrite-assistant-canonical
