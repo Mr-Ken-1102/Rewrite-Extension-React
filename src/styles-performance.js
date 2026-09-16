@@ -151,16 +151,6 @@ export const RWA_PERFORMANCE_CSS = `
   font-size: 10px !important;
 }
 
-/* Drag should be pure transform work; suppress descendant effects entirely. */
-.rwa-popup-main.rwa-dragging-active,
-.rwa-popup-main.rwa-dragging-active * {
-  transition: none !important;
-  animation: none !important;
-  text-shadow: none !important;
-  filter: none !important;
-}
-.rwa-popup-main.rwa-dragging-active { box-shadow: 0 8px 22px rgba(0,0,0,.38) !important; }
-
 @media (max-width: 700px) {
   .rwa-popup-main {
     width: calc(100vw - 12px) !important;

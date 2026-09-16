@@ -17,13 +17,26 @@ ok('popup drag has pointer cancel, blur and visibility fail-safe cleanup', () =>
   assert.match(source, /setDragging\(false\)/);
 });
 
-ok('popup drag stays on compositor path and paints the first move immediately', () => {
+ok('popup drag uses a minimal transform-only hot path', () => {
   const source = read('./src/hooks/usePopupDrag.js');
   assert.match(source, /setPointerCapture/);
   assert.match(source, /translate3d\(/);
-  assert.match(source, /paintedMove/);
-  assert.match(source, /if \(!paintedMove\)[\s\S]*applyPosition\(\)/);
-  assert.doesNotMatch(source, /window\.addEventListener\('pointermove'/);
+  assert.doesNotMatch(source, /requestAnimationFrame/);
+  assert.doesNotMatch(source, /document\.body\.style/);
+  assert.doesNotMatch(source, /classList\.add\('rwa-dragging-active'\)/);
+
+  const moveMatch = source.match(/const onPointerMove = \(moveEvent\) => \{([\s\S]*?)\n    \};/);
+  assert.ok(moveMatch, 'onPointerMove handler must be present');
+  const moveBody = moveMatch[1];
+  assert.doesNotMatch(moveBody, /getBoundingClientRect|offsetWidth|offsetHeight/);
+  assert.doesNotMatch(moveBody, /setPopupPosition|updateConfig|setDragging/);
+  assert.doesNotMatch(moveBody, /requestAnimationFrame|setTimeout/);
+  assert.match(moveBody, /style\.transform = `translate3d/);
+});
+
+ok('popup drag CSS avoids descendant-wide drag invalidation', () => {
+  const css = read('./src/styles-performance.js');
+  assert.doesNotMatch(css, /\.rwa-popup-main\.rwa-dragging-active\s*\*/);
 });
 
 ok('popup header uses pointer drag instead of mouse-only drag', () => {
