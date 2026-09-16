@@ -47,7 +47,25 @@ export const TabProfiles = ({ openEditProfile, scrollContainerRef }) => {
     const handle = event.currentTarget;
     const pointerId = event.pointerId;
     const container = scrollContainerRef?.current || handle.closest('.rwa-settings-body');
-    const state = { id, targetId: id, pointerId, handle, container, scrollVelocity: 0, finished: false };
+    const itemCenters = visibleProfiles.map((profile) => {
+      const node = itemRefs.current.get(profile.id);
+      if (!node?.isConnected) return null;
+      const rect = node.getBoundingClientRect();
+      return { id: profile.id, center: rect.top + (rect.height / 2) };
+    }).filter(Boolean);
+    const containerRect = container?.getBoundingClientRect() || null;
+    const state = {
+      id,
+      targetId: id,
+      pointerId,
+      handle,
+      container,
+      containerRect,
+      itemCenters,
+      scrollStart: container?.scrollTop || 0,
+      scrollVelocity: 0,
+      finished: false,
+    };
     dragStateRef.current = state;
     pendingYRef.current = event.clientY;
     setDraggedId(id);
@@ -56,21 +74,29 @@ export const TabProfiles = ({ openEditProfile, scrollContainerRef }) => {
     document.body.style.userSelect = 'none';
     try { handle.setPointerCapture?.(pointerId); } catch { /* best effort */ }
 
+    const scrollTick = () => {
+      scrollFrameRef.current = 0;
+      const current = dragStateRef.current;
+      if (!current || current.finished || !current.container || current.scrollVelocity === 0) return;
+      current.container.scrollTop += current.scrollVelocity;
+      updateTarget();
+      if (current.scrollVelocity !== 0) scrollFrameRef.current = window.requestAnimationFrame(scrollTick);
+    };
+
     const updateTarget = () => {
       moveFrameRef.current = 0;
       const current = dragStateRef.current;
       if (!current || current.finished) return;
       const y = pendingYRef.current;
+      const scrollDelta = (current.container?.scrollTop || 0) - current.scrollStart;
       let closest = null;
       let bestDistance = Number.POSITIVE_INFINITY;
-      for (const profile of visibleProfiles) {
-        const node = itemRefs.current.get(profile.id);
-        if (!node?.isConnected) continue;
-        const rect = node.getBoundingClientRect();
-        const distance = Math.abs(y - (rect.top + rect.height / 2));
+
+      for (const item of current.itemCenters) {
+        const distance = Math.abs(y - (item.center - scrollDelta));
         if (distance < bestDistance) {
           bestDistance = distance;
-          closest = profile.id;
+          closest = item.id;
         }
       }
       if (closest && closest !== current.targetId) {
@@ -78,13 +104,16 @@ export const TabProfiles = ({ openEditProfile, scrollContainerRef }) => {
         setDragOverId(closest);
       }
 
-      const scrollHost = current.container;
-      if (scrollHost) {
-        const rect = scrollHost.getBoundingClientRect();
-        const edge = Math.min(76, Math.max(48, rect.height * 0.14));
-        if (y < rect.top + edge) current.scrollVelocity = -Math.max(4, Math.min(18, (rect.top + edge - y) * 0.24));
-        else if (y > rect.bottom - edge) current.scrollVelocity = Math.max(4, Math.min(18, (y - (rect.bottom - edge)) * 0.24));
+      const rect = current.containerRect;
+      if (rect) {
+        const edge = Math.min(72, Math.max(44, rect.height * 0.12));
+        if (y < rect.top + edge) current.scrollVelocity = -Math.max(4, Math.min(16, (rect.top + edge - y) * 0.22));
+        else if (y > rect.bottom - edge) current.scrollVelocity = Math.max(4, Math.min(16, (y - (rect.bottom - edge)) * 0.22));
         else current.scrollVelocity = 0;
+      }
+
+      if (current.scrollVelocity !== 0 && !scrollFrameRef.current) {
+        scrollFrameRef.current = window.requestAnimationFrame(scrollTick);
       }
     };
 
@@ -92,27 +121,14 @@ export const TabProfiles = ({ openEditProfile, scrollContainerRef }) => {
       if (!moveFrameRef.current) moveFrameRef.current = window.requestAnimationFrame(updateTarget);
     };
 
-    const scrollTick = () => {
-      scrollFrameRef.current = 0;
-      const current = dragStateRef.current;
-      if (!current || current.finished || !current.container || current.scrollVelocity === 0) return;
-      current.container.scrollTop += current.scrollVelocity;
-      updateTarget();
-      scrollFrameRef.current = window.requestAnimationFrame(scrollTick);
-    };
-
-    const ensureScrollLoop = () => {
-      const current = dragStateRef.current;
-      if (current?.scrollVelocity && !scrollFrameRef.current) scrollFrameRef.current = window.requestAnimationFrame(scrollTick);
-    };
-
     const onPointerMove = (moveEvent) => {
       const current = dragStateRef.current;
       if (!current || (pointerId !== undefined && moveEvent.pointerId !== pointerId)) return;
       moveEvent.preventDefault();
-      pendingYRef.current = moveEvent.clientY;
+      const samples = moveEvent.getCoalescedEvents?.();
+      const latest = samples?.length ? samples[samples.length - 1] : moveEvent;
+      pendingYRef.current = latest.clientY;
       scheduleTargetUpdate();
-      window.requestAnimationFrame(ensureScrollLoop);
     };
 
     const cleanup = (commit) => {

@@ -4,6 +4,7 @@ import { useRuntimeStore } from './store/useRuntimeStore';
 import { RWA_PREMIUM_CSS } from './styles.js';
 import { RWA_BALANCE_CSS } from './styles-balance.js';
 import { RWA_WORLDCLASS_CSS } from './styles-worldclass.js';
+import { RWA_PERFORMANCE_CSS } from './styles-performance.js';
 import { diffWorkerInstance } from './services/diffWorkerService';
 import { usePersistentStore } from './store/usePersistentStore';
 import { MarinaraHost } from './services/marinaraHost';
@@ -53,8 +54,6 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
 
   window.__rwa_active_instance__ = { destroy: destroyInstance };
 
-  // Register cleanup before any async hydration. If Marinara unloads the
-  // extension while private storage is being read, bootstrap must not late-mount.
   if (typeof currentMarinara.onCleanup === 'function') currentMarinara.onCleanup(destroyInstance);
 
   async function hydrateAndMount() {
@@ -95,7 +94,7 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
 
     const styleContainer = document.createElement('style');
     styleContainer.id = 'rwa-premium-styles';
-    styleContainer.textContent = `${RWA_PREMIUM_CSS}\n${RWA_BALANCE_CSS}\n${RWA_WORLDCLASS_CSS}`;
+    styleContainer.textContent = `${RWA_PREMIUM_CSS}\n${RWA_BALANCE_CSS}\n${RWA_WORLDCLASS_CSS}\n${RWA_PERFORMANCE_CSS}`;
     shadowRoot.appendChild(styleContainer);
 
     if (destroyed) {

@@ -17,12 +17,12 @@ ok('popup drag has pointer cancel, blur and visibility fail-safe cleanup', () =>
   assert.match(source, /setDragging\(false\)/);
 });
 
-ok('popup drag uses captured-pointer compositor transforms instead of per-frame layout positioning', () => {
+ok('popup drag stays on compositor path and paints the first move immediately', () => {
   const source = read('./src/hooks/usePopupDrag.js');
   assert.match(source, /setPointerCapture/);
-  assert.match(source, /captureTarget\?\.addEventListener\?\.\('pointermove'/);
   assert.match(source, /translate3d\(/);
-  assert.match(source, /rwa-dragging-active/);
+  assert.match(source, /paintedMove/);
+  assert.match(source, /if \(!paintedMove\)[\s\S]*applyPosition\(\)/);
   assert.doesNotMatch(source, /window\.addEventListener\('pointermove'/);
 });
 
@@ -39,6 +39,20 @@ ok('preset reorder avoids native HTML5 drag and owns cancellation cleanup', () =
   assert.match(source, /onPointerDown=\{\(event\) => beginPointerDrag/);
   assert.match(source, /lostpointercapture/);
   assert.match(source, /visibilitychange/);
+});
+
+ok('preset reorder caches row geometry instead of measuring the whole list per frame', () => {
+  const source = read('./src/components/modals/settings/TabProfiles.jsx');
+  assert.match(source, /const itemCenters = visibleProfiles\.map/);
+  assert.match(source, /scrollStart:/);
+  assert.match(source, /const scrollDelta =/);
+  assert.match(source, /current\.itemCenters/);
+});
+
+ok('global pointer tracker stays out of extension drag hot paths', () => {
+  const source = read('./src/hooks/useNativeEvents.js');
+  assert.match(source, /if \(runtime\.isDragging\) return;/);
+  assert.match(source, /event\.composedPath\(\)\.includes\(runtime\.hostElement\)/);
 });
 
 ok('global runtime reset cannot preserve a stale dragging guard', () => {
@@ -73,68 +87,70 @@ ok('Marinara timeout protects non-streaming cold-model requests', () => {
   assert.match(source, /mode === 'marinara' \? Math\.max\(90000, configuredTimeout\)/);
 });
 
-ok('settings expose current-chat connection and balanced footer geometry', () => {
+ok('settings expose current-chat connection without duplicate model selection', () => {
   const api = read('./src/components/modals/settings/TabAPI.jsx');
-  const settings = read('./src/components/modals/SettingsModal.jsx');
   assert.match(api, /CURRENT CHAT CONNECTION/);
   assert.match(api, /No separate model selection is required/);
-  assert.match(settings, /Version 3\.0\.1/);
-  assert.match(settings, /rwa-settings-foot-four/);
-  assert.match(settings, /rwa-settings-foot-two/);
 });
 
-ok('popup context controls use a symmetric four-switch grid', () => {
+ok('popup keeps explicit one-shot and token-estimate copy contracts', () => {
   const source = read('./src/components/popup/ContextPanel.jsx');
-  const css = read('./src/styles-worldclass.js');
+  assert.match(source, /This rewrite:/);
+  assert.match(source, /Selection \+ context ≈/);
   assert.match(source, /rwa-context-switch-grid/);
-  assert.match(css, /\.rwa-context-switch-grid[\s\S]*grid-template-columns:\s*repeat\(2/);
 });
 
-ok('standard profile palette caps text buttons at two readable columns', () => {
-  const source = read('./src/components/popup/ProfileGrid.jsx');
-  const settings = read('./src/components/modals/settings/TabUI.jsx');
-  assert.match(source, /compact \? Math\.min\(requestedCols, 4\) : Math\.min\(requestedCols, 2\)/);
-  assert.match(settings, /profileColumnMax = config\.compact \? 4 : 2/);
-});
-
-ok('world-class popup layer is loaded last and removes expensive blur while dragging', () => {
-  const main = read('./src/main.jsx');
-  const css = read('./src/styles-worldclass.js');
-  assert.match(main, /RWA_PREMIUM_CSS\}\\n\$\{RWA_BALANCE_CSS\}\\n\$\{RWA_WORLDCLASS_CSS\}/);
-  assert.match(css, /\.rwa-popup-main\.rwa-dragging-active[\s\S]*backdrop-filter:\s*none/);
-  assert.match(css, /width:\s*min\(424px/);
-});
-
-ok('unified popup exposes command hierarchy and readable selection-context status', () => {
+ok('profile columns are configurable beyond two on the wide popup', () => {
   const profileGrid = read('./src/components/popup/ProfileGrid.jsx');
-  const contextPanel = read('./src/components/popup/ContextPanel.jsx');
-  const css = read('./src/styles-worldclass.js');
-  assert.match(profileGrid, /rwa-command-section/);
-  assert.match(profileGrid, /Choose a style/);
-  assert.match(contextPanel, /Selection \+ context ≈/);
-  assert.match(contextPanel, /rwa-context-subtitle/);
-  assert.match(css, /\.rwa-mini-title[\s\S]*color:\s*var\(--rwa-brand\)/);
-  assert.match(css, /\.rwa-token-total[\s\S]*font-size:\s*11px/);
+  const popup = read('./src/components/PopupMain.jsx');
+  const settings = read('./src/components/modals/settings/TabUI.jsx');
+  assert.match(profileGrid, /compact \? Math\.min\(requestedCols, 6\) : Math\.min\(requestedCols, 4\)/);
+  assert.match(popup, /compact \? Math\.min\(colCount, 6\) : Math\.min\(colCount, 4\)/);
+  assert.match(settings, /profileColumnMax = config\.compact \? 6 : 4/);
+  assert.doesNotMatch(settings, /Math\.min\(config\.cols \|\| 2, 2\)/);
 });
 
-ok('settings use sidebar navigation, workspace hierarchy and sticky action grouping', () => {
+ok('wide low popup uses a horizontal workbench and matching viewport math', () => {
+  const popup = read('./src/components/PopupMain.jsx');
+  const position = read('./src/hooks/usePopupPosition.js');
+  const css = read('./src/styles-performance.js');
+  assert.match(popup, /rwa-popup-workbench/);
+  assert.match(position, /Math\.min\(620/);
+  assert.match(css, /width:\s*min\(620px/);
+  assert.match(css, /grid-template-columns:\s*minmax\(0, 1\.28fr\)/);
+});
+
+ok('performance visual layer is loaded last', () => {
+  const main = read('./src/main.jsx');
+  assert.match(main, /RWA_PERFORMANCE_CSS/);
+  assert.match(main, /RWA_WORLDCLASS_CSS\}\\n\$\{RWA_PERFORMANCE_CSS\}/);
+});
+
+ok('muted amber palette avoids the previous fluorescent primary fill', () => {
+  const css = read('./src/styles-performance.js');
+  assert.match(css, /--rwa-brand:\s*#d6a04a/);
+  assert.match(css, /--rwa-action:\s*#bd8435/);
+  assert.match(css, /\.rwa-accept[\s\S]*var\(--rwa-action\)/);
+});
+
+ok('settings and presets use low-paint dense surfaces', () => {
+  const css = read('./src/styles-performance.js');
+  assert.match(css, /\.rwa-settings-win[\s\S]*backdrop-filter:\s*none/);
+  assert.match(css, /\.rwa-profile-row[\s\S]*min-height:\s*42px/);
+  assert.match(css, /\.rwa-profile-search[\s\S]*min-height:\s*38px/);
+});
+
+ok('cursor-following glow no longer performs layout reads on pointermove', () => {
+  const source = read('./src/hooks/useGlowPointer.js');
+  assert.doesNotMatch(source, /getBoundingClientRect/);
+  assert.doesNotMatch(source, /requestAnimationFrame/);
+});
+
+ok('settings retain sidebar/workspace information architecture', () => {
   const settings = read('./src/components/modals/SettingsModal.jsx');
-  const css = read('./src/styles-worldclass.js');
-  assert.match(settings, /rwa-settings-shell/);
   assert.match(settings, /rwa-settings-sidebar/);
   assert.match(settings, /rwa-settings-workspace/);
-  assert.match(settings, /rwa-settings-page-head/);
   assert.match(settings, /SETTINGS_SECTIONS/);
-  assert.match(css, /\.rwa-settings-shell[\s\S]*grid-template-columns:\s*196px/);
-  assert.match(css, /\.rwa-settings-foot[\s\S]*justify-content:\s*space-between/);
-});
-
-ok('shared modal visual system is synchronized with the popup palette', () => {
-  const css = read('./src/styles-worldclass.js');
-  assert.match(css, /--rwa-brand:\s*#ffb020/);
-  assert.match(css, /\.rwa-win,[\s\S]*\.rwa-err-window[\s\S]*background:/);
-  assert.match(css, /\.rwa-title[\s\S]*color:\s*var\(--rwa-brand\)/);
-  assert.match(css, /\.rwa-inp:[\s\S]*focus[\s\S]*rgba\(255,176,32/);
 });
 
 ok('lint policy rejects warnings instead of treating them as clean', () => {

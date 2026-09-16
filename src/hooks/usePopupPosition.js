@@ -7,7 +7,7 @@ export function usePopupPosition({ popupPosition, selection, sortedProfilesLengt
     let finalVisibility = 'hidden';
 
     if (popupPosition && selection) {
-      const panelWidth = Math.min(424, Math.max(200, window.innerWidth - 16));
+      const panelWidth = Math.min(620, Math.max(280, window.innerWidth - 16));
 
       if (pinnedPos) {
         finalLeft = `${Math.max(8, Math.min(Number(pinnedPos.left) || 8, window.innerWidth - panelWidth - 8))}px`;
@@ -20,7 +20,9 @@ export function usePopupPosition({ popupPosition, selection, sortedProfilesLengt
       } else {
         const actualRows = Math.ceil(sortedProfilesLength / Math.max(1, colCount));
         const visibleRows = Math.min(actualRows, Math.max(1, rows || 3));
-        const estimatedHeight = Math.min(window.innerHeight - 16, (visibleRows * 42) + 280);
+        const commandHeight = (visibleRows * 34) + 70;
+        const inspectorHeight = 224;
+        const estimatedHeight = Math.min(window.innerHeight - 16, Math.max(commandHeight, inspectorHeight) + 82);
         let top = popupPosition.bottom + 12;
 
         if (popupPos === 'above') top = popupPosition.top - estimatedHeight - 12;

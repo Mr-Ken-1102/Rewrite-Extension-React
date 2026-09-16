@@ -22,9 +22,9 @@ const NumericInput = ({ min, max, value, onChangeKey, updateConfig }) => (
     max={max}
     value={value !== undefined ? value : 3}
     onChange={(e) => {
-      let val = parseInt(e.target.value, 10);
-      if (Number.isNaN(val)) val = min;
-      updateConfig({ [onChangeKey]: Math.max(min, Math.min(max, val)) });
+      const parsed = parseInt(e.target.value, 10);
+      if (Number.isNaN(parsed)) return;
+      updateConfig({ [onChangeKey]: Math.max(min, Math.min(max, parsed)) });
     }}
     style={{ width: '64px', margin: '0', padding: '6px 10px', fontSize: '12px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }}
   />
@@ -34,12 +34,10 @@ export const TabUI = ({ onCloseModal }) => {
   const { config, updateConfig, clearAllData } = usePersistentStore();
   const showToast = useToastStore((state) => state.showToast);
   const [showCleanConfirm, setShowCleanConfirm] = useState(false);
-  const profileColumnMax = config.compact ? 4 : 2;
-  const visibleProfileColumns = Math.min(Math.max(1, config.cols || 2), profileColumnMax);
+  const profileColumnMax = config.compact ? 6 : 4;
+  const visibleProfileColumns = Math.min(Math.max(1, config.cols || 3), profileColumnMax);
 
   const handleCleanData = async () => {
-    // Treat private-storage deletion as the commit point. If Marinara rejects
-    // it, do not claim success or leave persisted data that reappears on reload.
     try {
       await usePersistentStore.persist.clearStorage();
     } catch (err) {
@@ -73,7 +71,7 @@ export const TabUI = ({ onCloseModal }) => {
           checked={config.compact}
           onChange={(v) => updateConfig({
             compact: v,
-            ...(v ? {} : { cols: Math.min(config.cols || 2, 2) }),
+            cols: Math.min(config.cols || 3, v ? 6 : 4),
           })}
         />
       </ConfigRow>

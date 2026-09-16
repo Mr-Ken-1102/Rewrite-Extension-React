@@ -45,11 +45,17 @@ export const useNativeEvents = () => {
     };
 
     add(document, 'pointermove', (event) => {
+      const runtime = useRuntimeStore.getState();
+      if (runtime.isDragging) return;
+      if (runtime.hostElement && event.composedPath().includes(runtime.hostElement)) return;
+
       lastMouse = { x: event.clientX, y: event.clientY };
       if (mouseFrame) return;
       mouseFrame = requestAnimationFrame(() => {
         mouseFrame = 0;
-        useRuntimeStore.getState().setMousePos(lastMouse.x, lastMouse.y);
+        const current = useRuntimeStore.getState();
+        if (current.isDragging) return;
+        current.setMousePos(lastMouse.x, lastMouse.y);
       });
     }, { passive: true });
 

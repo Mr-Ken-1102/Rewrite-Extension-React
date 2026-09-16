@@ -2,8 +2,8 @@ import { Button } from '../ui/Button';
 
 export function ProfileGrid({ profiles, colCount, rows, compact, onRun, onTooltip, onTooltipLeave }) {
   const requestedCols = Math.max(1, Number(colCount) || 1);
-  const effectiveCols = compact ? Math.min(requestedCols, 4) : Math.min(requestedCols, 2);
-  const rowHeight = compact ? 38 : 42;
+  const effectiveCols = compact ? Math.min(requestedCols, 6) : Math.min(requestedCols, 4);
+  const rowHeight = compact ? 30 : 34;
 
   return (
     <section className="rwa-command-section" aria-label="Rewrite styles">

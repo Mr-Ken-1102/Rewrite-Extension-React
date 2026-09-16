@@ -35,6 +35,7 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
     let renderedLeft = startLeft;
     let renderedTop = startTop;
     let finished = false;
+    let paintedMove = false;
 
     try { captureTarget?.setPointerCapture?.(pointerId); } catch { /* best effort */ }
 
@@ -70,7 +71,15 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
       const latest = samples?.length ? samples[samples.length - 1] : moveEvent;
       pendingLeft = clamp(startLeft + latest.clientX - originX, 8, Math.max(8, window.innerWidth - width - 8));
       pendingTop = clamp(startTop + latest.clientY - originY, 8, Math.max(8, window.innerHeight - height - 8));
-      schedulePosition();
+
+      // Paint the first movement synchronously. Subsequent moves are coalesced
+      // to animation frames, which removes the visible catch-up on drag start.
+      if (!paintedMove) {
+        paintedMove = true;
+        applyPosition();
+      } else {
+        schedulePosition();
+      }
     };
 
     const cleanup = (commit) => {
@@ -108,8 +117,6 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
         });
         if (pinnedPos) updateConfig({ pinnedPos: { left, top } });
 
-        // Keep the guard alive just long enough that the pointer-up ending the
-        // drag cannot be interpreted as a fresh selection by the host page.
         releaseTimerRef.current = window.setTimeout(() => {
           releaseTimerRef.current = 0;
           useRuntimeStore.getState().setDragging(false);

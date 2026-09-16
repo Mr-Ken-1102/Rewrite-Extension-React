@@ -70,7 +70,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
 
   const colCount = useMemo(() => Math.max(1, config.cols || 3), [config.cols]);
   const layoutColCount = useMemo(
-    () => config.compact ? Math.min(colCount, 4) : Math.min(colCount, 2),
+    () => config.compact ? Math.min(colCount, 6) : Math.min(colCount, 4),
     [colCount, config.compact],
   );
   const sortedProfiles = useMemo(() => profiles
@@ -191,29 +191,31 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
 
         <MultiMessageNotice selection={selection} mergeMultiMsg={config.mergeMultiMsg} />
 
-        <ProfileGrid
-          profiles={sortedProfiles}
-          colCount={layoutColCount}
-          rows={config.rows}
-          compact={config.compact}
-          onRun={runProfile}
-          onTooltip={showTooltip}
-          onTooltipLeave={hideTooltip}
-        />
+        <div className="rwa-popup-workbench">
+          <ProfileGrid
+            profiles={sortedProfiles}
+            colCount={layoutColCount}
+            rows={config.rows}
+            compact={config.compact}
+            onRun={runProfile}
+            onTooltip={showTooltip}
+            onTooltipLeave={hideTooltip}
+          />
 
-        <ContextPanel
-          config={config}
-          updateConfig={updateConfig}
-          keepFocus={keepFocus}
-          radarText={radarText}
-          radarColor={radarColor}
-          tokenInfo={tokenInfo}
-          contextSources={contextSources}
-          contextExclusions={contextExclusions}
-          onToggleContext={toggleContextExclusion}
-          onTooltip={showTooltip}
-          onTooltipLeave={hideTooltip}
-        />
+          <ContextPanel
+            config={config}
+            updateConfig={updateConfig}
+            keepFocus={keepFocus}
+            radarText={radarText}
+            radarColor={radarColor}
+            tokenInfo={tokenInfo}
+            contextSources={contextSources}
+            contextExclusions={contextExclusions}
+            onToggleContext={toggleContextExclusion}
+            onTooltip={showTooltip}
+            onTooltipLeave={hideTooltip}
+          />
+        </div>
 
         <PopupFooter
           msgHistory={msgHistory}
