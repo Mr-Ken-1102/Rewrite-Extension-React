@@ -1,105 +1,102 @@
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { useRuntimeStore } from './store/useRuntimeStore';
-import { usePersistentStore } from './store/usePersistentStore';
 import { RWA_PREMIUM_CSS } from './styles.js';
+import { diffWorkerInstance } from './services/diffWorkerService';
+import { usePersistentStore } from './store/usePersistentStore';
+import { MarinaraHost } from './services/marinaraHost';
+import { debugLogService } from './services/debugLogService';
+import { sessionLedgerStore } from './services/advancedRewriteService';
 
-(function (envMarinara) {
+(async function bootstrap(envMarinara) {
   'use strict';
 
-  const currentMarinara = typeof envMarinara !== 'undefined'
-    ? envMarinara
-    : (typeof marinara !== 'undefined' ? marinara : null);
-
+  const currentMarinara = envMarinara || globalThis.marinara || null;
   if (!currentMarinara) {
     console.error('[Rewrite Assistant] Marinara full-page API is unavailable.');
     return;
   }
 
-  const RWA_CONFIG = {
-    extId: currentMarinara.extension?.id || 'premium',
-    get ns() { return `rwa-${this.extId}-`; },
+  try { window.__rwa_active_instance__?.destroy?.(); } catch { /* best effort */ }
+  document.getElementById('rwa-shadow-host')?.remove();
+
+  useRuntimeStore.getState().setMarinara(currentMarinara);
+  MarinaraHost.setHost(currentMarinara);
+
+  let destroyed = false;
+  let root = null;
+  let hostElement = null;
+  let shadowRoot = null;
+  let stopFocusSteal = null;
+  let unsubscribeDebug = null;
+
+  const destroyInstance = () => {
+    if (destroyed) return;
+    destroyed = true;
+    try { useRuntimeStore.getState().abortAll(); } catch { /* noop */ }
+    try { shadowRoot?.removeEventListener('mousedown', stopFocusSteal); } catch { /* noop */ }
+    try { diffWorkerInstance.dispose(); } catch { /* noop */ }
+    try { unsubscribeDebug?.(); } catch { /* noop */ }
+    try { sessionLedgerStore.clear(); } catch { /* noop */ }
+    debugLogService.setEnabled(false);
+    try { root?.unmount(); } catch { /* noop */ }
+    try { hostElement?.remove(); } catch { /* noop */ }
+    useRuntimeStore.getState().reset();
+    MarinaraHost.setHost(null);
+    if (window.__rwa_active_instance__?.destroy === destroyInstance) delete window.__rwa_active_instance__;
   };
 
-  const initReactApp = async () => {
-    const previous = window.__rwa_active_instance__;
-    if (previous && typeof previous.destroy === 'function') {
-      try { previous.destroy(); } catch (error) { console.warn('[Rewrite Assistant] Previous instance cleanup failed.', error); }
-    }
+  window.__rwa_active_instance__ = { destroy: destroyInstance };
 
-    useRuntimeStore.getState().setMarinara(currentMarinara);
+  // Register cleanup before any async hydration. If Marinara unloads the
+  // extension while private storage is being read, bootstrap must not late-mount.
+  if (typeof currentMarinara.onCleanup === 'function') currentMarinara.onCleanup(destroyInstance);
 
-    try {
-      await usePersistentStore.persist.rehydrate();
-    } catch (error) {
-      console.warn('[Rewrite Assistant] Private state hydration failed; defaults will be used.', error);
-    }
+  try {
+    await usePersistentStore.persist.rehydrate();
+  } catch (error) {
+    console.warn('[Rewrite Assistant] Private state hydration failed; defaults will be used.', error);
+  }
+  if (destroyed) return;
 
-    if (document.getElementById('rwa-shadow-host')) {
-      document.getElementById('rwa-shadow-host')?.remove();
-    }
+  debugLogService.setEnabled(usePersistentStore.getState().config.debugEnabled === true, { clearOnDisable: false });
+  unsubscribeDebug = usePersistentStore.subscribe((state) => {
+    debugLogService.setEnabled(state.config.debugEnabled === true);
+  });
 
-    const hostElement = document.createElement('div');
-    hostElement.id = 'rwa-shadow-host';
-    hostElement.style.cssText = 'position: fixed !important; top: 0; left: 0; width: 0; height: 0; overflow: visible; z-index: 2147483647; display: block;';
-    hostElement.className = `${document.documentElement.className || ''} ${document.body.className || ''}`.trim();
-    document.body.appendChild(hostElement);
+  hostElement = document.createElement('div');
+  hostElement.id = 'rwa-shadow-host';
+  hostElement.style.cssText = 'position:fixed!important;top:0;left:0;width:0;height:0;overflow:visible;z-index:2147483647;display:block;';
+  hostElement.className = `${document.documentElement.className || ''} ${document.body.className || ''}`.trim();
+  document.body.appendChild(hostElement);
 
-    const shadowRoot = hostElement.attachShadow({ mode: 'closed' });
-    useRuntimeStore.getState().setHost(hostElement, shadowRoot);
+  shadowRoot = hostElement.attachShadow({ mode: 'closed' });
+  useRuntimeStore.getState().setHost(hostElement, shadowRoot);
 
-    shadowRoot.addEventListener('mousedown', (event) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const rwaPopup = target.closest('.rwa') || target.closest('.rwa-tip') || target.closest('.rwa-ov') || target.closest('.rwa-win');
-      if (!rwaPopup) return;
-
-      const exemptTags = ['INPUT', 'SELECT', 'TEXTAREA', 'LABEL'];
-      const isExempt = exemptTags.includes(target.tagName)
-        || target.closest('label')
-        || target.closest('.rwa-tog-wrap')
-        || target.closest('.rwa-item')
-        || target.closest('[draggable]');
-      if (!isExempt) event.preventDefault();
-    });
-
-    const reactRootContainer = document.createElement('div');
-    reactRootContainer.id = 'rwa-react-root';
-    shadowRoot.appendChild(reactRootContainer);
-
-    const styleContainer = document.createElement('style');
-    styleContainer.id = 'rwa-premium-styles';
-    styleContainer.textContent = RWA_PREMIUM_CSS;
-    shadowRoot.appendChild(styleContainer);
-
-    const root = ReactDOM.createRoot(reactRootContainer);
-    root.render(
-      <React.StrictMode>
-        <App config={RWA_CONFIG} styleTarget={styleContainer} />
-      </React.StrictMode>,
-    );
-
-    let destroyed = false;
-    const instance = {
-      destroy() {
-        if (destroyed) return;
-        destroyed = true;
-        try { root.unmount(); } catch (error) { console.warn('[Rewrite Assistant] React cleanup failed.', error); }
-        hostElement.remove();
-        useRuntimeStore.getState().reset();
-        if (window.__rwa_active_instance__ === instance) {
-          delete window.__rwa_active_instance__;
-        }
-      },
-    };
-
-    window.__rwa_active_instance__ = instance;
-
-    if (typeof currentMarinara.onCleanup === 'function') {
-      currentMarinara.onCleanup(() => instance.destroy());
-    }
+  stopFocusSteal = (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const insideUi = target.closest('.rwa, .rwa-tip, .rwa-ov, .rwa-win');
+    if (!insideUi) return;
+    const interactive = target.closest('input, select, textarea, label, button, [draggable], .rwa-tog-wrap, .rwa-item');
+    if (!interactive) event.preventDefault();
   };
+  shadowRoot.addEventListener('mousedown', stopFocusSteal);
 
-  void initReactApp();
+  const reactRootContainer = document.createElement('div');
+  reactRootContainer.id = 'rwa-react-root';
+  shadowRoot.appendChild(reactRootContainer);
+
+  const styleContainer = document.createElement('style');
+  styleContainer.id = 'rwa-premium-styles';
+  styleContainer.textContent = RWA_PREMIUM_CSS;
+  shadowRoot.appendChild(styleContainer);
+
+  if (destroyed) {
+    destroyInstance();
+    return;
+  }
+
+  root = ReactDOM.createRoot(reactRootContainer);
+  root.render(<App />);
 })(typeof marinara !== 'undefined' ? marinara : undefined);

@@ -1,7 +1,10 @@
-import React from 'react';
+import { useRef } from 'react';
 import { Button } from '../ui/Button';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 export const ConfirmModal = ({ message, onConfirm, onCancel, zIndex = 20000 }) => {
+  const dialogRef = useRef(null);
+  useDialogFocusTrap(dialogRef, onCancel);
   const handleGlowMouseMove = (e) => {
     const target = e.target.closest(".rwa-glow-button");
     if (target) {
@@ -13,7 +16,7 @@ export const ConfirmModal = ({ message, onConfirm, onCancel, zIndex = 20000 }) =
 
   return (
     <div className="rwa-ov" style={{ zIndex }} onMouseMove={handleGlowMouseMove}>
-      <div className="rwa-win" style={{ width: "340px", textAlign: "center" }}>
+      <div ref={dialogRef} className="rwa-win" style={{ width: "340px", textAlign: "center" }} role="alertdialog" aria-modal="true" aria-label="Confirmation" tabIndex={-1}>
         <div className="rwa-body" style={{ padding: "28px 24px" }}>
           <div style={{ fontSize: "32px", marginBottom: "14px", textShadow: "0 0 10px rgba(255, 107, 107, 0.4)" }}>
             ⚠️
@@ -26,7 +29,6 @@ export const ConfirmModal = ({ message, onConfirm, onCancel, zIndex = 20000 }) =
           <Button className="rwa-glow-button" onClick={onCancel} style={{ flex: 1 }}>
             Cancel
           </Button>
-          {/* [BẢN VÁ]: Xóa bỏ toàn bộ !important để React nhận diện Inline Style */}
           <Button 
             className="rwa-glow-button"
             variant="rwa-dng" 

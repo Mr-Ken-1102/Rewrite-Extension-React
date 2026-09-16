@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const ToggleSwitch = ({ checked, onChange, label, disabled, labelStyle = {} }) => {
   return (

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { usePersistentStore } from '../../store/usePersistentStore';
 
-export const EditProfileModal = ({ profileToEdit, editIndex, onClose }) => {
+export const EditProfileModal = ({ profileToEdit, initialDraft, onClose }) => {
   const { profiles, updateProfiles } = usePersistentStore();
   
-  const [name, setName] = useState(profileToEdit ? profileToEdit.name : "");
-  const [prompt, setPrompt] = useState(profileToEdit ? profileToEdit.prompt : "");
+  const [name, setName] = useState(profileToEdit ? profileToEdit.name : (initialDraft?.name || ''));
+  const [prompt, setPrompt] = useState(profileToEdit ? profileToEdit.prompt : (initialDraft?.prompt || ''));
   const [color, setColor] = useState((profileToEdit && profileToEdit.color) ? profileToEdit.color : "#ff8c00");
 
   const handleSave = () => {
@@ -22,15 +22,14 @@ export const EditProfileModal = ({ profileToEdit, editIndex, onClose }) => {
       name: n,
       prompt: p,
       order: profileToEdit ? (profileToEdit.order || 0) : profiles.length,
+      hidden: profileToEdit?.hidden === true,
       color: chosenColor,
     };
 
     const newProfiles = [...profiles];
-    if (editIndex >= 0) {
-      newProfiles[editIndex] = newProfile;
-    } else {
-      newProfiles.push(newProfile);
-    }
+    const actualIndex = profileToEdit ? newProfiles.findIndex((item) => item.id === profileToEdit.id) : -1;
+    if (actualIndex >= 0) newProfiles[actualIndex] = newProfile;
+    else newProfiles.push(newProfile);
     
     updateProfiles(newProfiles);
     onClose();
@@ -56,6 +55,8 @@ export const EditProfileModal = ({ profileToEdit, editIndex, onClose }) => {
           placeholder="e.g., Pirate Accent" 
           value={name}
           onChange={(e) => setName(e.target.value)}
+          maxLength={80}
+          aria-label="Style name"
         />
 
         <div className="rwa-lbl">Instructional Prompt</div>
@@ -64,6 +65,8 @@ export const EditProfileModal = ({ profileToEdit, editIndex, onClose }) => {
           placeholder="Rewrite the following text converting style..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
+          maxLength={5000}
+          aria-label="Instructional prompt"
           style={{ height: "180px", resize: "vertical", fontSize: "13px", borderRadius: "12px" }}
         />
 

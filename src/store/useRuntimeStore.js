@@ -11,11 +11,9 @@ export const useRuntimeStore = create((set, get) => ({
   mouseY: 0,
   lastClickedMid: null,
   
-  selection: { text: "", mid: "", cid: null, isTa: true, start: -1, end: -1, el: null, detectedRole: null },
+  selection: { source: null, text: '', mid: '', cid: null, start: -1, end: -1, el: null, detectedRole: null },
   
   popupPosition: null, 
-  activeModal: null, 
-  previewData: null, 
 
   setMarinara: (marinara) => set({ marinara }),
   setHost: (hostElement, shadowRoot) => set({ hostElement, shadowRoot }),
@@ -24,34 +22,32 @@ export const useRuntimeStore = create((set, get) => ({
   setLastClickedMid: (mid) => set({ lastClickedMid: mid }),
   setSelection: (selection) => set({ selection }),
   setPopupPosition: (popupPosition) => set({ popupPosition }),
-  setActiveModal: (activeModal) => set({ activeModal }),
-  setPreviewData: (previewData) => set({ previewData }),
   
-  // TỐI ƯU HÓA: Tạo Set mới thay vì mutate trực tiếp
   registerController: (ctrl) => set((state) => {
     const newControllers = new Set(state.abortControllers);
     newControllers.add(ctrl);
-    return { abortControllers: newControllers };
+    return { abortControllers: newControllers, isProcessing: newControllers.size > 0 };
+  }),
+
+  unregisterController: (ctrl) => set((state) => {
+    const next = new Set(state.abortControllers);
+    next.delete(ctrl);
+    return { abortControllers: next, isProcessing: next.size > 0 };
   }),
 
   abortAll: () => {
     const { abortControllers } = get();
     abortControllers.forEach(ctrl => {
-      try { ctrl.abort(); } catch (e) {}
+      try { ctrl.abort(); } catch {}
     });
-    // Trả về Set rỗng để dọn dẹp bộ nhớ
     set({ abortControllers: new Set(), isProcessing: false });
   },
   
-  setProcessing: (isProcessing) => set({ isProcessing }),
-
   reset: () => {
     get().abortAll();
     set({
-      selection: { text: "", mid: "", cid: null, isTa: true, start: -1, end: -1, el: null, detectedRole: null },
-      popupPosition: null,
-      activeModal: null,
-      previewData: null
+      selection: { source: null, text: '', mid: '', cid: null, start: -1, end: -1, el: null, detectedRole: null },
+      popupPosition: null
     });
   }
 }));

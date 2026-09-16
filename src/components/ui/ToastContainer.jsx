@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useToastStore } from '../../store/useToastStore';
 
 const ToastItem = ({ toast }) => {
@@ -11,17 +11,18 @@ const ToastItem = ({ toast }) => {
     const showTimer = setTimeout(() => setShow(true), 10);
     
     // 2. Sau 3000ms: Gỡ class rwa-toast-show để trượt xuống / mờ dần
+    let removeTimer = null;
     const hideTimer = setTimeout(() => {
       setShow(false);
-      // 3. Đợi thêm 400ms cho animation hoàn tất rồi mới gỡ hoàn toàn khỏi React Node (DOM)
-      setTimeout(() => {
-        if (removeToast) removeToast(toast.id);
+      removeTimer = setTimeout(() => {
+        removeToast?.(toast.id);
       }, 400);
     }, 3000);
 
     return () => {
       clearTimeout(showTimer);
       clearTimeout(hideTimer);
+      if (removeTimer) clearTimeout(removeTimer);
     };
   }, [toast.id, removeToast]);
 

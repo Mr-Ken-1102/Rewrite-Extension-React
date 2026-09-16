@@ -1,33 +1,41 @@
 {
-  "name": "r-w-a-v2-3-react",
+  "name": "rewrite-assistant-react-marinara",
   "private": true,
-  "version": "0.0.0",
+  "version": "3.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node selfcheck.mjs && node failuremodecheck.mjs && node propertycheck.mjs",
     "lint": "eslint .",
-    "test:compat": "node scripts/compat-selfcheck.mjs",
-    "test:engine": "node scripts/engine-compat-check.mjs",
-    "check": "npm run lint && npm run test:compat && npm run build",
-    "preview": "vite preview"
+    "check": "npm run verify:source && npm run verify:manifest && npm run test && npm run lint && npm run build",
+    "bundle": "node build-extension.mjs",
+    "preview": "vite preview",
+    "compat:engine": "node engine-compatcheck.mjs",
+    "verify:source": "node sourcecheck.mjs",
+    "test:regression": "node selfcheck.mjs",
+    "test:failure-modes": "node failuremodecheck.mjs",
+    "verify:manifest": "node manifestcheck.mjs",
+    "test:properties": "node propertycheck.mjs"
   },
   "dependencies": {
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "zustand": "^5.0.14"
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "zustand": "5.0.14"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "terser": "^5.48.0",
-    "vite": "^8.0.12",
-    "vite-plugin-css-injected-by-js": "^5.0.1"
+    "@eslint/js": "10.0.1",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "eslint": "10.5.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.3",
+    "globals": "17.6.0",
+    "terser": "5.48.0",
+    "vite": "8.0.16"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

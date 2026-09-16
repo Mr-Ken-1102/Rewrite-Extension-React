@@ -10,7 +10,6 @@ export const useToastStore = create((set) => ({
       toasts: [...state.toasts, { id, message, variant }]
     }));
 
-    // [BẢN VÁ]: KHÔNG DÙNG setTimeout ở đây nữa.
     // Việc tính toán thời gian tồn tại (3000ms) và animation fade-out (400ms) 
     // giờ đây được quản lý 100% bên trong useEffect của ToastContainer.jsx
   },

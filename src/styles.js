@@ -224,6 +224,10 @@ export const RWA_PREMIUM_CSS = `
   top: -5px;
 }
 
+.rwa-mini-actions { display: inline-flex; gap: 4px; align-items: center; position: relative; z-index: 4; }
+.rwa-mini-action { width: 24px; height: 22px; padding: 0; border-radius: 6px; border: 1px solid rgba(255,140,0,0.25); background: rgba(255,140,0,0.05); color: rgba(255,255,255,0.8); cursor: pointer; font-size: 12px; line-height: 1; }
+.rwa-mini-action:hover, .rwa-mini-action-active { color: #fff; background: rgba(255,140,0,0.18); border-color: rgba(255,140,0,0.55); box-shadow: 0 0 8px var(--rwa-primary-glow); }
+
 /* 2. Bóp nhỏ Profile Buttons */
 .rwa-profile-grid { margin-bottom: -4px !important; padding-top: 2px !important; }
 .rwa-profile-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; font-size: 11.5px; }
@@ -243,7 +247,13 @@ export const RWA_PREMIUM_CSS = `
 .rwa-radar-target { display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 10.5px; font-weight: 700; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
 .rwa-panel-compact { background: rgba(0,0,0,0.15); border-radius: 8px; padding: 6px 10px; border: 1px solid rgba(255,255,255,0.04); }
-.rwa-toggle-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.rwa-toggle-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; align-items: center; margin-bottom: 4px; }
+
+.rwa-one-shot-context { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-top: 5px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.04); }
+.rwa-one-shot-label { font-size: 9.5px; color: rgba(255,255,255,0.48); margin-right: 2px; }
+.rwa-context-chip { appearance: none; border: 1px solid rgba(5,196,107,0.32); background: rgba(5,196,107,0.08); color: rgba(255,255,255,0.8); border-radius: 999px; padding: 2px 7px; font-size: 9.5px; cursor: pointer; }
+.rwa-context-chip:hover { border-color: rgba(5,196,107,0.6); }
+.rwa-context-chip-off { border-color: rgba(255,71,87,0.4); background: rgba(255,71,87,0.08); color: rgba(255,255,255,0.48); text-decoration: line-through; }
 
 /* 5. Khối Gộp: Length Adjust & History Depth */
 .rwa-merged-row { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px; margin-top: 6px; }
@@ -274,6 +284,12 @@ export const RWA_PREMIUM_CSS = `
 .rwa-btn-custom:hover, .rwa-btn-settings:hover { background: rgba(255,140,0,0.15); box-shadow: 0 0 10px var(--rwa-primary-glow); transform: translateY(-1px); color: #fff; }
 
 .rwa-popup-tip { position: fixed; pointer-events: none; z-index: 9999999; transition: opacity 0.15s ease, transform 0.15s ease; white-space: pre-line; }
+
+
+.rwa-auto-profile { width: 100%; min-height: 32px; margin: 0 0 5px; justify-content: flex-start; color: var(--rwa-primary); border-color: rgba(255,140,0,0.35); background: rgba(255,140,0,0.08); font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rwa-token-panel { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 7px; padding: 4px 2px 6px; min-height: 18px; color: rgba(255,255,255,0.48); font-size: 9px; line-height: 1.2; }
+.rwa-token-total { color: var(--rwa-primary); font-weight: 800; font-size: 9.5px; }
+.rwa-token-part { white-space: nowrap; }
 
 /* ========================================================================= */
 /* --- BẢN CHUẨN: GIAO DIỆN SETTINGS MODAL & COMPACT ABOUT ----------------- */

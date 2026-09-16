@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 
 export const Button = ({ 
   children, 
@@ -9,7 +9,7 @@ export const Button = ({
   title, 
   style, 
   type = "button",
-  ...rest // [BẢN VÁ QUAN TRỌNG]: Hứng toàn bộ các sự kiện khác (onMouseEnter, onMouseLeave, onMouseUp, v.v.)
+  ...rest
 }) => {
   const btnRef = useRef(null);
 
@@ -46,7 +46,7 @@ export const Button = ({
       disabled={disabled}
       title={title}
       style={style}
-      {...rest} // [BẢN VÁ QUAN TRỌNG]: Trải toàn bộ props xuống DOM thật
+      {...rest}
       onMouseMove={handleMouseMove} // Ghi đè onMouseMove sau cùng để giữ logic Glow
     >
       {children}

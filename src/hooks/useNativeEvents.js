@@ -3,168 +3,122 @@ import { useRuntimeStore } from '../store/useRuntimeStore';
 import { usePersistentStore } from '../store/usePersistentStore';
 import { useToastStore } from '../store/useToastStore';
 import { DOMUtils } from '../utils/domUtils';
+import { makeHistoryKey } from '../utils/historyKey';
 
 export const useNativeEvents = () => {
-  const setHistoryData = usePersistentStore((state) => state.setHistoryData);
+  const hostElement = useRuntimeStore((state) => state.hostElement);
+  const clearHistory = usePersistentStore((state) => state.clearHistory);
   const showToast = useToastStore((state) => state.showToast);
 
   useEffect(() => {
+    if (!hostElement) return undefined;
     const syncTheme = () => {
-      const targetHost = useRuntimeStore.getState().hostElement;
-      if (!targetHost) return;
-
       const htmlClass = document.documentElement.className || '';
       const bodyClass = document.body.className || '';
-      const themeAttr = document.documentElement.getAttribute('data-theme')
-        || document.body.getAttribute('data-theme')
-        || '';
-
-      targetHost.className = `${htmlClass} ${bodyClass}`.trim();
-      if (themeAttr) targetHost.setAttribute('data-theme', themeAttr);
-      else targetHost.removeAttribute('data-theme');
+      const themeAttr = document.documentElement.getAttribute('data-theme') || document.body.getAttribute('data-theme') || '';
+      hostElement.className = `${htmlClass} ${bodyClass}`.trim();
+      if (themeAttr) hostElement.setAttribute('data-theme', themeAttr);
+      else hostElement.removeAttribute('data-theme');
     };
-
-    const themeObserver = new MutationObserver(syncTheme);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
-    themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
     syncTheme();
-
-    return () => themeObserver.disconnect();
-  }, []);
+    return () => observer.disconnect();
+  }, [hostElement]);
 
   useEffect(() => {
-    const activeListeners = [];
-    const scheduledTimers = new Map();
+    const listeners = [];
+    const timers = new Set();
+    let mouseFrame = 0;
+    let lastMouse = { x: 0, y: 0 };
 
-    const addManagedListener = (target, event, handler, options = false) => {
+    const add = (target, event, handler, options = false) => {
       target.addEventListener(event, handler, options);
-      activeListeners.push({ target, event, handler, options });
+      listeners.push({ target, event, handler, options });
     };
 
-    const schedule = (callback, delay) => {
-      const marinara = useRuntimeStore.getState().marinara;
-      const setTimer = marinara && typeof marinara.setTimeout === 'function'
-        ? marinara.setTimeout.bind(marinara)
-        : window.setTimeout.bind(window);
-      const clearTimer = marinara && typeof marinara.clearTimeout === 'function'
-        ? marinara.clearTimeout.bind(marinara)
-        : window.clearTimeout.bind(window);
-      const timerId = setTimer(() => {
-        scheduledTimers.delete(timerId);
-        callback();
-      }, delay);
-      scheduledTimers.set(timerId, clearTimer);
-      return timerId;
+    const schedule = (fn, ms) => {
+      const id = window.setTimeout(() => { timers.delete(id); fn(); }, ms);
+      timers.add(id);
+      return id;
     };
 
-    addManagedListener(document, 'mousemove', (event) => {
-      useRuntimeStore.getState().setMousePos(event.clientX, event.clientY);
-    });
+    add(document, 'pointermove', (event) => {
+      lastMouse = { x: event.clientX, y: event.clientY };
+      if (mouseFrame) return;
+      mouseFrame = requestAnimationFrame(() => {
+        mouseFrame = 0;
+        useRuntimeStore.getState().setMousePos(lastMouse.x, lastMouse.y);
+      });
+    }, { passive: true });
 
-    addManagedListener(document, 'click', (event) => {
-      if (!(event.target instanceof Element)) return;
-      const button = event.target.closest('button[title*="edit" i], button[aria-label*="edit" i], .message-action-edit');
-      const message = button?.closest('[data-message-id]');
-      const messageId = message?.getAttribute('data-message-id');
-      if (messageId) useRuntimeStore.getState().setLastClickedMid(messageId);
+    add(document, 'click', (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target?.closest('button[title*="Edit" i], .message-action-edit');
+      const message = button?.closest?.('[data-message-id], [mesid], .mari-message, .message');
+      if (!message) return;
+      const mid = message.getAttribute('data-message-id') || message.getAttribute('mesid') || message.id;
+      if (mid) useRuntimeStore.getState().setLastClickedMid(mid);
     }, true);
 
-    addManagedListener(document, 'mouseup', (event) => {
+    add(document, 'mouseup', (event) => {
       const runtime = useRuntimeStore.getState();
       const config = usePersistentStore.getState().config;
       if (runtime.isDragging || config.onlyAltR) return;
       if (runtime.hostElement && event.composedPath().includes(runtime.hostElement)) return;
-
-      const clickX = event.clientX || runtime.mouseX;
-      const clickY = event.clientY || runtime.mouseY;
-      const target = event.target;
-
+      const x = event.clientX || runtime.mouseX;
+      const y = event.clientY || runtime.mouseY;
       schedule(() => {
-        const savedSelection = DOMUtils.getSelectionData(target);
-        if (!savedSelection) return;
-        runtime.setLastClickedMid(savedSelection.mid);
-        runtime.setSelection(savedSelection);
-        runtime.setPopupPosition({ left: clickX, top: clickY - 20, right: clickX, bottom: clickY });
-      }, 50);
+        const saved = DOMUtils.getSelectionData(event.target, config, runtime.lastClickedMid);
+        if (!saved) return;
+        runtime.setSelection(saved);
+        runtime.setPopupPosition({ left: x, top: y - 20, right: x, bottom: y });
+      }, 100);
     }, true);
 
-    addManagedListener(document, 'keydown', (event) => {
+    add(document, 'keydown', (event) => {
+      if (!event.altKey || event.code !== 'KeyR') return;
       const runtime = useRuntimeStore.getState();
-
-      if (event.ctrlKey && event.shiftKey && event.code === 'KeyD') {
-        event.preventDefault();
+      const config = usePersistentStore.getState().config;
+      const saved = DOMUtils.getSelectionData(null, config, runtime.lastClickedMid);
+      if (!saved) {
+        showToast('Select text in a message or edit box first, then press Alt+R.', 'warn');
         return;
       }
-
-      if (event.altKey && event.code === 'KeyR') {
-        event.preventDefault();
-        let savedSelection = DOMUtils.getSelectionData(null);
-
-        if (!savedSelection) {
-          savedSelection = {
-            text: '',
-            rawText: '',
-            mid: runtime.lastClickedMid || '',
-            cid: DOMUtils.getChatId(),
-            isTa: false,
-            start: -1,
-            end: -1,
-            el: null,
-            detectedRole: null,
-          };
-        }
-        savedSelection.forced = true;
-        runtime.setSelection(savedSelection);
-        runtime.setPopupPosition({
-          left: runtime.mouseX,
-          top: runtime.mouseY - 20,
-          right: runtime.mouseX,
-          bottom: runtime.mouseY,
-        });
-      }
+      event.preventDefault();
+      saved.forced = true;
+      runtime.setSelection(saved);
+      runtime.setPopupPosition({ left: runtime.mouseX, top: runtime.mouseY - 20, right: runtime.mouseX, bottom: runtime.mouseY });
     }, true);
 
-    addManagedListener(document, 'mousedown', (event) => {
-      const runtime = useRuntimeStore.getState();
-      const path = event.composedPath();
-      if (runtime.hostElement && path.includes(runtime.hostElement)) return;
-      if (runtime.popupPosition || runtime.activeModal) runtime.reset();
-    }, true);
-
-    addManagedListener(document, 'click', (event) => {
+    add(document, 'mousedown', (event) => {
       const runtime = useRuntimeStore.getState();
       if (runtime.hostElement && event.composedPath().includes(runtime.hostElement)) return;
-      if (!(event.target instanceof Element)) return;
+      if (runtime.popupPosition) runtime.reset();
+    }, true);
 
-      const button = event.target.closest('button');
+    // Native edit-mode save/cancel closes the editor. Drop only that editor's
+    // in-memory undo history; no message body is persisted in extension storage.
+    add(document, 'click', (event) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const button = target?.closest('button');
       if (!button) return;
-      const activeTextarea = DOMUtils.isEditTextarea(document.activeElement) ? document.activeElement : null;
-      if (!activeTextarea) return;
-
-      const buttonMessageId = DOMUtils.getMessageId(button);
-      const activeMessageId = DOMUtils.getMessageId(activeTextarea);
-      if (!buttonMessageId || buttonMessageId !== activeMessageId) return;
-
-      const label = `${button.title || ''} ${button.getAttribute('aria-label') || ''} ${button.textContent || ''}`.toLowerCase();
-      const isSave = /\b(save|lưu|apply|confirm)\b/i.test(label);
-      const isCancel = /\b(cancel|close|hủy|huỷ)\b/i.test(label);
+      const active = DOMUtils.isEditTextarea(document.activeElement) ? document.activeElement : null;
+      if (!active?.dataset.rwaMid) return;
+      const title = (button.title || '').toLowerCase();
+      const label = (button.textContent || '').toLowerCase();
+      const isSave = !!button.querySelector('.ph-check, .fa-check, svg.lucide-check, svg[class*="lucide-check"]') || title.includes('save') || label.includes('save') || label.includes('lưu');
+      const isCancel = !!button.querySelector('.ph-x, .fa-times, svg.lucide-x, svg[class*="lucide-x"]') || title.includes('cancel') || label.includes('cancel') || label.includes('hủy');
       if (!isSave && !isCancel) return;
-
-      const historyStore = usePersistentStore.getState().history;
-      if (activeMessageId && historyStore[activeMessageId]) {
-        setHistoryData(activeMessageId, [], []);
-      }
-
-      showToast(isSave ? 'Saved successfully' : 'Edit cancelled', isSave ? 'ok' : 'err');
-      runtime.reset();
+      const key = makeHistoryKey(DOMUtils.getChatId(), active.dataset.rwaMid);
+      clearHistory(key);
     }, true);
 
     return () => {
-      activeListeners.forEach(({ target, event, handler, options }) => {
-        target.removeEventListener(event, handler, options);
-      });
-      for (const [timerId, clearTimer] of scheduledTimers) clearTimer(timerId);
-      scheduledTimers.clear();
+      listeners.forEach(({ target, event, handler, options }) => target.removeEventListener(event, handler, options));
+      timers.forEach((id) => window.clearTimeout(id));
+      if (mouseFrame) cancelAnimationFrame(mouseFrame);
     };
-  }, [setHistoryData, showToast]);
+  }, [clearHistory, showToast]);
 };

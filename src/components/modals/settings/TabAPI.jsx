@@ -1,199 +1,298 @@
-import React, { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePersistentStore } from '../../../store/usePersistentStore';
 import { useToastStore } from '../../../store/useToastStore';
-import { apiJson, fetchJson } from '../../../services/marinaraBridge';
+import { APIService } from '../../../services/apiService';
+import { MarinaraHost } from '../../../services/marinaraHost';
 import { Button } from '../../ui/Button';
+import { ToggleSwitch } from '../../ui/ToggleSwitch';
 
 const PresetItem = ({ name, url, updateConfig, showToast }) => (
-  <div
-    title="Click to apply this port preset"
+  <button
+    type="button"
+    className="rwa-inp"
     onClick={() => {
-      updateConfig({ ollamaUrl: url });
-      showToast(`✓ Preset Applied: ${name}`, 'ok');
+      updateConfig({ ollamaUrl: url, connMode: 'direct' });
+      showToast(`✓ Preset applied: ${name}`, 'ok');
     }}
-    onMouseEnter={(event) => {
-      event.currentTarget.style.borderColor = 'var(--rwa-primary)';
-      event.currentTarget.style.background = 'rgba(255, 140, 0, 0.02)';
-    }}
-    onMouseLeave={(event) => {
-      event.currentTarget.style.borderColor = 'rgba(255,255,255,0.03)';
-      event.currentTarget.style.background = 'rgba(255,255,255,0.01)';
-    }}
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      background: 'rgba(255,255,255,0.01)',
-      padding: '8px 10px',
-      borderRadius: '8px',
-      border: '1px solid rgba(255,255,255,0.03)',
-      cursor: 'pointer',
-      transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-    }}
+    style={{ textAlign: 'left', cursor: 'pointer', padding: '9px 10px', margin: 0 }}
   >
-    <span style={{ fontSize: '9.5px', fontWeight: '800', color: 'var(--rwa-primary)', textTransform: 'uppercase' }}>{name}</span>
-    <span style={{ fontSize: '10px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.4)', marginTop: '4px', wordBreak: 'break-all', lineHeight: '1.2' }}>{url}</span>
-  </div>
+    <strong style={{ display: 'block', color: 'var(--rwa-primary)', fontSize: '10px' }}>{name}</strong>
+    <span style={{ display: 'block', opacity: 0.6, fontFamily: 'monospace', fontSize: '10px', marginTop: '3px' }}>{url}</span>
+  </button>
 );
 
 export const TabAPI = () => {
   const { config, updateConfig } = usePersistentStore();
   const showToast = useToastStore((state) => state.showToast);
-  const [isTesting, setIsTesting] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [fetchedModels, setFetchedModels] = useState([]);
+  const [connections, setConnections] = useState([]);
+  const [models, setModels] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const actionControllerRef = useRef(null);
 
-  const handleTestConnection = async () => {
-    setIsTesting(true);
-    const url = (config.ollamaUrl || '').trim();
+  useEffect(() => () => actionControllerRef.current?.abort(), []);
 
+  useEffect(() => {
+    let alive = true;
+    if (config.connMode !== 'marinara') return () => { alive = false; };
+    const controller = new AbortController();
+    APIService.listConnections(controller.signal)
+      .then((list) => {
+        if (!alive) return;
+        setConnections(list);
+        const stillExists = list.some((connection) => connection.id === config.connectionId);
+        if (config.connectionId && !stillExists) updateConfig({ connectionId: '' });
+      })
+      .catch(() => { if (alive) setConnections([]); });
+    return () => { alive = false; controller.abort(); };
+  }, [config.connMode, config.connectionId, updateConfig]);
+
+  const selectedConnection = useMemo(
+    () => connections.find((connection) => connection.id === config.connectionId),
+    [connections, config.connectionId],
+  );
+
+  const directUrlAdvisory = useMemo(() => {
+    if (config.connMode !== 'direct' || !config.ollamaUrl) return '';
     try {
-      if (!url) {
-        const result = await apiJson('/sidecar/tracker', {
-          method: 'POST',
-          body: { systemPrompt: 'ping', userPrompt: 'Reply with pong.' },
-        });
-        if (!result || typeof result.result !== 'string') {
-          throw new Error('Sidecar returned an invalid response');
-        }
-        showToast('✓ Default Sidecar Active!', 'ok');
-      } else {
-        const baseUrl = url.replace(/\/v1\/?$/, '').replace(/\/$/, '');
-        try {
-          await fetchJson(`${baseUrl}/api/tags`, {}, 8_000);
-          showToast('✓ Ollama Server Active!', 'ok');
-        } catch {
-          await fetchJson(`${url.replace(/\/$/, '')}/models`, {}, 8_000);
-          showToast('✓ API Endpoint Connected!', 'ok');
-        }
+      const url = new URL(config.ollamaUrl);
+      const host = url.hostname.toLowerCase();
+      const loopback = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+      if (url.username || url.password) return 'Do not put API credentials in the URL. Use a Marinara connection for credentialed remote providers.';
+      if (!loopback && url.protocol !== 'https:') return 'Remote Direct API is using unencrypted HTTP. Use HTTPS or a loopback/local model endpoint.';
+      if (!loopback) return 'Remote Direct API: selected text and any context you explicitly enable will leave this browser session.';
+      return '';
+    } catch {
+      return 'The Direct API URL is not valid yet.';
+    }
+  }, [config.connMode, config.ollamaUrl]);
+
+  const handleTest = async () => {
+    actionControllerRef.current?.abort();
+    const controller = new AbortController();
+    actionControllerRef.current = controller;
+    setBusy(true);
+    try {
+      const response = await APIService.runInference(
+        'You are a connection test. Output only the word ok.',
+        'Reply with: ok',
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      if (response?.aborted) {
+        showToast('⚠️ The provider aborted the connection test before completion.', 'warn');
+        return;
       }
-    } catch (error) {
-      console.warn('[Rewrite Assistant] API connection test failed.', error);
-      showToast('✕ API Connection Failed!', 'err');
+      if (response?.error) throw new Error(response.error);
+      showToast(`✓ Connected${response?.result ? `: ${String(response.result).slice(0, 40)}` : ''}`, 'ok');
+    } catch (err) {
+      if (!controller.signal.aborted && !MarinaraHost.isAbortError(err)) {
+        showToast(`✕ Connection failed: ${err?.message || String(err)}`, 'err');
+      }
     } finally {
-      setIsTesting(false);
+      if (actionControllerRef.current === controller) {
+        actionControllerRef.current = null;
+        setBusy(false);
+      }
     }
   };
 
-  const handleFetchModels = async () => {
-    const url = (config.ollamaUrl || '').trim();
-    if (!url) {
-      showToast("ℹ️ Sidecar automatically uses the platform's active model.", 'ok');
+  const handleDiscover = async () => {
+    if (config.connMode !== 'direct') {
+      showToast('Model discovery is only needed for Direct API mode.', 'warn');
       return;
     }
-
-    setIsFetching(true);
-    const baseUrl = url.replace(/\/v1\/?$/, '').replace(/\/$/, '');
-
-    try {
-      try {
-        const data = await fetchJson(`${baseUrl}/api/tags`, {}, 8_000);
-        if (Array.isArray(data?.models) && data.models.length > 0) {
-          const models = data.models.map((model) => model?.name).filter(Boolean);
-          setFetchedModels(models);
-          showToast(`Discovered ${models.length} active models!`, 'ok');
-          return;
-        }
-        throw new Error('No Ollama models found');
-      } catch {
-        const data = await fetchJson(`${url.replace(/\/$/, '')}/models`, {}, 8_000);
-        if (Array.isArray(data?.data) && data.data.length > 0) {
-          const models = data.data.map((model) => model?.id).filter(Boolean);
-          setFetchedModels(models);
-          showToast(`Discovered ${models.length} active models!`, 'ok');
-          return;
-        }
-        throw new Error('No OpenAI-compatible models found');
-      }
-    } catch (error) {
-      console.warn('[Rewrite Assistant] Model discovery failed.', error);
-      showToast('Failed to fetch server models!', 'err');
-    } finally {
-      setIsFetching(false);
+    actionControllerRef.current?.abort();
+    const controller = new AbortController();
+    actionControllerRef.current = controller;
+    setBusy(true);
+    const result = await APIService.discoverModels(config.ollamaUrl, controller.signal);
+    if (actionControllerRef.current === controller) {
+      actionControllerRef.current = null;
+      setBusy(false);
     }
+    if (controller.signal.aborted) return;
+    if (result.error) {
+      showToast(`✕ ${result.error}`, 'err');
+      return;
+    }
+    setModels(result.models || []);
+    showToast(`✓ Found ${result.models?.length || 0} model(s)`, 'ok');
   };
 
   return (
     <>
-      <div className="rwa-lbl" style={{ marginBottom: '20px' }}>API ROUTE CONFIGURATION</div>
+      <div className="rwa-lbl" style={{ marginBottom: '16px' }}>MODEL SOURCE</div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <span style={{ fontSize: '12px', width: '80px', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold' }}>API URL:</span>
-        <input
-          type="text"
+      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '18px' }}>
+        <span style={{ fontSize: '12px' }}>Connection mode</span>
+        <select
           className="rwa-inp"
-          placeholder="Leave empty to route through Default Sidecar..."
-          value={config.ollamaUrl || ''}
-          onChange={(event) => updateConfig({ ollamaUrl: event.target.value })}
-          maxLength={2048}
-          style={{ flex: '1', margin: '0', padding: '8px 12px', fontSize: '12px' }}
-        />
-        <Button
-          className="rwa-glow-button"
-          variant="rwa-btn-action"
-          onClick={handleTestConnection}
-          disabled={isTesting}
-          title="Test server endpoint connection"
-          style={{ fontSize: isTesting ? '10px' : '14px' }}
+          value={config.connMode || 'marinara'}
+          onChange={(e) => updateConfig({ connMode: e.target.value })}
+          style={{ margin: 0 }}
         >
-          {isTesting ? '...' : '⚡'}
-        </Button>
+          <option value="marinara">Marinara connection (recommended)</option>
+          <option value="sidecar">Marinara local sidecar model</option>
+          <option value="direct">Direct OpenAI-compatible API</option>
+          <option value="extender">Marinara Extender</option>
+        </select>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '30px' }}>
-        <span style={{ fontSize: '12px', width: '80px', color: 'rgba(255,255,255,0.7)', fontWeight: 'bold' }}>LLM Model:</span>
-        {fetchedModels.length > 0 ? (
+      {config.connMode === 'marinara' && (
+        <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '18px' }}>
+          <span style={{ fontSize: '12px' }}>Marinara connection</span>
           <select
             className="rwa-inp"
-            value={config.ollamaModel || ''}
-            onChange={(event) => updateConfig({ ollamaModel: event.target.value })}
-            style={{ flex: '1', margin: '0', padding: '8px 12px', fontSize: '12px', background: 'rgba(255,255,255,0.02)', color: '#fff', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px' }}
+            value={config.connectionId || ''}
+            onChange={(e) => updateConfig({ connectionId: e.target.value })}
+            style={{ margin: 0 }}
           >
-            <option value="" style={{ background: '#13131c' }}>-- Empty (Local Sidecar) --</option>
-            {fetchedModels.map((model) => (
-              <option key={model} value={model} style={{ background: '#13131c' }}>{model}</option>
+            <option value="">{connections.length ? '— Select connection —' : 'No connections found'}</option>
+            {connections.map((connection) => (
+              <option key={connection.id} value={connection.id}>
+                {connection.name || connection.label || connection.provider || connection.id}
+              </option>
             ))}
           </select>
-        ) : (
-          <input
-            type="text"
-            className="rwa-inp"
-            placeholder="Leave blank to default to Sidecar Active Model..."
-            value={config.ollamaModel || ''}
-            onChange={(event) => updateConfig({ ollamaModel: event.target.value })}
-            maxLength={256}
-            style={{ flex: '1', margin: '0', padding: '8px 12px', fontSize: '12px' }}
-          />
-        )}
+          <span />
+          <div style={{ fontSize: '10px', opacity: 0.62, lineHeight: 1.45 }}>
+            Recommended: the API key remains on the Marinara server. The extension only stores the selected connection id.
+            {selectedConnection ? ` Selected: ${selectedConnection.name || selectedConnection.provider || selectedConnection.id}.` : ''}
+          </div>
+        </div>
+      )}
 
-        <Button
-          className="rwa-glow-button"
-          variant="rwa-btn-action"
-          onClick={handleFetchModels}
-          disabled={isFetching}
-          title="Refresh model presets list"
-          style={{ fontSize: isFetching ? '10px' : '14px' }}
-        >
-          {isFetching ? '...' : '↻'}
-        </Button>
+      {config.connMode === 'sidecar' && (
+        <div className="rwa-prev" style={{ fontSize: '11px', lineHeight: 1.5, marginBottom: '18px' }}>
+          Uses Marinara&apos;s downloaded local model. If you never installed the local model, choose a Marinara connection instead.
+        </div>
+      )}
+
+      {config.connMode === 'extender' && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '12px' }}>Extender server</span>
+            <input
+              type="text"
+              className="rwa-inp"
+              value={config.extenderUrl || ''}
+              onChange={(e) => updateConfig({ extenderUrl: e.target.value })}
+              placeholder="http://127.0.0.1:3001"
+              style={{ margin: 0 }}
+            />
+            <span style={{ fontSize: '12px' }}>Temperature</span>
+            <input
+              type="number"
+              className="rwa-inp"
+              min="0"
+              max="2"
+              step="0.1"
+              value={config.directTemp ?? 0.7}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                updateConfig({ directTemp: Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 0.7 });
+              }}
+              style={{ margin: 0 }}
+            />
+          </div>
+          <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '18px' }}>
+            Extender mode sends rewrite prompts to the configured Marinara Extender sidecar using its OpenAI-compatible /v1/chat/completions endpoint. The Extender chooses its own model; Rewrite Assistant stores no Extender credential.
+          </div>
+        </>
+      )}
+
+      {config.connMode === 'direct' && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '12px' }}>API base URL</span>
+            <input
+              type="text"
+              className="rwa-inp"
+              value={config.ollamaUrl || ''}
+              onChange={(e) => updateConfig({ ollamaUrl: e.target.value })}
+              placeholder="http://127.0.0.1:11434/v1"
+              style={{ margin: 0 }}
+            />
+            <span style={{ fontSize: '12px' }}>Model</span>
+            {models.length ? (
+              <select className="rwa-inp" value={config.ollamaModel || ''} onChange={(e) => updateConfig({ ollamaModel: e.target.value })} style={{ margin: 0 }}>
+                <option value="">— Select model —</option>
+                {models.map((model) => <option key={model} value={model}>{model}</option>)}
+              </select>
+            ) : (
+              <input type="text" className="rwa-inp" value={config.ollamaModel || ''} onChange={(e) => updateConfig({ ollamaModel: e.target.value })} style={{ margin: 0 }} />
+            )}
+            <span style={{ fontSize: '12px' }}>Temperature</span>
+            <input
+              type="number"
+              className="rwa-inp"
+              min="0"
+              max="2"
+              step="0.1"
+              value={config.directTemp ?? 0.7}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                updateConfig({ directTemp: Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 0.7 });
+              }}
+              style={{ margin: 0 }}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+            <PresetItem name="Ollama" url="http://127.0.0.1:11434/v1" updateConfig={updateConfig} showToast={showToast} />
+            <PresetItem name="LM Studio" url="http://127.0.0.1:1234/v1" updateConfig={updateConfig} showToast={showToast} />
+            <PresetItem name="llama.cpp" url="http://127.0.0.1:8080/v1" updateConfig={updateConfig} showToast={showToast} />
+            <PresetItem name="KoboldCPP" url="http://127.0.0.1:5001/v1" updateConfig={updateConfig} showToast={showToast} />
+          </div>
+
+          <Button className="rwa-glow-button" onClick={handleDiscover} disabled={busy} style={{ width: '100%', marginBottom: '12px' }}>
+            {busy ? 'Working…' : 'Discover models'}
+          </Button>
+          <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, opacity: 0.8 }}>
+            Direct mode sends the selected text and enabled context to the URL above. Prefer loopback/local URLs for private content; use HTTPS for remote servers.
+            {directUrlAdvisory ? <><br /><strong>{directUrlAdvisory}</strong></> : null}
+          </div>
+        </>
+      )}
+
+      <div className="rwa-lbl" style={{ marginTop: '24px', marginBottom: '12px' }}>PROMPT ECONOMY</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '14px' }}>
+        <div>
+          <div style={{ fontSize: '12px' }}>Shorter system instructions</div>
+          <div style={{ fontSize: '10px', opacity: 0.6, marginTop: '3px' }}>Useful for smaller local models; output and context safety rules remain intact.</div>
+        </div>
+        <ToggleSwitch checked={config.conciseSysPrompt} onChange={(value) => updateConfig({ conciseSysPrompt: value })} />
       </div>
 
-      <div style={{ padding: '18px 16px', background: 'rgba(255,255,255,0.015)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '12px', marginTop: '20px' }}>
-        <div style={{ fontSize: '10px', fontWeight: '900', letterSpacing: '0.06em', color: 'rgba(255,255,255,0.45)', marginBottom: '14px', textAlign: 'center' }}>
-          POPULAR API ENGINE LOCAL PORTS
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <PresetItem name="Ollama" url="http://127.0.0.1:11434/v1" updateConfig={updateConfig} showToast={showToast} />
-          <PresetItem name="LM Studio" url="http://127.0.0.1:1234/v1" updateConfig={updateConfig} showToast={showToast} />
-          <PresetItem name="llama.cpp" url="http://127.0.0.1:8080/v1" updateConfig={updateConfig} showToast={showToast} />
-          <PresetItem name="KoboldCPP" url="http://127.0.0.1:5001/v1" updateConfig={updateConfig} showToast={showToast} />
-        </div>
+      <div className="rwa-lbl" style={{ marginTop: '24px', marginBottom: '12px' }}>REQUEST SAFETY</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+        <span style={{ fontSize: '12px' }}>Timeout (ms)</span>
+        <input
+          type="number"
+          className="rwa-inp"
+          min="5000"
+          max="180000"
+          step="1000"
+          value={config.requestTimeoutMs || 45000}
+          onChange={(e) => updateConfig({ requestTimeoutMs: Math.max(5000, Math.min(180000, Number(e.target.value) || 45000)) })}
+          style={{ margin: 0 }}
+        />
+        <span style={{ fontSize: '12px' }}>Prompt budget (chars)</span>
+        <input
+          type="number"
+          className="rwa-inp"
+          min="8000"
+          max="120000"
+          step="1000"
+          value={config.maxPromptChars || 32000}
+          onChange={(e) => updateConfig({ maxPromptChars: Math.max(8000, Math.min(120000, Number(e.target.value) || 32000)) })}
+          style={{ margin: 0 }}
+        />
       </div>
 
-      <div className="rwa-err-guide" style={{ background: 'transparent', border: 'none', padding: '8px 0 0', marginTop: '24px' }}>
-        <div className="rwa-err-guide-step" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', paddingLeft: '14px' }}>
-          Fill port route if using alternative self-hosted LLM endpoints. Otherwise, leave empty.
-        </div>
-      </div>
+      <Button className="rwa-glow-button" variant="rwa-accept" onClick={handleTest} disabled={busy} style={{ width: '100%' }}>
+        {busy ? 'Testing…' : '⚡ Test connection'}
+      </Button>
     </>
   );
 };

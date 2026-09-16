@@ -1,0 +1,96 @@
+name: Rewrite Assistant quality gate
+
+on:
+  push:
+    branches: [main, upgrade/marinara-v2.4.4-hardening, 'backup/**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Rewrite Assistant
+        uses: actions/checkout@v4
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      # These gates intentionally run before npm ci. A registry/toolchain outage
+      # must not hide a source, failure-mode, or installable-contract regression.
+      - name: Dependency-free source gate
+        run: node sourcecheck.mjs
+
+      - name: Dependency-free regression gate
+        run: node selfcheck.mjs
+
+      - name: Dependency-free failure-mode gate
+        run: node failuremodecheck.mjs
+
+      - name: Dependency-free property/fuzz gate
+        run: node propertycheck.mjs
+
+      - name: Dependency-free manifest gate
+        run: node manifestcheck.mjs
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Runtime dependency security gate
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Full dependency advisory gate
+        run: npm audit --audit-level=critical
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
+
+      - name: Build and validate installable JSON
+        run: npm run bundle
+
+      - name: Verify real installable artifact
+        shell: bash
+        run: |
+          test -s rewrite-assistant-react.json
+          node --input-type=module -e "import {readFileSync} from 'node:fs'; import {validateExtensionManifest} from './extension-manifest.mjs'; const m=JSON.parse(readFileSync('rewrite-assistant-react.json','utf8')); validateExtensionManifest(m); if (m.version !== JSON.parse(readFileSync('package.json','utf8')).version) process.exit(1);"
+
+      - name: Checkout pinned Marinara Engine v2.4.4 source
+        uses: actions/checkout@v4
+        with:
+          repository: Pasta-Devs/Marinara-Engine
+          ref: 1a299369ac7025028c3ce1b80cc59f47b7b0691b
+          path: vendor/marinara-engine
+
+      - name: Cross-check pinned Engine v2.4.4 contract
+        run: node engine-compatcheck.mjs vendor/marinara-engine 2.4.4
+
+      - name: Checkout pinned Marinara Engine v2.4.6 source
+        uses: actions/checkout@v4
+        with:
+          repository: Pasta-Devs/Marinara-Engine
+          ref: cc783dd194bacd97379191b9d490939afbe6759e
+          path: vendor/marinara-engine-246
+
+      - name: Cross-check pinned Engine v2.4.6 contract
+        run: node engine-compatcheck.mjs vendor/marinara-engine-246 2.4.6
+
+      - name: Hash verified installable artifact
+        run: sha256sum rewrite-assistant-react.json > rewrite-assistant-react.json.sha256
+
+      - name: Upload verified installable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rewrite-assistant-v3.0.1-engine-2.4.6
+          path: |
+            rewrite-assistant-react.json
+            rewrite-assistant-react.json.sha256
+          if-no-files-found: error

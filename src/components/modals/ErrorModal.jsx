@@ -1,7 +1,10 @@
-import React from 'react';
+import { useRef } from 'react';
 import { Button } from '../ui/Button';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 
 export const ErrorModal = ({ message, onClose }) => {
+  const dialogRef = useRef(null);
+  useDialogFocusTrap(dialogRef, onClose);
   const stepStyle = { fontSize: "12.5px", color: "rgba(255,255,255,0.7)", marginBottom: "12px", lineHeight: "1.55" };
 
   const handleGlowMouseMove = (e) => {
@@ -15,7 +18,7 @@ export const ErrorModal = ({ message, onClose }) => {
 
   return (
     <div className="rwa-ov" style={{ zIndex: 10005 }} onMouseMove={handleGlowMouseMove}>
-      <div className="rwa-err-window">
+      <div ref={dialogRef} className="rwa-err-window" role="alertdialog" aria-modal="true" aria-label="Connection diagnostics" tabIndex={-1}>
         
         <div className="rwa-err-hdr" style={{ justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -24,7 +27,8 @@ export const ErrorModal = ({ message, onClose }) => {
           </div>
           <Button 
             className="rwa-glow-button"
-            onClick={onClose} 
+            onClick={onClose}
+            aria-label="Close diagnostics"
             style={{ padding: "4px 10px", fontSize: "11px", fontWeight: "bold", borderRadius: "6px" }}
           >
             ✕
@@ -42,15 +46,15 @@ export const ErrorModal = ({ message, onClose }) => {
             </div>
             
             <div className="rwa-err-guide-step" style={stepStyle}>
-              <b style={{ color: '#fff' }}>1. Check Model Setting:</b> If using a custom server connection, ensure your specified <code>Model</code> name matches exactly.
+              <b style={{ color: '#fff' }}>1. Marinara connection:</b> Open Settings → API &amp; LLM and select a configured Marinara connection. This is the recommended mode.
             </div>
             
             <div className="rwa-err-guide-step" style={stepStyle}>
-              <b style={{ color: '#fff' }}>2. Using Local Sidecar?</b> Leave the Model field <b>completely empty</b> to run Marinara's default internal bridge.
+              <b style={{ color: '#fff' }}>2. Direct API:</b> Verify the base URL and model name. For Ollama the usual base is <code>http://127.0.0.1:11434/v1</code>.
             </div>
             
             <div className="rwa-err-guide-step" style={{ ...stepStyle, marginBottom: "0" }}>
-              <b style={{ color: '#fff' }}>3. Verify Sidecar Status:</b> Go to Marinara Settings &rarr; AI Models, and verify that your local sidecar is loaded and responsive.
+              <b style={{ color: '#fff' }}>3. Local Sidecar:</b> If you selected Sidecar mode, verify Marinara's downloaded local model is installed and responsive.
             </div>
           </div>
         </div>

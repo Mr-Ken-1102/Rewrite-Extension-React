@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { usePersistentStore } from '../../../store/usePersistentStore';
+import { useState } from 'react';
+import { usePersistentStore, STORAGE_KEY, LEGACY_BACKUP_KEY, safeLocalStorage } from '../../../store/usePersistentStore';
 import { useToastStore } from '../../../store/useToastStore';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
 import { Button } from '../../ui/Button';
 import { ConfirmModal } from '../ConfirmModal';
 
 const ConfigRow = ({ label, children }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
-    <span style={{ fontSize: '14px', flex: '1', color: 'rgba(255,255,255,0.85)', fontWeight: '500' }}>
+  <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "18px" }}>
+    <span style={{ fontSize: "14px", flex: "1", color: "rgba(255,255,255,0.85)", fontWeight: "500" }}>
       {label}
     </span>
     {children}
@@ -15,18 +15,18 @@ const ConfigRow = ({ label, children }) => (
 );
 
 const NumericInput = ({ min, max, value, onChangeKey, updateConfig }) => (
-  <input
+  <input 
     type="number"
     className="rwa-inp"
     min={min}
     max={max}
     value={value !== undefined ? value : 3}
-    onChange={(event) => {
-      let nextValue = Number.parseInt(event.target.value, 10);
-      if (Number.isNaN(nextValue)) nextValue = min;
-      updateConfig({ [onChangeKey]: Math.max(min, Math.min(max, nextValue)) });
+    onChange={(e) => {
+      let val = parseInt(e.target.value, 10);
+      if (isNaN(val)) val = min;
+      updateConfig({ [onChangeKey]: Math.max(min, Math.min(max, val)) });
     }}
-    style={{ width: '64px', margin: '0', padding: '6px 10px', fontSize: '12px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }}
+    style={{ width: "64px", margin: "0", padding: "6px 10px", fontSize: "12px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.08)", borderRadius: "8px", color: "#fff" }}
   />
 );
 
@@ -34,21 +34,23 @@ export const TabUI = ({ onCloseModal }) => {
   const { config, updateConfig, clearAllData } = usePersistentStore();
   const showToast = useToastStore((state) => state.showToast);
   const [showCleanConfirm, setShowCleanConfirm] = useState(false);
-  const [isCleaning, setIsCleaning] = useState(false);
 
   const handleCleanData = async () => {
-    setIsCleaning(true);
+    // Treat private-storage deletion as the commit point. If Marinara rejects
+    // it, do not claim success or leave persisted data that reappears on reload.
     try {
-      await clearAllData();
+      await usePersistentStore.persist.clearStorage();
+    } catch (err) {
       setShowCleanConfirm(false);
-      onCloseModal();
-      showToast('All Rewrite Assistant private data was cleaned successfully!', 'ok');
-    } catch (error) {
-      console.error('[Rewrite Assistant] Failed to clear private storage.', error);
-      showToast('Failed to clean Rewrite Assistant data.', 'err');
-    } finally {
-      setIsCleaning(false);
+      showToast(`Could not clear Marinara private storage: ${err?.message || String(err)}`, "err");
+      return;
     }
+
+    [STORAGE_KEY, LEGACY_BACKUP_KEY].forEach((key) => safeLocalStorage.removeItem(key));
+    clearAllData();
+    setShowCleanConfirm(false);
+    onCloseModal();
+    showToast("All Rewrite Assistant data cleaned successfully!", "ok");
   };
 
   return (
@@ -56,19 +58,20 @@ export const TabUI = ({ onCloseModal }) => {
       <div className="rwa-lbl">Behavior & Viewports</div>
 
       <ConfigRow label="Typewriter reveal on final output:">
-        <ToggleSwitch checked={config.typewriter} onChange={(value) => updateConfig({ typewriter: value })} />
+        <ToggleSwitch checked={config.typewriter} onChange={(v) => updateConfig({ typewriter: v })} />
       </ConfigRow>
       <ConfigRow label="Show inline visual word diff:">
-        <ToggleSwitch checked={config.showDiff} onChange={(value) => updateConfig({ showDiff: value })} />
+        <ToggleSwitch checked={config.showDiff} onChange={(v) => updateConfig({ showDiff: v })} />
       </ConfigRow>
       <ConfigRow label="Auto-apply result(skip preview):">
-        <ToggleSwitch checked={config.autoApply} onChange={(value) => updateConfig({ autoApply: value })} />
+        <ToggleSwitch checked={config.autoApply} onChange={(v) => updateConfig({ autoApply: v })} />
       </ConfigRow>
       <ConfigRow label="Compact grid (2-letter labels):">
-        <ToggleSwitch checked={config.compact} onChange={(value) => updateConfig({ compact: value })} />
+        <ToggleSwitch checked={config.compact} onChange={(v) => updateConfig({ compact: v })} />
       </ConfigRow>
+      
       <ConfigRow label="Only show on ALT + R (Always hide popup):">
-        <ToggleSwitch checked={config.onlyAltR} onChange={(value) => updateConfig({ onlyAltR: value })} />
+        <ToggleSwitch checked={config.onlyAltR} onChange={(v) => updateConfig({ onlyAltR: v })} />
       </ConfigRow>
 
       <ConfigRow label="Max column grid count:">
@@ -78,36 +81,39 @@ export const TabUI = ({ onCloseModal }) => {
         <NumericInput min={1} max={10} value={config.rows} onChangeKey="rows" updateConfig={updateConfig} />
       </ConfigRow>
       <ConfigRow label="Prose history (Undo depth):">
-        <NumericInput min={1} max={50} value={config.historyDepth} onChangeKey="historyDepth" updateConfig={updateConfig} />
+        <NumericInput min={1} max={20} value={config.historyDepth} onChangeKey="historyDepth" updateConfig={updateConfig} />
+      </ConfigRow>
+
+      <ConfigRow label="Surrounding context words / side:">
+        <NumericInput min={50} max={400} value={config.localContextWords} onChangeKey="localContextWords" updateConfig={updateConfig} />
       </ConfigRow>
 
       <ConfigRow label="Popup viewport alignment:">
-        <select
+        <select 
           className="rwa-inp"
-          value={config.popupPos || 'auto'}
-          onChange={(event) => updateConfig({ popupPos: event.target.value })}
-          style={{ width: 'auto', margin: '0', padding: '6px 12px', fontSize: '12px', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }}
+          value={config.popupPos || "auto"}
+          onChange={(e) => updateConfig({ popupPos: e.target.value })}
+          style={{ width: "auto", margin: "0", padding: "6px 12px", fontSize: "12px", background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.08)", borderRadius: "8px", color: "#fff" }}
         >
-          <option value="auto" style={{ background: '#12121a' }}>Auto Flipping viewport</option>
-          <option value="above" style={{ background: '#12121a' }}>Always above highlight</option>
-          <option value="below" style={{ background: '#12121a' }}>Always below highlight</option>
+          <option value="auto" style={{ background: "#12121a" }}>Auto Flipping viewport</option>
+          <option value="above" style={{ background: "#12121a" }}>Always above highlight</option>
+          <option value="below" style={{ background: "#12121a" }}>Always below highlight</option>
         </select>
       </ConfigRow>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: 'auto' }}>
-        <Button
-          variant="rwa-dng"
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "auto", paddingTop: "auto" }}>
+        <Button 
+          variant="rwa-dng" 
           onClick={() => setShowCleanConfirm(true)}
-          disabled={isCleaning}
-          style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '8px', fontWeight: 700, height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ fontSize: "12px", padding: "6px 14px", borderRadius: "8px", fontWeight: 700, height: "30px", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
-          {isCleaning ? 'Cleaning…' : '🧹 Clean Data'}
+          🧹 Clean Data
         </Button>
       </div>
 
       {showCleanConfirm && (
-        <ConfirmModal
-          message="Warning: clear all Rewrite Assistant settings, profiles, custom prompts, and session history? This cannot be undone."
+        <ConfirmModal 
+          message="Warning: Are you sure you want to clear ALL settings, history, and custom styles? This cannot be undone."
           onConfirm={handleCleanData}
           onCancel={() => setShowCleanConfirm(false)}
         />
