@@ -110,8 +110,10 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     sortedProfilesLength: sortedProfiles.length,
     colCount: layoutColCount,
     rows: config.rows,
+    compact: config.compact,
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
+    hasAutoProfile: !!autoProfile,
   });
 
   const runProfile = useCallback((profile) => {

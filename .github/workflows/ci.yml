@@ -42,6 +42,9 @@ jobs:
       - name: Dependency-free UX lifecycle and connection gate
         run: node uxcheck.mjs
 
+      - name: Dependency-free popup architecture gate
+        run: node popupcheck.mjs
+
       - name: Install locked dependencies
         run: npm ci
 

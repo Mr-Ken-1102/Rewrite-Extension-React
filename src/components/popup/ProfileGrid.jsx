@@ -1,16 +1,23 @@
+import { getProfileViewportHeight } from '../../popupGeometry';
 import { Button } from '../ui/Button';
 
 export function ProfileGrid({ profiles, colCount, rows, compact, onRun, onTooltip, onTooltipLeave }) {
   const requestedCols = Math.max(1, Number(colCount) || 1);
   const effectiveCols = compact ? Math.min(requestedCols, 6) : Math.min(requestedCols, 4);
-  const rowHeight = compact ? 30 : 34;
+  const viewportHeight = getProfileViewportHeight(rows, compact);
+  const classes = [
+    'rwa-grid',
+    'rwa-profile-grid',
+    `rwa-profile-cols-${effectiveCols}`,
+    compact ? 'rwa-profile-grid-compact' : '',
+  ].filter(Boolean).join(' ');
 
   return (
     <div
-      className="rwa-grid rwa-profile-grid"
+      className={classes}
       role="group"
       aria-label="Rewrite styles"
-      style={{ gridTemplateColumns: `repeat(${effectiveCols}, minmax(0, 1fr))`, maxHeight: `${Math.max(1, rows || 3) * rowHeight}px` }}
+      style={{ maxHeight: `${viewportHeight}px` }}
     >
       {profiles.map((profile) => (
         <Button
