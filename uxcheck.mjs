@@ -105,6 +105,38 @@ ok('world-class popup layer is loaded last and removes expensive blur while drag
   assert.match(css, /width:\s*min\(424px/);
 });
 
+ok('unified popup exposes command hierarchy and readable selection-context status', () => {
+  const profileGrid = read('./src/components/popup/ProfileGrid.jsx');
+  const contextPanel = read('./src/components/popup/ContextPanel.jsx');
+  const css = read('./src/styles-worldclass.js');
+  assert.match(profileGrid, /rwa-command-section/);
+  assert.match(profileGrid, /Choose a style/);
+  assert.match(contextPanel, /Selection \+ context ≈/);
+  assert.match(contextPanel, /rwa-context-subtitle/);
+  assert.match(css, /\.rwa-mini-title[\s\S]*color:\s*var\(--rwa-brand\)/);
+  assert.match(css, /\.rwa-token-total[\s\S]*font-size:\s*11px/);
+});
+
+ok('settings use sidebar navigation, workspace hierarchy and sticky action grouping', () => {
+  const settings = read('./src/components/modals/SettingsModal.jsx');
+  const css = read('./src/styles-worldclass.js');
+  assert.match(settings, /rwa-settings-shell/);
+  assert.match(settings, /rwa-settings-sidebar/);
+  assert.match(settings, /rwa-settings-workspace/);
+  assert.match(settings, /rwa-settings-page-head/);
+  assert.match(settings, /SETTINGS_SECTIONS/);
+  assert.match(css, /\.rwa-settings-shell[\s\S]*grid-template-columns:\s*196px/);
+  assert.match(css, /\.rwa-settings-foot[\s\S]*justify-content:\s*space-between/);
+});
+
+ok('shared modal visual system is synchronized with the popup palette', () => {
+  const css = read('./src/styles-worldclass.js');
+  assert.match(css, /--rwa-brand:\s*#ffb020/);
+  assert.match(css, /\.rwa-win,[\s\S]*\.rwa-err-window[\s\S]*background:/);
+  assert.match(css, /\.rwa-title[\s\S]*color:\s*var\(--rwa-brand\)/);
+  assert.match(css, /\.rwa-inp:[\s\S]*focus[\s\S]*rgba\(255,176,32/);
+});
+
 ok('lint policy rejects warnings instead of treating them as clean', () => {
   const pkg = JSON.parse(read('./package.json'));
   assert.match(pkg.scripts.lint, /--max-warnings=0/);
