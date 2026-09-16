@@ -1,0 +1,60 @@
+name: Restore canonical Rewrite Assistant v3.0.1
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-canonical-v3.0.1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and verify canonical archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat backup/chunks-v2/part-*.b64 > /tmp/rewrite-assistant-canonical.b64
+          base64 --decode /tmp/rewrite-assistant-canonical.b64 > /tmp/rewrite-assistant-canonical.zip
+          echo '7fb9583bbcdb00bc26e37a9017c09a74eb809112f1908d82460163e0ba413060  /tmp/rewrite-assistant-canonical.zip' | sha256sum -c -
+          rm -rf /tmp/rewrite-assistant-canonical
+          mkdir -p /tmp/rewrite-assistant-canonical
+          unzip -q /tmp/rewrite-assistant-canonical.zip -d /tmp/rewrite-assistant-canonical
+          test "$(find /tmp/rewrite-assistant-canonical -type f | wc -l)" -eq 91
+          test -f /tmp/rewrite-assistant-canonical/package.json
+          test -f /tmp/rewrite-assistant-canonical/package-lock.json
+          test -f /tmp/rewrite-assistant-canonical/.github/workflows/ci.yml
+          node -e "const p=require('/tmp/rewrite-assistant-canonical/package.json'); if(p.version!=='3.0.1') process.exit(1)"
+
+      - name: Verify dependency-free canonical gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/rewrite-assistant-canonical
+          node sourcecheck.mjs
+          node selfcheck.mjs
+          node failuremodecheck.mjs
+          node propertycheck.mjs
+          node manifestcheck.mjs
+
+      - name: Replace repository tree with verified canonical source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -r --ignore-unmatch .
+          cp -a /tmp/rewrite-assistant-canonical/. .
+          git add -A
+          test "$(git ls-files | wc -l)" -eq 91
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'chore: sync canonical Rewrite Assistant v3.0.1'
+          git push origin HEAD:main
