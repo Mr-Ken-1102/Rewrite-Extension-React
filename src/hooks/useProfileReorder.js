@@ -32,7 +32,6 @@ export function useProfileReorder({
     const pointerId = event.pointerId;
     const container = scrollContainerRef?.current || handle.closest('.rwa-settings-body');
     const containerRect = container?.getBoundingClientRect() || null;
-    const draggedRect = draggedNode.getBoundingClientRect();
     const itemCenters = orderedProfiles
       .filter((profile) => profile.id !== draggedId)
       .map((profile) => {
