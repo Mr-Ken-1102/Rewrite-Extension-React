@@ -31,73 +31,84 @@ export function ContextPanel({
       : 'Selection + context ≈ — tok';
 
   return (
-    <section className="rwa-bottom-controls rwa-context-section" aria-label="Context controls">
-      <div className="rwa-context-section-head">
-        <div className="rwa-context-heading">
-          <div className="rwa-context-kicker-row">
-            <span className="rwa-radar-kicker">Context</span>
-            <button
-              type="button"
-              className="rwa-info-icon"
-              onMouseEnter={(event) => onTooltip(event, 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.')}
-              onMouseLeave={onTooltipLeave}
-              aria-label="Context mode help"
-            >i</button>
-          </div>
-          <div className="rwa-context-subtitle">Control what the model sees for this rewrite.</div>
-        </div>
-        <div className="rwa-radar-target" aria-label={`Rewrite target: ${radarText}`}>
-          <span className="rwa-target-dot" style={{ backgroundColor: radarColor }}></span>
-          <span style={{ color: radarColor }}>{radarText}</span>
-        </div>
-      </div>
-
-      <div className="rwa-token-panel" title={tokenTitle}>
-        <span className="rwa-token-dot" aria-hidden="true"></span>
-        <span className="rwa-token-total">{tokenLabel}</span>
-      </div>
-
-      <div className="rwa-panel-box rwa-panel-compact">
-        <div className="rwa-context-primary">
-          <ToggleSwitch
-            label="Free Mode"
-            labelStyle={{ fontSize: '11.5px', fontWeight: '750', color: 'var(--rwa-brand)' }}
-            checked={config.freeMode}
-            onChange={(value) => { updateConfig({ freeMode: value }); keepFocus(); }}
-          />
-          <span className="rwa-context-primary-note">Ignore character/persona/lore injection</span>
-        </div>
-
-        <div className="rwa-context-switch-grid">
-          <ToggleSwitch label="Character" checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
-          <ToggleSwitch label="Persona" checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
-          <ToggleSwitch label="Lore" checked={config.injectLorebook} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectLorebook: value }); keepFocus(); }} />
-          <ToggleSwitch label="Around" checked={config.localContextEnabled} onChange={(value) => { updateConfig({ localContextEnabled: value }); keepFocus(); }} />
-        </div>
-
-        {contextSources.length > 0 && (
-          <div className="rwa-one-shot-context">
-            <span className="rwa-one-shot-label">This rewrite:</span>
-            <div className="rwa-one-shot-chips">
-              {contextSources.map((source) => {
-                const excluded = !!contextExclusions[source.key];
-                return (
-                  <button
-                    key={source.key}
-                    type="button"
-                    className={`rwa-context-chip ${excluded ? 'rwa-context-chip-off' : ''}`}
-                    aria-pressed={!excluded}
-                    title={`${excluded ? 'Excluded from' : 'Included in'} this rewrite only`}
-                    onClick={(event) => { event.preventDefault(); event.stopPropagation(); onToggleContext(source.key); }}
-                  >
-                    {source.label}
-                  </button>
-                );
-              })}
+    <section className="rwa-bottom-controls rwa-context-section rwa-context-rail" aria-label="Context controls">
+      <div className="rwa-context-region rwa-context-identity">
+        <div className="rwa-context-section-head">
+          <div className="rwa-context-heading">
+            <div className="rwa-context-kicker-row">
+              <span className="rwa-radar-kicker">Context</span>
+              <button
+                type="button"
+                className="rwa-info-icon"
+                onMouseEnter={(event) => onTooltip(event, 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.')}
+                onMouseLeave={onTooltipLeave}
+                aria-label="Context mode help"
+              >i</button>
             </div>
+            <div className="rwa-context-subtitle">Control what the model sees for this rewrite.</div>
           </div>
-        )}
 
+          <div className="rwa-radar-target" aria-label={`Rewrite target: ${radarText}`}>
+            <span className="rwa-target-dot" style={{ backgroundColor: radarColor }}></span>
+            <span style={{ color: radarColor }}>{radarText}</span>
+          </div>
+        </div>
+
+        <div className="rwa-token-panel" title={tokenTitle}>
+          <span className="rwa-token-dot" aria-hidden="true"></span>
+          <span className="rwa-token-total">{tokenLabel}</span>
+        </div>
+      </div>
+
+      <div className="rwa-context-region rwa-context-sources">
+        <div className="rwa-panel-box rwa-panel-compact">
+          <div className="rwa-context-primary">
+            <ToggleSwitch
+              label="Free Mode"
+              labelStyle={{ fontSize: '11.5px', fontWeight: '750', color: 'var(--rwa-brand)' }}
+              checked={config.freeMode}
+              onChange={(value) => { updateConfig({ freeMode: value }); keepFocus(); }}
+            />
+            <span className="rwa-context-primary-note">Ignore character/persona/lore injection</span>
+          </div>
+
+          <div className="rwa-context-switch-grid">
+            <ToggleSwitch label="Character" checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
+            <ToggleSwitch label="Persona" checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
+            <ToggleSwitch label="Lore" checked={config.injectLorebook} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectLorebook: value }); keepFocus(); }} />
+            <ToggleSwitch label="Around" checked={config.localContextEnabled} onChange={(value) => { updateConfig({ localContextEnabled: value }); keepFocus(); }} />
+          </div>
+
+          {contextSources.length > 0 && (
+            <div className="rwa-one-shot-context">
+              <span className="rwa-one-shot-label">This rewrite:</span>
+              <div className="rwa-one-shot-chips">
+                {contextSources.map((source) => {
+                  const excluded = !!contextExclusions[source.key];
+                  return (
+                    <button
+                      key={source.key}
+                      type="button"
+                      className={`rwa-context-chip ${excluded ? 'rwa-context-chip-off' : ''}`}
+                      aria-pressed={!excluded}
+                      title={`${excluded ? 'Excluded from' : 'Included in'} this rewrite only`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onToggleContext(source.key);
+                      }}
+                    >
+                      {source.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="rwa-context-region rwa-context-modifiers">
         <div className="rwa-merged-row">
           <div className="rwa-length-side" style={{ opacity: config.lengthEnabled ? '1' : '0.45' }}>
             <ToggleSwitch

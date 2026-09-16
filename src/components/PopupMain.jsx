@@ -12,8 +12,7 @@ import { useAutoProfileGeneration } from '../hooks/useAutoProfileGeneration';
 import { usePopupDrag } from '../hooks/usePopupDrag';
 import { usePopupPosition } from '../hooks/usePopupPosition';
 import { PopupHeader } from './popup/PopupHeader';
-import { ProfileGrid } from './popup/ProfileGrid';
-import { MultiMessageNotice } from './popup/MultiMessageNotice';
+import { RewriteSection } from './popup/RewriteSection';
 import { ContextPanel } from './popup/ContextPanel';
 import { PopupFooter } from './popup/PopupFooter';
 
@@ -178,25 +177,15 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           onPinToggle={handlePinToggle}
         />
 
-        {autoProfile && (
-          <Button
-            className="rwa-auto-profile"
-            onMouseEnter={(event) => showTooltip(event, `${autoProfile.name}: ${autoProfile.prompt}`)}
-            onMouseLeave={hideTooltip}
-            onClick={(event) => { event.stopPropagation(); runProfile(autoProfile); }}
-          >
-            ✨ {autoProfile.name}
-          </Button>
-        )}
-
-        <MultiMessageNotice selection={selection} mergeMultiMsg={config.mergeMultiMsg} />
-
         <div className="rwa-popup-workbench">
-          <ProfileGrid
+          <RewriteSection
             profiles={sortedProfiles}
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
+            autoProfile={autoProfile}
+            selection={selection}
+            mergeMultiMsg={config.mergeMultiMsg}
             onRun={runProfile}
             onTooltip={showTooltip}
             onTooltipLeave={hideTooltip}
