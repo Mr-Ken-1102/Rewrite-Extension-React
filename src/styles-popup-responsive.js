@@ -5,6 +5,28 @@ import {
 } from './popupGeometry';
 
 export const RWA_POPUP_RESPONSIVE_CSS = `
+/* D.1 density calibration inside the authoritative popup style family. */
+.rwa2-popup {
+  gap: 6px;
+  padding-top: 7px;
+  padding-bottom: 8px;
+}
+.rwa2-toolbar { min-height: 32px; }
+.rwa2-section-head { min-height: 24px; padding-bottom: 5px; }
+.rwa2-profile-grid { gap: 5px; }
+.rwa2-cols-4 { grid-template-columns: repeat(4, minmax(${POPUP_NORMAL_MIN_CELL}px, 1fr)); }
+.rwa2-popup .rwa2-profile-btn { min-height: 30px !important; height: 30px !important; }
+.rwa2-actionbar { min-height: 34px; }
+.rwa2-popup .rwa2-action { min-height: 34px !important; height: 34px !important; }
+.rwa2-context-region { padding: 7px 8px; }
+.rwa2-context-rail { min-height: 88px; }
+.rwa2-free-note { display: none; }
+.rwa2-free-mode-row { grid-template-columns: 1fr; margin-top: 6px; padding-bottom: 4px; }
+.rwa2-source-grid { margin-top: 3px; }
+.rwa2-one-shot { margin-top: 4px; padding-top: 4px; }
+.rwa2-context-modifiers { gap: 7px; }
+.rwa2-depth-row { padding-top: 6px; }
+
 @media (max-width: ${POPUP_NORMAL_BREAKPOINTS.fourToThree - 1}px) {
   .rwa2-profile-grid:not(.rwa2-profile-grid-compact).rwa2-cols-4 {
     grid-template-columns: repeat(3, minmax(${POPUP_NORMAL_MIN_CELL}px, 1fr));
@@ -65,7 +87,6 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
   .rwa2-context-modifiers { grid-column: 1 / -1; border-left: 0; }
   .rwa2-context-sources,
   .rwa2-context-modifiers { border-top: 1px solid rgba(255,255,255,.055); }
-  .rwa2-free-note { display: none; }
   .rwa2-target-chip { max-width: 128px; }
   .rwa2-actionbar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
   .rwa2-undo { grid-column: 1; }
