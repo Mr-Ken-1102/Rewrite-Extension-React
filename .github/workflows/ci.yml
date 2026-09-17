@@ -51,6 +51,9 @@ jobs:
       - name: Dependency-free settings architecture gate
         run: node settingscheck.mjs
 
+      - name: Dependency-free LAN inference and result UI gate
+        run: node lancheck.mjs
+
       - name: Install locked dependencies
         run: npm ci
 
