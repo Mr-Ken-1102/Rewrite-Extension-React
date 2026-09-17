@@ -10,15 +10,15 @@ const ok = (name, fn) => {
   console.log(`✓ ${name}`);
 };
 
-ok('popup geometry constants encode the 688px / 12-column contract', () => {
+ok('popup geometry constants encode the calibrated 640px / 12-column contract', () => {
   const source = read('./src/popupGeometry.js');
-  assert.match(source, /POPUP_DESKTOP_WIDTH = 688/);
-  assert.match(source, /POPUP_OUTER_PADDING_X = 12/);
+  assert.match(source, /POPUP_DESKTOP_WIDTH = 640/);
+  assert.match(source, /POPUP_OUTER_PADDING_X = 10/);
   assert.match(source, /POPUP_GRID_COLUMNS = 12/);
   assert.match(source, /POPUP_GRID_GAP = 8/);
-  assert.match(source, /POPUP_NORMAL_MIN_CELL = 156/);
-  assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 32/);
-  assert.match(source, /POPUP_PROFILE_ROW_GAP = 6/);
+  assert.match(source, /POPUP_NORMAL_MIN_CELL = 140/);
+  assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 30/);
+  assert.match(source, /POPUP_PROFILE_ROW_GAP = 5/);
 });
 
 ok('popup visual system is loaded last after legacy extension layers', () => {
@@ -63,12 +63,24 @@ ok('profile grid derives viewport height from shared geometry and exposes determ
   assert.doesNotMatch(source, /gridTemplateColumns:/);
 });
 
-ok('normal profile grid degrades before cells become narrower than the 156px contract', () => {
+ok('normal profile grid degrades before cells become narrower than the 140px contract', () => {
   const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /POPUP_NORMAL_MIN_CELL/);
   assert.match(css, /POPUP_NORMAL_BREAKPOINTS\.fourToThree - 1/);
   assert.match(css, /POPUP_NORMAL_BREAKPOINTS\.threeToTwo - 1/);
   assert.match(css, /POPUP_NORMAL_BREAKPOINTS\.twoToOne - 1/);
+});
+
+ok('selection popup uses a release-point anchor with viewport flipping', () => {
+  const native = read('./src/hooks/useNativeEvents.js');
+  const position = read('./src/hooks/usePopupPosition.js');
+  assert.match(native, /anchorX:\s*x/);
+  assert.match(native, /anchorY:\s*y/);
+  assert.match(native, /isDragged:\s*false/);
+  assert.match(position, /const rightCandidate = anchorX \+ ANCHOR_GAP/);
+  assert.match(position, /const leftCandidate = anchorX - panelWidth - ANCHOR_GAP/);
+  assert.match(position, /const belowCandidate = anchorY \+ ANCHOR_GAP/);
+  assert.match(position, /const aboveCandidate = anchorY - estimatedHeight - ANCHOR_GAP/);
 });
 
 ok('popup positioning consumes shared geometry and accounts for transient rows', () => {
@@ -103,6 +115,14 @@ ok('popup visual layer is low-paint and uses subdued amber', () => {
   assert.match(base, /--rwa2-brand:\s*#d19a45/);
   assert.doesNotMatch(`${base}\n${context}`, /backdrop-filter|filter:\s*blur/);
   assert.doesNotMatch(`${base}\n${context}`, /#ffb020/i);
+});
+
+ok('D.1 density calibration lowers shell and control height without shrinking labels', () => {
+  const css = read('./src/styles-popup-responsive.js');
+  assert.match(css, /\.rwa2-toolbar \{ min-height: 32px; \}/);
+  assert.match(css, /rwa2-profile-btn \{ min-height: 30px !important; height: 30px !important; \}/);
+  assert.match(css, /rwa2-action \{ min-height: 34px !important; height: 34px !important; \}/);
+  assert.match(css, /\.rwa2-free-note \{ display: none; \}/);
 });
 
 ok('main-popup buttons disable cursor-following glow work', () => {
