@@ -1,7 +1,13 @@
 import { usePersistentStore } from '../../store/usePersistentStore';
 import { MarinaraHost } from '../marinaraHost';
 import { debugLogService } from '../debugLogService';
-import { isLikelyLocalNetworkUrl, normalizeProviderFailure, validateProviderHttpUrl } from '../policies/providerPolicy.js';
+import {
+  getProviderTargetAddressSpace,
+  isLikelyLocalNetworkUrl,
+  normalizeProviderFailure,
+  validateProviderHttpUrl,
+  withProviderNetworkHints,
+} from '../policies/providerPolicy.js';
 
 const ENDPOINTS = {
   tracker: '/sidecar/tracker',
@@ -19,10 +25,29 @@ function extenderRoot(value) {
   return String(value || '').trim().replace(/\/+$/, '').replace(/\/v1$/, '');
 }
 
+function directBase(value) {
+  return String(value || '').trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+}
+
 function extractMarinaraContent(payload) {
   if (typeof payload?.content === 'string') return payload.content;
   if (typeof payload?.result === 'string') return payload.result;
   return '';
+}
+
+async function queryLocalNetworkPermission(addressSpace) {
+  const permissionName = addressSpace === 'loopback'
+    ? 'loopback-network'
+    : addressSpace === 'local'
+      ? 'local-network'
+      : '';
+  if (!permissionName || !globalThis.navigator?.permissions?.query) return 'unsupported';
+  try {
+    const status = await globalThis.navigator.permissions.query({ name: permissionName });
+    return status?.state || 'unknown';
+  } catch {
+    return 'unsupported';
+  }
 }
 
 export class ProviderService {
@@ -179,7 +204,8 @@ export class ProviderService {
       if (!root) return { error: 'No Extender URL is configured.' };
       try { validateProviderHttpUrl(root, 'Extender'); } catch (err) { return { error: err?.message || String(err) }; }
       try {
-        const response = await MarinaraHost.fetch(`${root}/v1/chat/completions`, {
+        const endpoint = `${root}/v1/chat/completions`;
+        const response = await MarinaraHost.fetch(endpoint, withProviderNetworkHints(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -191,7 +217,7 @@ export class ProviderService {
             stream: false,
           }),
           signal,
-        }, timeout);
+        }), timeout);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) return normalizeProviderFailure(data?.error || data || `HTTP ${response.status} from Extender.`, `HTTP ${response.status} from Extender.`);
         if (data?.error) return normalizeProviderFailure(data.error);
@@ -205,7 +231,7 @@ export class ProviderService {
       }
     }
 
-    const base = String(config.ollamaUrl || '').trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+    const base = directBase(config.ollamaUrl);
     if (!base) return { error: 'No Direct API URL is configured.' };
     if (!config.ollamaModel?.trim()) return { error: 'No Direct API model is configured.' };
     try { validateProviderHttpUrl(base, 'Direct API'); } catch (err) {
@@ -214,7 +240,8 @@ export class ProviderService {
     }
 
     try {
-      const response = await MarinaraHost.fetch(`${base}/chat/completions`, {
+      const endpoint = `${base}/chat/completions`;
+      const response = await MarinaraHost.fetch(endpoint, withProviderNetworkHints(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -227,7 +254,7 @@ export class ProviderService {
           stream: false,
         }),
         signal,
-      }, timeout);
+      }), timeout);
       const data = await response.json().catch(() => ({}));
       if (data.error) return normalizeProviderFailure(data.error);
       if (!response.ok) return normalizeProviderFailure(data, `HTTP ${response.status} from Direct API.`);
@@ -247,20 +274,22 @@ export class ProviderService {
   }
 
   static async discoverModels(url, signal) {
-    const base = String(url || '').trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+    const base = directBase(url);
     if (!base) return { models: [], error: 'No Direct API URL is configured.' };
     try { validateProviderHttpUrl(base, 'Direct API'); } catch (err) { return { models: [], error: err?.message || String(err) }; }
     const root = base.replace(/\/v1$/, '');
+    const tagsEndpoint = `${root}/api/tags`;
     try {
-      const tags = await MarinaraHost.fetch(`${root}/api/tags`, { signal }, 12000);
+      const tags = await MarinaraHost.fetch(tagsEndpoint, withProviderNetworkHints(tagsEndpoint, { signal }), 12000);
       if (tags.ok) {
         const data = await tags.json();
         const models = Array.isArray(data?.models) ? data.models.map((model) => model.name).filter(Boolean) : [];
         if (models.length) return { models };
       }
     } catch { /* fall through */ }
+    const modelsEndpoint = `${base}/models`;
     try {
-      const response = await MarinaraHost.fetch(`${base}/models`, { signal }, 12000);
+      const response = await MarinaraHost.fetch(modelsEndpoint, withProviderNetworkHints(modelsEndpoint, { signal }), 12000);
       const data = await response.json().catch(() => ({}));
       const models = Array.isArray(data?.data) ? data.data.map((model) => model.id).filter(Boolean) : [];
       if (!response.ok) return { models: [], error: `HTTP ${response.status}` };
@@ -268,6 +297,84 @@ export class ProviderService {
     } catch (err) {
       const failure = normalizeProviderFailure(err, 'Model discovery failed.');
       return { models: [], error: failure.error, errorCode: failure.errorCode };
+    }
+  }
+
+  static async diagnoseDirectApi(url, signal) {
+    const base = directBase(url);
+    if (!base) return { ok: false, issue: 'config', message: 'No Direct API URL is configured.' };
+    try { validateProviderHttpUrl(base, 'Direct API'); } catch (err) {
+      return { ok: false, issue: 'config', message: err?.message || String(err) };
+    }
+
+    const root = base.replace(/\/v1$/, '');
+    const endpoint = `${root}/api/tags`;
+    const targetAddressSpace = getProviderTargetAddressSpace(endpoint);
+    const permission = await queryLocalNetworkPermission(targetAddressSpace);
+    const browserOrigin = globalThis.location?.origin || '';
+
+    try {
+      const response = await MarinaraHost.fetch(endpoint, withProviderNetworkHints(endpoint, { signal }), 10000);
+      if (!response.ok) {
+        return {
+          ok: false,
+          issue: 'http',
+          httpStatus: response.status,
+          targetAddressSpace,
+          permission,
+          browserOrigin,
+          message: `The server is reachable but returned HTTP ${response.status} from /api/tags.`,
+        };
+      }
+      const data = await response.json().catch(() => ({}));
+      const models = Array.isArray(data?.models) ? data.models.map((model) => model.name).filter(Boolean) : [];
+      return {
+        ok: true,
+        issue: null,
+        models,
+        targetAddressSpace,
+        permission,
+        browserOrigin,
+        message: `LAN provider is reachable with readable CORS${models.length ? `; ${models.length} model(s) found.` : '.'}`,
+      };
+    } catch (err) {
+      if (signal?.aborted || MarinaraHost.isAbortError(err)) throw err;
+      if (permission === 'denied') {
+        return {
+          ok: false,
+          issue: 'permission',
+          targetAddressSpace,
+          permission,
+          browserOrigin,
+          message: 'Browser Local Network Access permission is denied for this site.',
+        };
+      }
+
+      try {
+        // An opaque no-cors response proves the TCP/HTTP path is reachable even
+        // when the readable CORS request is blocked by the provider policy.
+        await MarinaraHost.fetch(endpoint, withProviderNetworkHints(endpoint, { signal, mode: 'no-cors' }), 10000);
+        return {
+          ok: false,
+          issue: 'cors',
+          transportReachable: true,
+          targetAddressSpace,
+          permission,
+          browserOrigin,
+          message: 'The LAN server is reachable, but the browser cannot read its response. Configure Ollama CORS for this Marinara origin and restart Ollama.',
+        };
+      } catch (transportErr) {
+        if (signal?.aborted || MarinaraHost.isAbortError(transportErr)) throw transportErr;
+        return {
+          ok: false,
+          issue: 'transport',
+          transportReachable: false,
+          targetAddressSpace,
+          permission,
+          browserOrigin,
+          message: 'The browser cannot reach the LAN server. Verify Ollama is listening on 0.0.0.0, the laptop firewall allows TCP 11434 from the local subnet, and both machines can reach each other.',
+        };
+      }
     }
   }
 }
