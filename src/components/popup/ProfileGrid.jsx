@@ -34,7 +34,7 @@ export function ProfileGrid({ profiles, colCount, rows, compact, onRun, onToolti
     const computedColumns = window.getComputedStyle(gridRef.current).gridTemplateColumns
       .split(' ')
       .filter(Boolean).length || 1;
-    let nextIndex = currentIndex;
+    let nextIndex;
 
     if (event.key === 'ArrowRight') nextIndex = Math.min(buttons.length - 1, currentIndex + 1);
     else if (event.key === 'ArrowLeft') nextIndex = Math.max(0, currentIndex - 1);
