@@ -94,11 +94,8 @@ export class ProviderService {
     const mode = ['marinara', 'sidecar', 'direct', 'extender'].includes(config.connMode) ? config.connMode : 'marinara';
     const configuredTimeout = Math.max(5000, Math.min(180000, Number(config.requestTimeoutMs) || 45000));
     const directLocalNetwork = mode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl);
-    const timeout = mode === 'marinara'
-      ? Math.max(90000, configuredTimeout)
-      : directLocalNetwork
-        ? Math.max(120000, configuredTimeout)
-        : configuredTimeout;
+    const marinaraTimeout = mode === 'marinara' ? Math.max(90000, configuredTimeout) : configuredTimeout;
+    const timeout = directLocalNetwork ? Math.max(120000, configuredTimeout) : marinaraTimeout;
     debugLogService.add('inference.request', {
       mode,
       systemChars: systemPrompt.length,
