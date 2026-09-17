@@ -1,108 +1,135 @@
 export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-context-rail {
-  min-height: 96px;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 8px;
+  gap: 0;
   align-items: stretch;
   min-width: 0;
   border: 1px solid var(--rwa2-border);
-  border-radius: 11px;
+  border-radius: 10px;
   background: var(--rwa2-surface);
   overflow: hidden;
 }
 .rwa2-context-region {
   min-width: 0;
-  padding: 9px 10px;
+  padding: 6px 8px;
 }
-.rwa2-context-region + .rwa2-context-region {
-  border-left: 1px solid rgba(255,255,255,.055);
+.rwa2-context-identity {
+  grid-column: 1 / -1;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, auto);
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,.055);
 }
-.rwa2-context-identity { grid-column: span 4; }
-.rwa2-context-sources { grid-column: span 5; }
-.rwa2-context-modifiers { grid-column: span 3; }
+.rwa2-context-sources {
+  grid-column: span 8;
+  border-right: 1px solid rgba(255,255,255,.055);
+}
+.rwa2-context-modifiers {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
 .rwa2-region-head {
+  min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 7px;
 }
-.rwa2-region-label-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rwa2-region-label-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
 .rwa2-info {
   appearance: none;
-  width: 17px;
-  height: 17px;
+  width: 24px;
+  height: 24px;
   display: inline-grid;
   place-items: center;
+  flex: 0 0 24px;
   padding: 0;
-  border: 1px solid var(--rwa2-border);
-  border-radius: 50%;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: transparent;
   color: var(--rwa2-muted);
   font: 700 10px/1 system-ui, sans-serif;
   cursor: help;
 }
-.rwa2-info:hover { color: var(--rwa2-text); border-color: var(--rwa2-border-strong); }
+.rwa2-info:hover {
+  color: var(--rwa2-text);
+  border-color: var(--rwa2-border);
+  background: rgba(255,255,255,.025);
+}
 .rwa2-target-chip {
   min-width: 0;
-  max-width: 145px;
+  max-width: 166px;
+  min-height: 24px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 7px;
+  padding: 0 7px;
   border: 1px solid var(--rwa2-border);
   border-radius: 999px;
   background: var(--rwa2-surface-2);
   color: var(--rwa2-text-2);
-  font-size: 9.25px;
+  font-size: 10px;
   line-height: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.rwa2-target-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; }
+.rwa2-target-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
 .rwa2-token-status {
-  min-height: 30px;
+  justify-self: end;
+  min-width: 190px;
+  max-width: 260px;
+  min-height: 24px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  margin-top: 9px;
-  padding: 0 9px;
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 8px;
-  background: rgba(0,0,0,.14);
-  color: rgba(255,255,255,.70);
-  font-size: 11.5px;
+  gap: 6px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 7px;
+  background: rgba(0,0,0,.12);
+  color: rgba(255,255,255,.68);
+  font-size: 11px;
   line-height: 1;
-  font-weight: 630;
+  font-weight: 620;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .rwa2-free-mode-row {
-  min-height: 28px;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 24px;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  margin-top: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255,255,255,.05);
+  margin-top: 3px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255,255,255,.045);
 }
-.rwa2-free-note {
-  min-width: 0;
-  color: var(--rwa2-subtle);
-  font-size: 8.75px;
-  line-height: 1.2;
-  text-align: right;
-}
+.rwa2-free-note { display: none; }
 .rwa2-source-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px 12px;
-  margin-top: 4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2px 5px;
+  margin-top: 2px;
 }
 .rwa2-source-grid > label,
 .rwa2-free-mode-row > label {
@@ -110,7 +137,7 @@ export const RWA_POPUP_CONTEXT_CSS = `
   min-height: 24px;
   justify-content: space-between;
   flex-direction: row-reverse;
-  gap: 8px !important;
+  gap: 6px !important;
 }
 .rwa2-source-grid > label > span,
 .rwa2-free-mode-row > label > span {
@@ -124,65 +151,87 @@ export const RWA_POPUP_CONTEXT_CSS = `
   height: 17px !important;
   flex: 0 0 30px !important;
 }
-.rwa2-popup .rwa-tog-sl { background: rgba(255,255,255,.15) !important; box-shadow: none !important; }
-.rwa2-popup .rwa-tog-sl:before { width: 11px !important; height: 11px !important; left: 3px !important; bottom: 3px !important; }
+.rwa2-popup .rwa-tog-sl {
+  background: rgba(255,255,255,.15) !important;
+  box-shadow: none !important;
+}
+.rwa2-popup .rwa-tog-sl:before {
+  width: 11px !important;
+  height: 11px !important;
+  left: 3px !important;
+  bottom: 3px !important;
+}
 .rwa2-popup .rwa-tog-wrap input:checked + .rwa-tog-sl {
   background: var(--rwa2-brand) !important;
   box-shadow: none !important;
 }
-.rwa2-popup .rwa-tog-wrap input:checked + .rwa-tog-sl:before { transform: translateX(13px) !important; }
+.rwa2-popup .rwa-tog-wrap input:checked + .rwa-tog-sl:before {
+  transform: translateX(13px) !important;
+}
 
 .rwa2-one-shot {
+  min-width: 0;
   display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255,255,255,.045);
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 1px solid rgba(255,255,255,.04);
 }
 .rwa2-one-shot-label {
-  padding-top: 4px;
+  flex: 0 0 auto;
   color: var(--rwa2-subtle);
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1;
   white-space: nowrap;
 }
-.rwa2-one-shot-chips { min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.rwa2-one-shot-chips {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
 .rwa2-chip {
   appearance: none;
-  min-height: 20px;
-  padding: 0 6px;
-  border: 1px solid rgba(255,255,255,.075);
+  min-height: 24px;
+  padding: 0 7px;
+  border: 1px solid rgba(255,255,255,.07);
   border-radius: 999px;
-  background: rgba(255,255,255,.02);
+  background: rgba(255,255,255,.018);
   color: var(--rwa2-text-2);
-  font: 600 8.5px/1 system-ui, sans-serif;
+  font: 600 10px/1 system-ui, sans-serif;
   cursor: pointer;
 }
-.rwa2-chip:hover { border-color: var(--rwa2-brand-border); color: var(--rwa2-brand); }
-.rwa2-chip-off { opacity: .42; text-decoration: line-through; }
+.rwa2-chip:hover {
+  border-color: var(--rwa2-brand-border);
+  color: var(--rwa2-brand);
+}
+.rwa2-chip-off {
+  opacity: .42;
+  text-decoration: line-through;
+}
 
-.rwa2-context-modifiers { display: flex; flex-direction: column; gap: 9px; }
 .rwa2-length-row {
-  display: grid;
-  grid-template-columns: 30px auto minmax(48px, 1fr) 38px;
-  align-items: center;
-  gap: 6px;
   min-width: 0;
+  min-height: 28px;
+  display: grid;
+  grid-template-columns: 30px auto minmax(42px, 1fr) 36px;
+  align-items: center;
+  gap: 5px;
 }
 .rwa2-length-row > label { min-width: 30px; }
 .rwa2-control-label {
   color: var(--rwa2-muted);
-  font-size: 9.25px;
+  font-size: 10px;
   line-height: 1;
-  font-weight: 700;
+  font-weight: 680;
   white-space: nowrap;
 }
 .rwa2-length-value {
-  min-width: 38px;
-  color: var(--rwa2-brand);
-  font-size: 9.5px;
-  font-weight: 700;
+  min-width: 36px;
+  color: var(--rwa2-text-2);
+  font-size: 10px;
+  font-weight: 680;
   text-align: right;
 }
 .rwa2-range {
@@ -214,14 +263,15 @@ export const RWA_POPUP_CONTEXT_CSS = `
 }
 .rwa2-range:disabled { cursor: not-allowed; }
 .rwa2-depth-row {
+  min-width: 0;
+  min-height: 28px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 52px;
   align-items: center;
   gap: 8px;
-  min-width: 0;
-  margin-top: auto;
-  padding-top: 8px;
-  border-top: 1px solid rgba(255,255,255,.05);
+  margin-top: 0;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255,255,255,.045);
 }
 .rwa2-depth-input {
   width: 52px;
@@ -232,7 +282,7 @@ export const RWA_POPUP_CONTEXT_CSS = `
   border: 1px solid var(--rwa2-border);
   border-radius: 7px;
   outline: none;
-  background: rgba(0,0,0,.18);
+  background: rgba(0,0,0,.16);
   color: var(--rwa2-text);
   font: 650 10px/1 system-ui, sans-serif;
   text-align: center;

@@ -5,27 +5,7 @@ import {
 } from './popupGeometry';
 
 export const RWA_POPUP_RESPONSIVE_CSS = `
-/* D.1 density calibration inside the authoritative popup style family. */
-.rwa2-popup {
-  gap: 6px;
-  padding-top: 7px;
-  padding-bottom: 8px;
-}
-.rwa2-toolbar { min-height: 32px; }
-.rwa2-section-head { min-height: 24px; padding-bottom: 5px; }
-.rwa2-profile-grid { gap: 5px; }
 .rwa2-cols-4 { grid-template-columns: repeat(4, minmax(${POPUP_NORMAL_MIN_CELL}px, 1fr)); }
-.rwa2-popup .rwa2-profile-btn { min-height: 30px !important; height: 30px !important; }
-.rwa2-actionbar { min-height: 34px; }
-.rwa2-popup .rwa2-action { min-height: 34px !important; height: 34px !important; }
-.rwa2-context-region { padding: 7px 8px; }
-.rwa2-context-rail { min-height: 88px; }
-.rwa2-free-note { display: none; }
-.rwa2-free-mode-row { grid-template-columns: 1fr; margin-top: 6px; padding-bottom: 4px; }
-.rwa2-source-grid { margin-top: 3px; }
-.rwa2-one-shot { margin-top: 4px; padding-top: 4px; }
-.rwa2-context-modifiers { gap: 7px; }
-.rwa2-depth-row { padding-top: 6px; }
 
 @media (max-width: ${POPUP_NORMAL_BREAKPOINTS.fourToThree - 1}px) {
   .rwa2-profile-grid:not(.rwa2-profile-grid-compact).rwa2-cols-4 {
@@ -71,32 +51,66 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 }
 
 @media (max-width: 559px) {
-  .rwa2-context-identity { grid-column: 1 / -1; }
-  .rwa2-context-sources { grid-column: span 8; border-left: 0; border-top: 1px solid rgba(255,255,255,.055); }
-  .rwa2-context-modifiers { grid-column: span 4; border-top: 1px solid rgba(255,255,255,.055); }
-  .rwa2-undo { grid-column: 1 / span 2; }
-  .rwa2-redo { grid-column: 3 / span 2; }
-  .rwa2-custom { grid-column: 5 / span 4; }
-  .rwa2-settings { grid-column: 9 / span 4; }
+  .rwa2-context-sources { grid-column: span 7; }
+  .rwa2-context-modifiers { grid-column: span 5; }
+  .rwa2-source-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 8px;
+  }
+}
+
+@media (max-width: 459px) {
+  .rwa2-context-identity {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .rwa2-context-sources,
+  .rwa2-context-modifiers {
+    grid-column: 1 / -1;
+  }
+  .rwa2-context-sources { border-right: 0; }
+  .rwa2-context-modifiers {
+    border-top: 1px solid rgba(255,255,255,.055);
+  }
 }
 
 @media (max-width: 419px) {
-  .rwa2-popup { width: calc(100vw - 12px); min-width: calc(100vw - 12px); max-width: calc(100vw - 12px); padding-left: 10px; padding-right: 10px; }
-  .rwa2-context-identity,
-  .rwa2-context-sources,
-  .rwa2-context-modifiers { grid-column: 1 / -1; border-left: 0; }
-  .rwa2-context-sources,
-  .rwa2-context-modifiers { border-top: 1px solid rgba(255,255,255,.055); }
-  .rwa2-target-chip { max-width: 128px; }
-  .rwa2-actionbar { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
-  .rwa2-undo { grid-column: 1; }
-  .rwa2-redo { grid-column: 2; }
-  .rwa2-custom { grid-column: 1 / span 2; grid-row: 2; }
-  .rwa2-settings { grid-column: 3 / span 2; grid-row: 2; }
+  .rwa2-popup {
+    width: calc(100vw - 12px);
+    min-width: calc(100vw - 12px);
+    max-width: calc(100vw - 12px);
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .rwa2-context-identity {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+  .rwa2-token-status {
+    justify-self: stretch;
+    min-width: 0;
+    max-width: none;
+  }
+  .rwa2-target-chip { max-width: 150px; }
+  .rwa2-actionbar {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .rwa2-popup .rwa2-custom {
+    flex: 1 1 150px;
+    width: auto !important;
+    margin-left: 0 !important;
+  }
+  .rwa2-popup .rwa2-settings {
+    flex: 0 1 96px;
+    width: auto !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .rwa2-popup *,
-  .rwa2-tooltip { transition: none !important; animation: none !important; }
+  .rwa2-tooltip {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 `;

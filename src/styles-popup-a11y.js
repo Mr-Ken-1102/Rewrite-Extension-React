@@ -1,13 +1,11 @@
 export const RWA_POPUP_A11Y_CSS = `
-/* Phase D.1: readability and keyboard-focus contract.
-   Loaded after popup layout/context so these cross-cutting rules are authoritative. */
+/* Readability, target-size and keyboard-focus contract.
+   Loaded after popup layout/context so these cross-cutting rules stay authoritative. */
 
 .rwa2-version,
-.rwa2-kicker,
 .rwa2-region-label,
 .rwa2-section-meta,
 .rwa2-target-chip,
-.rwa2-free-note,
 .rwa2-one-shot-label,
 .rwa2-chip,
 .rwa2-control-label,
@@ -20,16 +18,12 @@ export const RWA_POPUP_A11Y_CSS = `
 }
 
 .rwa2-token-status {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.2;
 }
 
-.rwa2-free-note {
-  line-height: 1.3;
-}
-
 .rwa2-chip {
-  min-height: 22px;
+  min-height: 24px;
   padding: 0 7px;
 }
 

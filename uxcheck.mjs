@@ -160,7 +160,7 @@ ok('profile columns are configurable beyond two on the wide popup', () => {
   assert.doesNotMatch(settings, /Math\.min\(config\.cols \|\| 2, 2\)/);
 });
 
-ok('popup geometry is delegated to the calibrated 640px isolated visual contract', () => {
+ok('popup geometry is delegated to the rebalanced 620px isolated visual contract', () => {
   const popup = read('./src/components/PopupMain.jsx');
   const position = read('./src/hooks/usePopupPosition.js');
   const geometry = read('./src/popupGeometry.js');
@@ -168,7 +168,7 @@ ok('popup geometry is delegated to the calibrated 640px isolated visual contract
   assert.match(popup, /className="rwa2-popup"/);
   assert.match(popup, /rwa2-workbench/);
   assert.match(position, /POPUP_DESKTOP_WIDTH/);
-  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 640/);
+  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 620/);
   assert.match(geometry, /POPUP_GRID_COLUMNS = 12/);
   assert.match(css, /POPUP_DESKTOP_WIDTH/);
 });

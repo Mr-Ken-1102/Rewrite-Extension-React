@@ -1,20 +1,20 @@
-export const POPUP_DESKTOP_WIDTH = 640;
+export const POPUP_DESKTOP_WIDTH = 620;
 export const POPUP_VIEWPORT_GUTTER = 8;
 export const POPUP_OUTER_PADDING_X = 10;
 export const POPUP_GRID_COLUMNS = 12;
-export const POPUP_GRID_GAP = 8;
+export const POPUP_GRID_GAP = 6;
 export const POPUP_NORMAL_MIN_CELL = 140;
 export const POPUP_COMPACT_MIN_CELL = 100;
 export const POPUP_PROFILE_ROW_HEIGHT = 30;
 export const POPUP_COMPACT_ROW_HEIGHT = 27;
 export const POPUP_PROFILE_ROW_GAP = 5;
-export const POPUP_FIXED_HEIGHT = 220;
+export const POPUP_FIXED_HEIGHT = 240;
 export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
 
 export const POPUP_NORMAL_BREAKPOINTS = Object.freeze({
-  fourToThree: 620,
-  threeToTwo: 458,
-  twoToOne: 310,
+  fourToThree: 598,
+  threeToTwo: 452,
+  twoToOne: 306,
 });
 
 export const POPUP_COMPACT_BREAKPOINTS = Object.freeze({
