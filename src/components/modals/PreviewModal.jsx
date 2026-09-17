@@ -102,94 +102,104 @@ export const PreviewModal = ({
     }
   };
 
-  const handleGlowMouseMove = (event) => {
-    const target = event.target.closest('.rwa-glow-button');
-    if (!target) return;
-    const rect = target.getBoundingClientRect();
-    target.style.setProperty('--x', `${event.clientX - rect.left}px`);
-    target.style.setProperty('--y', `${event.clientY - rect.top}px`);
-  };
-
   return (
-    <div onMouseMove={handleGlowMouseMove}>
-      <Modal
-        title={isLoading ? `${profile?.name} — Processing…` : (isApplying ? `${profile?.name || 'Result'} — Applying…` : `${profile?.name || 'Result'} — Result`)}
-        onClose={isApplying ? () => {} : onClose}
-        width="620px"
-      >
-        {isLoading ? (
-          <>
-            {progress ? <div className="rwa-prev" style={{ fontSize: '11px', marginBottom: '10px' }}>{progress}</div> : null}
-            <div className="rwa-plbl">Selected Passage</div>
-            <div className="rwa-prev rwa-shimmer" style={{ marginBottom: '14px', maxHeight: '250px' }}>{selection?.text}</div>
-            <div style={{ padding: '8px 0 12px' }}>
-              <div className="rwa-pulse" />
-              <div style={{ fontSize: '10.5px', fontWeight: 900, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginTop: '10px', textAlign: 'center' }}>Writing with Intelligence...</div>
+    <Modal
+      title={isLoading ? `${profile?.name} — Processing…` : (isApplying ? `${profile?.name || 'Result'} — Applying…` : `${profile?.name || 'Result'} — Result`)}
+      onClose={isApplying ? () => {} : onClose}
+      width="600px"
+      className="rwar-window"
+      bodyClassName="rwar-body"
+    >
+      {isLoading ? (
+        <div className="rwar-loading">
+          {progress ? <div className="rwa-prev rwar-progress">{progress}</div> : null}
+          <section className="rwar-section">
+            <div className="rwa-plbl rwar-label">Selected Passage</div>
+            <div className="rwa-prev rwa-shimmer rwar-selected">{selection?.text}</div>
+          </section>
+          <div className="rwar-writing" aria-live="polite">
+            <div className="rwa-pulse" />
+            <div className="rwar-writing-copy">Writing with Intelligence…</div>
+          </div>
+          <div className="rwar-loading-actions">
+            <Button glow={false} onClick={onClose}>Cancel</Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {progress ? <div className="rwa-prev rwar-progress rwar-progress-active">{progress}</div> : null}
+          {applyReport ? <div role="status" className="rwa-prev rwar-apply-report">{applyReport}</div> : null}
+
+          <section className="rwar-section">
+            <div className="rwa-plbl rwar-label">Original Text</div>
+            <div className="rwa-prev rwar-original">{selection?.text || ''}</div>
+          </section>
+
+          {isMerged ? (
+            <section className="rwar-section">
+              <div className="rwa-plbl rwar-label">Validated merged result — split by message</div>
+              <div className="rwa-prev rwar-merged">
+                {pieces.map((piece, index) => (
+                  <div key={index} className="rwar-message-piece">
+                    <div className="rwa-plbl rwar-message-label">Message {index + 1}</div>
+                    <div className="rwar-message-text">{piece}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : (
+            <section className="rwar-section">
+              <div className="rwar-section-head">
+                <div className="rwa-plbl rwar-label">{config.showDiff ? 'Diff Breakdown' : 'Result Preview'}</div>
+                <div className="rwar-word-delta">{getWcDiff()}</div>
+              </div>
+              {config.showDiff ? <div className="rwar-diff-legend"><span className="rwar-added">Added</span><span className="rwar-removed">Removed</span></div> : null}
+              <div className="rwa-prev rwar-result-preview">
+                {config.showDiff ? (
+                  diffOps ? diffOps.map((op, idx) => {
+                    if (op.t === 'eq') return <Fragment key={idx}>{op.v}</Fragment>;
+                    return <span key={idx} className={op.t === 'ins' ? 'rwar-diff-add' : 'rwar-diff-remove'}>{op.v}</span>;
+                  }) : <div className="rwar-diff-loading"><div className="rwa-pulse" /><span>Computing diff…</span></div>
+                ) : (config.typewriter ? typewriterText : result)}
+              </div>
+            </section>
+          )}
+
+          <section className="rwar-section rwar-raw-section">
+            <div className="rwar-section-head">
+              <div className="rwa-plbl rwar-label">Raw result</div>
+              <div className="rwar-recovery-note">Selectable recovery copy</div>
             </div>
-            <div className="rwa-foot"><Button className="rwa-glow-button" onClick={onClose} style={{ flex: 1 }}>Cancel</Button></div>
-          </>
-        ) : (
-          <>
-            {progress ? <div className="rwa-prev" style={{ fontSize: '11px', marginBottom: '10px', color: 'var(--rwa-primary)' }}>{progress}</div> : null}
-            {applyReport ? <div role="status" className="rwa-prev" style={{ fontSize: '11px', marginBottom: '10px', borderColor: 'rgba(255,190,80,.4)' }}>{applyReport}</div> : null}
-            <div className="rwa-plbl">Original Text</div>
-            <div className="rwa-prev" style={{ maxHeight: '140px', opacity: '.65', marginBottom: '12px', resize: 'vertical' }}>{selection?.text || ''}</div>
-
-            {isMerged ? (
-              <>
-                <div className="rwa-plbl">Validated merged result — split by message</div>
-                <div className="rwa-prev" style={{ maxHeight: '300px', marginBottom: '8px', resize: 'vertical' }}>
-                  {pieces.map((piece, index) => (
-                    <div key={index} style={{ marginTop: index ? '12px' : 0 }}>
-                      <div className="rwa-plbl">Message {index + 1}</div>
-                      <div style={{ whiteSpace: 'pre-wrap', fontSize: '12px', lineHeight: 1.55 }}>{piece}</div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="rwa-plbl">{config.showDiff ? 'Diff Breakdown (green: added / red: removed)' : 'Result Preview'}</div>
-                <div className="rwa-prev" style={{ maxHeight: '250px', marginBottom: '4px', resize: 'vertical' }}>
-                  {config.showDiff ? (
-                    diffOps ? diffOps.map((op, idx) => {
-                      if (op.t === 'eq') return <Fragment key={idx}>{op.v}</Fragment>;
-                      return <span key={idx} style={{ color: op.t === 'ins' ? 'var(--rwa-accent)' : 'var(--rwa-coral)', fontWeight: op.t === 'ins' ? 700 : 'normal', textDecoration: op.t === 'ins' ? 'none' : 'line-through', opacity: op.t === 'ins' ? 1 : .65 }}>{op.v}</span>;
-                    }) : <><div className="rwa-pulse" /><div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--rwa-primary)', textAlign: 'center', marginTop: '10px' }}>Computing diff…</div></>
-                  ) : (config.typewriter ? typewriterText : result)}
-                </div>
-                <div className="rwa-wc">{getWcDiff()}</div>
-              </>
-            )}
-
-            <div className="rwa-plbl" style={{ marginTop: '10px' }}>Raw result — always selectable for manual recovery</div>
             <textarea
-              className="rwa-inp"
+              className="rwa-inp rwar-raw"
               readOnly
               value={result || ''}
               aria-label="Raw rewrite result"
               onFocus={(event) => event.currentTarget.select()}
-              style={{ minHeight: result?.length > 12000 ? '220px' : '120px', maxHeight: '320px', resize: 'vertical', whiteSpace: 'pre-wrap', fontFamily: 'inherit', fontSize: '12px' }}
             />
+          </section>
 
-            <div className="rwa-foot" style={{ alignItems: 'center', flexWrap: 'wrap' }}>
-              <Button className="rwa-glow-button" variant="rwa-accept" onClick={() => onAccept?.(result, selection)} disabled={isApplying} style={{ flex: 1.4, minWidth: '110px' }}>
+          <div className="rwar-actions">
+            <div className="rwar-actions-primary">
+              <Button glow={false} variant="rwa-accept" onClick={() => onAccept?.(result, selection)} disabled={isApplying} className="rwar-accept">
                 {isApplying ? 'Applying…' : (isMerged ? '✓ Accept All' : '✓ Accept')}
               </Button>
               {!isMerged && onManualSave ? (
-                <Button className="rwa-glow-button" onClick={() => onManualSave(result, selection)} disabled={isApplying} style={{ flex: 1.2, minWidth: '120px' }}>Open native editor</Button>
+                <Button glow={false} onClick={() => onManualSave(result, selection)} disabled={isApplying}>Open native editor</Button>
               ) : null}
               {selection?.source === 'textarea' && !isMerged ? (
-                <Button className="rwa-glow-button" variant="rwa-replace" onClick={handleReplaceAllClick} disabled={isApplying} style={{ flex: 1, minWidth: '100px' }}>Replace All</Button>
+                <Button glow={false} variant="rwa-replace" onClick={handleReplaceAllClick} disabled={isApplying}>Replace All</Button>
               ) : null}
-              <Button className="rwa-glow-button" onClick={handleCopy} disabled={isApplying || !result} style={{ flex: 0.8, minWidth: '70px' }}>Copy</Button>
-              <Button className="rwa-glow-button" onClick={handleSaveFile} disabled={isApplying || !result} style={{ flex: 0.9, minWidth: '80px' }}>Save .txt</Button>
-              <Button className="rwa-glow-button" onClick={onRetry} disabled={isApplying} style={{ flex: 0.8, minWidth: '70px' }}>Retry</Button>
-              <Button className="rwa-glow-button" onClick={onClose} disabled={isApplying} style={{ flex: 0.8, minWidth: '70px' }}>Close</Button>
             </div>
-          </>
-        )}
-      </Modal>
-    </div>
+            <div className="rwar-actions-tools">
+              <Button glow={false} onClick={handleCopy} disabled={isApplying || !result}>Copy</Button>
+              <Button glow={false} onClick={handleSaveFile} disabled={isApplying || !result}>Save .txt</Button>
+              <Button glow={false} onClick={onRetry} disabled={isApplying}>Retry</Button>
+              <Button glow={false} onClick={onClose} disabled={isApplying}>Close</Button>
+            </div>
+          </div>
+        </>
+      )}
+    </Modal>
   );
 };
