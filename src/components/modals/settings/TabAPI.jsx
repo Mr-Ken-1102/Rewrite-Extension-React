@@ -8,15 +8,16 @@ import { DOMUtils } from '../../../utils/domUtils';
 import { Button } from '../../ui/Button';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
 
+const t = (language, en, vi) => (language === 'vi' ? vi : en);
 const connectionLabel = (connection) => connection?.name || connection?.label || connection?.provider || connection?.id || 'Unknown connection';
 
-const PresetItem = ({ name, url, updateConfig, showToast }) => (
+const PresetItem = ({ name, url, updateConfig, showToast, language }) => (
   <button
     type="button"
     className="rwa-inp rwa-api-preset"
     onClick={() => {
       updateConfig({ ollamaUrl: url, connMode: 'direct' });
-      showToast(`✓ Preset applied: ${name}`, 'ok');
+      showToast(t(language, `✓ Preset applied: ${name}`, `✓ Đã áp dụng preset: ${name}`), 'ok');
     }}
   >
     <strong>{name}</strong>
@@ -24,23 +25,36 @@ const PresetItem = ({ name, url, updateConfig, showToast }) => (
   </button>
 );
 
-function lanDiagnosticMessage(result) {
+function lanDiagnosticMessage(result, language) {
   if (!result) return '';
-  if (result.ok) return result.message || 'LAN provider is reachable.';
+  if (result.ok) return result.message || t(language, 'LAN provider is reachable.', 'Có thể kết nối tới provider trong LAN.');
   if (result.issue === 'permission') {
-    return 'Browser Local Network Access is denied for this Marinara site. Allow local-network access in the browser site permissions, then retry.';
+    return t(
+      language,
+      'Browser Local Network Access is denied for this Marinara site. Allow local-network access in the browser site permissions, then retry.',
+      'Trình duyệt đang chặn quyền truy cập mạng cục bộ cho trang Marinara này. Hãy cho phép Local Network trong quyền của trang rồi thử lại.',
+    );
   }
   if (result.issue === 'cors') {
-    return 'The laptop is reachable, but readable browser access is blocked. Add this Marinara origin to OLLAMA_ORIGINS, fully restart Ollama, then retry.';
+    return t(
+      language,
+      'The laptop is reachable, but readable browser access is blocked. Add this Marinara origin to OLLAMA_ORIGINS, fully restart Ollama, then retry.',
+      'Có thể kết nối tới laptop nhưng trình duyệt không được phép đọc phản hồi. Hãy thêm origin Marinara này vào OLLAMA_ORIGINS, khởi động lại hoàn toàn Ollama rồi thử lại.',
+    );
   }
   if (result.issue === 'transport') {
-    return 'The 3080 machine cannot reach Ollama on the laptop. Make Ollama listen on 0.0.0.0:11434 and allow inbound TCP 11434 from the local subnet in the laptop firewall.';
+    return t(
+      language,
+      'The 3080 machine cannot reach Ollama on the laptop. Make Ollama listen on 0.0.0.0:11434 and allow inbound TCP 11434 from the local subnet in the laptop firewall.',
+      'Máy 3080 không thể kết nối tới Ollama trên laptop. Hãy cho Ollama lắng nghe tại 0.0.0.0:11434 và mở inbound TCP 11434 cho mạng nội bộ trên firewall của laptop.',
+    );
   }
-  return result.message || 'LAN diagnosis could not determine the failure.';
+  return result.message || t(language, 'LAN diagnosis could not determine the failure.', 'Chẩn đoán LAN chưa xác định được nguyên nhân lỗi.');
 }
 
 export const TabAPI = () => {
   const { config, updateConfig } = usePersistentStore();
+  const language = config.uiLanguage === 'vi' ? 'vi' : 'en';
   const showToast = useToastStore((state) => state.showToast);
   const [connections, setConnections] = useState([]);
   const [chatInfo, setChatInfo] = useState(null);
@@ -95,7 +109,7 @@ export const TabAPI = () => {
     () => config.connMode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl),
     [config.connMode, config.ollamaUrl],
   );
-  const browserOrigin = globalThis.location?.origin || 'Unavailable in this host';
+  const browserOrigin = globalThis.location?.origin || t(language, 'Unavailable in this host', 'Không xác định trong host này');
 
   const directUrlAdvisory = useMemo(() => {
     if (config.connMode !== 'direct' || !config.ollamaUrl) return '';
@@ -104,15 +118,23 @@ export const TabAPI = () => {
       const host = url.hostname.toLowerCase();
       const loopback = host === 'localhost' || host === '127.0.0.1' || host === '::1';
       const localNetwork = isLikelyLocalNetworkUrl(config.ollamaUrl) && !loopback;
-      if (url.username || url.password) return 'Do not put API credentials in the URL. Use a Marinara connection for credentialed remote providers.';
-      if (localNetwork) return 'LAN Direct API: the browser needs local-network permission, the laptop must expose Ollama to the LAN, and Ollama CORS must allow this Marinara origin.';
-      if (!loopback && url.protocol !== 'https:') return 'Remote Direct API is using unencrypted HTTP. Use HTTPS for non-LAN remote servers.';
-      if (!loopback) return 'Remote Direct API: selected text and any context you explicitly enable will leave this browser session.';
+      if (url.username || url.password) {
+        return t(language, 'Do not put API credentials in the URL. Use a Marinara connection for credentialed remote providers.', 'Không đặt thông tin xác thực API trong URL. Hãy dùng kết nối Marinara cho provider từ xa có xác thực.');
+      }
+      if (localNetwork) {
+        return t(language, 'LAN Direct API: the browser needs local-network permission, the laptop must expose Ollama to the LAN, and Ollama CORS must allow this Marinara origin.', 'Direct API qua LAN: trình duyệt cần quyền Local Network, laptop phải mở Ollama ra LAN và CORS của Ollama phải cho phép origin Marinara này.');
+      }
+      if (!loopback && url.protocol !== 'https:') {
+        return t(language, 'Remote Direct API is using unencrypted HTTP. Use HTTPS for non-LAN remote servers.', 'Direct API từ xa đang dùng HTTP không mã hóa. Hãy dùng HTTPS cho máy chủ từ xa ngoài LAN.');
+      }
+      if (!loopback) {
+        return t(language, 'Remote Direct API: selected text and any context you explicitly enable will leave this browser session.', 'Direct API từ xa: văn bản đã chọn và ngữ cảnh bạn bật sẽ được gửi ra ngoài phiên trình duyệt này.');
+      }
       return '';
     } catch {
-      return 'The Direct API URL is not valid yet.';
+      return t(language, 'The Direct API URL is not valid yet.', 'URL Direct API chưa hợp lệ.');
     }
-  }, [config.connMode, config.ollamaUrl]);
+  }, [config.connMode, config.ollamaUrl, language]);
 
   const handleTest = async () => {
     actionControllerRef.current?.abort();
@@ -131,15 +153,19 @@ export const TabAPI = () => {
       );
       if (controller.signal.aborted) return;
       if (response?.aborted) {
-        showToast('⚠️ The provider aborted the connection test before completion.', 'warn');
+        showToast(t(language, '⚠️ The provider aborted the connection test before completion.', '⚠️ Provider đã hủy bài kiểm tra kết nối trước khi hoàn tất.'), 'warn');
         return;
       }
       if (response?.error) throw new Error(response.error);
       const suffix = config.connMode === 'marinara' && effectiveConnection ? ` via ${connectionLabel(effectiveConnection)}` : '';
-      showToast(`✓ Connected${suffix}${response?.result ? `: ${String(response.result).slice(0, 40)}` : ''}`, 'ok');
+      showToast(t(
+        language,
+        `✓ Connected${suffix}${response?.result ? `: ${String(response.result).slice(0, 40)}` : ''}`,
+        `✓ Đã kết nối${suffix}${response?.result ? `: ${String(response.result).slice(0, 40)}` : ''}`,
+      ), 'ok');
     } catch (err) {
       if (!controller.signal.aborted && !MarinaraHost.isAbortError(err)) {
-        showToast(`✕ Connection failed: ${err?.message || String(err)}`, 'err');
+        showToast(t(language, `✕ Connection failed: ${err?.message || String(err)}`, `✕ Kết nối thất bại: ${err?.message || String(err)}`), 'err');
       }
     } finally {
       if (actionControllerRef.current === controller) {
@@ -151,7 +177,7 @@ export const TabAPI = () => {
 
   const handleDiscover = async () => {
     if (config.connMode !== 'direct') {
-      showToast('Model discovery is only needed for Direct API mode.', 'warn');
+      showToast(t(language, 'Model discovery is only needed for Direct API mode.', 'Chỉ cần tìm model khi dùng chế độ Direct API.'), 'warn');
       return;
     }
     actionControllerRef.current?.abort();
@@ -169,7 +195,7 @@ export const TabAPI = () => {
       return;
     }
     setModels(result.models || []);
-    showToast(`✓ Found ${result.models?.length || 0} model(s)`, 'ok');
+    showToast(t(language, `✓ Found ${result.models?.length || 0} model(s)`, `✓ Tìm thấy ${result.models?.length || 0} model`), 'ok');
   };
 
   const handleLanDiagnose = async () => {
@@ -183,12 +209,13 @@ export const TabAPI = () => {
       if (controller.signal.aborted) return;
       setLanDiagnostic(result);
       if (result.ok && result.models?.length) setModels(result.models);
-      showToast(result.ok ? `✓ ${lanDiagnosticMessage(result)}` : `✕ ${lanDiagnosticMessage(result)}`, result.ok ? 'ok' : 'warn');
+      const message = lanDiagnosticMessage(result, language);
+      showToast(`${result.ok ? '✓' : '✕'} ${message}`, result.ok ? 'ok' : 'warn');
     } catch (err) {
       if (!controller.signal.aborted && !MarinaraHost.isAbortError(err)) {
         const result = { ok: false, issue: 'transport', message: err?.message || String(err) };
         setLanDiagnostic(result);
-        showToast(`✕ ${lanDiagnosticMessage(result)}`, 'err');
+        showToast(`✕ ${lanDiagnosticMessage(result, language)}`, 'err');
       }
     } finally {
       if (actionControllerRef.current === controller) {
@@ -200,13 +227,13 @@ export const TabAPI = () => {
 
   return (
     <>
-      <div className="rwa-lbl rwa-settings-section-title">MODEL SOURCE</div>
+      <div className="rwa-lbl rwa-settings-section-title">{t(language, 'MODEL SOURCE', 'NGUỒN MODEL')}</div>
 
       <div className="rwa-form-row">
-        <span>Connection mode</span>
+        <span>{t(language, 'Connection mode', 'Chế độ kết nối')}</span>
         <select className="rwa-inp" value={config.connMode || 'marinara'} onChange={(event) => updateConfig({ connMode: event.target.value })}>
-          <option value="marinara">Marinara connection (recommended)</option>
-          <option value="sidecar">Marinara local sidecar model</option>
+          <option value="marinara">{t(language, 'Marinara connection (recommended)', 'Kết nối Marinara (khuyến nghị)')}</option>
+          <option value="sidecar">{t(language, 'Marinara local sidecar model', 'Model Sidecar cục bộ của Marinara')}</option>
           <option value="direct">Direct OpenAI-compatible API</option>
           <option value="extender">Marinara Extender</option>
         </select>
@@ -217,31 +244,41 @@ export const TabAPI = () => {
           <div className={`rwa-connection-card ${chatConnectionId && !currentChatConnection ? 'rwa-connection-card-error' : ''}`}>
             <div className="rwa-connection-card-head">
               <div>
-                <div className="rwa-connection-eyebrow">CURRENT CHAT CONNECTION</div>
+                <div className="rwa-connection-eyebrow">{t(language, 'CURRENT CHAT CONNECTION', 'KẾT NỐI CỦA CHAT HIỆN TẠI')}</div>
                 <div className="rwa-connection-name">
                   {currentChatConnection
                     ? connectionLabel(currentChatConnection)
-                    : (chatConnectionId ? 'Connection unavailable' : 'No connection selected on this chat')}
+                    : (chatConnectionId
+                      ? t(language, 'Connection unavailable', 'Kết nối không khả dụng')
+                      : t(language, 'No connection selected on this chat', 'Chat này chưa chọn kết nối'))}
                 </div>
               </div>
-              <Button glow={false} onClick={() => setRefreshSeq((value) => value + 1)} disabled={busy} className="rwa-connection-refresh">Refresh</Button>
+              <Button glow={false} onClick={() => setRefreshSeq((value) => value + 1)} disabled={busy} className="rwa-connection-refresh">
+                {t(language, 'Refresh', 'Làm mới')}
+              </Button>
             </div>
             <div className="rwa-connection-note">
               {connectionLoadError
-                ? `Could not read Marinara connection state: ${connectionLoadError}`
+                ? t(language, `Could not read Marinara connection state: ${connectionLoadError}`, `Không thể đọc trạng thái kết nối Marinara: ${connectionLoadError}`)
                 : currentChatConnection
-                  ? `Rewrite Assistant follows this chat automatically. No separate model selection is required.${chatInfo?.name ? ` Chat: ${chatInfo.name}.` : ''}`
+                  ? t(
+                    language,
+                    `Rewrite Assistant follows this chat automatically. No separate model selection is required.${chatInfo?.name ? ` Chat: ${chatInfo.name}.` : ''}`,
+                    `Rewrite Assistant tự động dùng kết nối của chat này. Không cần chọn model riêng.${chatInfo?.name ? ` Chat: ${chatInfo.name}.` : ''}`,
+                  )
                   : chatConnectionId
-                    ? 'This chat points to a connection that is no longer present. Fix the chat connection in Marinara before rewriting.'
-                    : 'Choose a connection in Marinara chat settings. The fallback below is used only when the chat itself has no connection.'}
+                    ? t(language, 'This chat points to a connection that is no longer present. Fix the chat connection in Marinara before rewriting.', 'Chat này đang trỏ tới một kết nối không còn tồn tại. Hãy sửa kết nối của chat trong Marinara trước khi viết lại.')
+                    : t(language, 'Choose a connection in Marinara chat settings. The fallback below is used only when the chat itself has no connection.', 'Hãy chọn kết nối trong cài đặt chat của Marinara. Kết nối dự phòng bên dưới chỉ được dùng khi chính chat không có kết nối.')}
             </div>
           </div>
 
           {!chatConnectionId && (
             <div className="rwa-form-row rwa-form-row-compact">
-              <span>Fallback connection</span>
+              <span>{t(language, 'Fallback connection', 'Kết nối dự phòng')}</span>
               <select className="rwa-inp" value={config.connectionId || ''} onChange={(event) => updateConfig({ connectionId: event.target.value })}>
-                <option value="">{connections.length ? '— Optional fallback —' : 'No connections found'}</option>
+                <option value="">{connections.length
+                  ? t(language, '— Optional fallback —', '— Dự phòng tùy chọn —')
+                  : t(language, 'No connections found', 'Không tìm thấy kết nối')}</option>
                 {connections.map((connection) => (
                   <option key={connection.id} value={connection.id}>{connectionLabel(connection)}</option>
                 ))}
@@ -253,23 +290,23 @@ export const TabAPI = () => {
 
       {config.connMode === 'sidecar' && (
         <div className="rwa-prev rwa-api-note">
-          Uses Marinara&apos;s downloaded local model. If you never installed the local model, choose a Marinara connection instead.
+          {t(language, 'Uses Marinara\'s downloaded local model. If you never installed the local model, choose a Marinara connection instead.', 'Dùng model cục bộ đã tải của Marinara. Nếu bạn chưa cài model cục bộ, hãy chọn kết nối Marinara thay thế.')}
         </div>
       )}
 
       {config.connMode === 'extender' && (
         <>
           <div className="rwa-form-grid">
-            <span>Extender server</span>
+            <span>{t(language, 'Extender server', 'Máy chủ Extender')}</span>
             <input type="text" className="rwa-inp" value={config.extenderUrl || ''} onChange={(event) => updateConfig({ extenderUrl: event.target.value })} placeholder="http://127.0.0.1:3001" />
-            <span>Temperature</span>
+            <span>{t(language, 'Temperature', 'Temperature')}</span>
             <input type="number" className="rwa-inp" min="0" max="2" step="0.1" value={config.directTemp ?? 0.7} onChange={(event) => {
               const value = Number(event.target.value);
               updateConfig({ directTemp: Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 0.7 });
             }} />
           </div>
           <div className="rwa-prev rwa-api-note">
-            Extender mode sends rewrite prompts to the configured Marinara Extender sidecar using its OpenAI-compatible /v1/chat/completions endpoint. The Extender chooses its own model; Rewrite Assistant stores no Extender credential.
+            {t(language, 'Extender mode sends rewrite prompts to the configured Marinara Extender sidecar using its OpenAI-compatible /v1/chat/completions endpoint. The Extender chooses its own model; Rewrite Assistant stores no Extender credential.', 'Chế độ Extender gửi prompt viết lại tới Marinara Extender sidecar qua endpoint OpenAI-compatible /v1/chat/completions. Extender tự chọn model; Rewrite Assistant không lưu thông tin xác thực Extender.')}
           </div>
         </>
       )}
@@ -279,16 +316,16 @@ export const TabAPI = () => {
           <div className="rwa-form-grid">
             <span>API base URL</span>
             <input type="text" className="rwa-inp" value={config.ollamaUrl || ''} onChange={(event) => updateConfig({ ollamaUrl: event.target.value })} placeholder="http://127.0.0.1:11434/v1" />
-            <span>Model</span>
+            <span>{t(language, 'Model', 'Model')}</span>
             {models.length ? (
               <select className="rwa-inp" value={config.ollamaModel || ''} onChange={(event) => updateConfig({ ollamaModel: event.target.value })}>
-                <option value="">— Select model —</option>
+                <option value="">{t(language, '— Select model —', '— Chọn model —')}</option>
                 {models.map((model) => <option key={model} value={model}>{model}</option>)}
               </select>
             ) : (
               <input type="text" className="rwa-inp" value={config.ollamaModel || ''} onChange={(event) => updateConfig({ ollamaModel: event.target.value })} />
             )}
-            <span>Temperature</span>
+            <span>{t(language, 'Temperature', 'Temperature')}</span>
             <input type="number" className="rwa-inp" min="0" max="2" step="0.1" value={config.directTemp ?? 0.7} onChange={(event) => {
               const value = Number(event.target.value);
               updateConfig({ directTemp: Number.isFinite(value) ? Math.max(0, Math.min(2, value)) : 0.7 });
@@ -296,28 +333,28 @@ export const TabAPI = () => {
           </div>
 
           <div className="rwa-api-preset-grid">
-            <PresetItem name="Ollama" url="http://127.0.0.1:11434/v1" updateConfig={updateConfig} showToast={showToast} />
-            <PresetItem name="LM Studio" url="http://127.0.0.1:1234/v1" updateConfig={updateConfig} showToast={showToast} />
-            <PresetItem name="llama.cpp" url="http://127.0.0.1:8080/v1" updateConfig={updateConfig} showToast={showToast} />
-            <PresetItem name="KoboldCPP" url="http://127.0.0.1:5001/v1" updateConfig={updateConfig} showToast={showToast} />
+            <PresetItem language={language} name="Ollama" url="http://127.0.0.1:11434/v1" updateConfig={updateConfig} showToast={showToast} />
+            <PresetItem language={language} name="LM Studio" url="http://127.0.0.1:1234/v1" updateConfig={updateConfig} showToast={showToast} />
+            <PresetItem language={language} name="llama.cpp" url="http://127.0.0.1:8080/v1" updateConfig={updateConfig} showToast={showToast} />
+            <PresetItem language={language} name="KoboldCPP" url="http://127.0.0.1:5001/v1" updateConfig={updateConfig} showToast={showToast} />
           </div>
 
           <Button glow={false} className="rwa-full-width" onClick={handleDiscover} disabled={busy}>
-            {busy ? 'Working…' : 'Discover models'}
+            {busy ? t(language, 'Working…', 'Đang xử lý…') : t(language, 'Discover models', 'Tìm model')}
           </Button>
 
           {directIsLan && (
             <div className="rwa-prev rwa-api-note" style={{ marginTop: '10px', borderColor: 'rgba(209,154,69,.24)' }}>
               <div className="rwa-lbl" style={{ marginBottom: '8px' }}>LAN OLLAMA SETUP</div>
               <div style={{ fontSize: '10px', lineHeight: 1.55, marginBottom: '8px' }}>
-                Direct LAN mode runs from the browser on this machine. The Ollama laptop must listen on the LAN, allow this Marinara web origin through CORS, and permit TCP 11434 through its firewall.
+                {t(language, 'Direct LAN mode runs from the browser on this machine. The Ollama laptop must listen on the LAN, allow this Marinara web origin through CORS, and permit TCP 11434 through its firewall.', 'Direct LAN chạy từ trình duyệt trên máy này. Laptop chạy Ollama phải lắng nghe trên LAN, cho phép origin web Marinara này qua CORS và mở TCP 11434 trên firewall.')}
               </div>
-              <div style={{ fontSize: '9.5px', opacity: 0.7, marginBottom: '4px' }}>Current Marinara browser origin</div>
+              <div style={{ fontSize: '9.5px', opacity: 0.7, marginBottom: '4px' }}>{t(language, 'Current Marinara browser origin', 'Origin Marinara hiện tại trong trình duyệt')}</div>
               <code style={{ display: 'block', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: '10px', marginBottom: '8px' }}>{browserOrigin}</code>
-              <div style={{ fontSize: '9.5px', opacity: 0.7, marginBottom: '4px' }}>Recommended Ollama environment on the backend laptop</div>
+              <div style={{ fontSize: '9.5px', opacity: 0.7, marginBottom: '4px' }}>{t(language, 'Recommended Ollama environment on the backend laptop', 'Biến môi trường Ollama khuyến nghị trên laptop backend')}</div>
               <code style={{ display: 'block', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontSize: '10px', lineHeight: 1.55, marginBottom: '10px' }}>{`OLLAMA_HOST=0.0.0.0:11434\nOLLAMA_ORIGINS=${browserOrigin}`}</code>
               <Button glow={false} className="rwa-full-width" onClick={handleLanDiagnose} disabled={busy}>
-                {busy ? 'Diagnosing…' : 'Diagnose LAN access'}
+                {busy ? t(language, 'Diagnosing…', 'Đang chẩn đoán…') : t(language, 'Diagnose LAN access', 'Chẩn đoán kết nối LAN')}
               </Button>
               {lanDiagnostic ? (
                 <div
@@ -331,9 +368,9 @@ export const TabAPI = () => {
                     lineHeight: 1.5,
                   }}
                 >
-                  {lanDiagnosticMessage(lanDiagnostic)}
+                  {lanDiagnosticMessage(lanDiagnostic, language)}
                   {lanDiagnostic.permission && lanDiagnostic.permission !== 'unsupported'
-                    ? ` Browser permission: ${lanDiagnostic.permission}.`
+                    ? t(language, ` Browser permission: ${lanDiagnostic.permission}.`, ` Quyền trình duyệt: ${lanDiagnostic.permission}.`)
                     : ''}
                 </div>
               ) : null}
@@ -341,34 +378,34 @@ export const TabAPI = () => {
           )}
 
           <div className="rwa-prev rwa-api-note">
-            Direct mode sends the selected text and enabled context to the URL above. Prefer loopback/local URLs for private content; use HTTPS for remote servers.
+            {t(language, 'Direct mode sends the selected text and enabled context to the URL above. Prefer loopback/local URLs for private content; use HTTPS for remote servers.', 'Direct mode gửi văn bản đã chọn và ngữ cảnh đã bật tới URL phía trên. Ưu tiên URL loopback/LAN cho nội dung riêng tư; dùng HTTPS cho máy chủ từ xa.')}
             {directUrlAdvisory ? <><br /><strong>{directUrlAdvisory}</strong></> : null}
           </div>
         </>
       )}
 
-      <div className="rwa-lbl rwa-settings-section-title">PROMPT ECONOMY</div>
+      <div className="rwa-lbl rwa-settings-section-title">{t(language, 'PROMPT ECONOMY', 'TỐI ƯU PROMPT')}</div>
       <div className="rwa-setting-toggle-row">
         <div>
-          <div>Shorter system instructions</div>
-          <small>Useful for smaller local models; output and context safety rules remain intact.</small>
+          <div>{t(language, 'Shorter system instructions', 'Rút gọn system instruction')}</div>
+          <small>{t(language, 'Useful for smaller local models; output and context safety rules remain intact.', 'Hữu ích với model cục bộ nhỏ; các quy tắc an toàn cho output và ngữ cảnh vẫn được giữ nguyên.')}</small>
         </div>
         <ToggleSwitch checked={config.conciseSysPrompt} onChange={(value) => updateConfig({ conciseSysPrompt: value })} />
       </div>
 
-      <div className="rwa-lbl rwa-settings-section-title">REQUEST SAFETY</div>
+      <div className="rwa-lbl rwa-settings-section-title">{t(language, 'REQUEST SAFETY', 'AN TOÀN REQUEST')}</div>
       <div className="rwa-form-grid">
-        <span>Timeout (ms)</span>
+        <span>{t(language, 'Timeout (ms)', 'Timeout (ms)')}</span>
         <input type="number" className="rwa-inp" min="5000" max="180000" step="1000" value={config.requestTimeoutMs || 45000} onChange={(event) => updateConfig({ requestTimeoutMs: Math.max(5000, Math.min(180000, Number(event.target.value) || 45000)) })} />
-        <span>Prompt budget (chars)</span>
+        <span>{t(language, 'Prompt budget (chars)', 'Giới hạn prompt (ký tự)')}</span>
         <input type="number" className="rwa-inp" min="8000" max="120000" step="1000" value={config.maxPromptChars || 32000} onChange={(event) => updateConfig({ maxPromptChars: Math.max(8000, Math.min(120000, Number(event.target.value) || 32000)) })} />
       </div>
       {config.connMode === 'marinara' && (
-        <div className="rwa-request-note">Marinara /generate/raw uses at least a 90-second safety window for cold local models; this field can extend it further.</div>
+        <div className="rwa-request-note">{t(language, 'Marinara /generate/raw uses at least a 90-second safety window for cold local models; this field can extend it further.', 'Marinara /generate/raw dùng tối thiểu 90 giây cho model cục bộ đang nguội; trường này có thể kéo dài thêm thời gian chờ.')}</div>
       )}
 
       <Button glow={false} className="rwa-full-width" variant="rwa-accept" onClick={handleTest} disabled={busy}>
-        {busy ? 'Testing…' : '⚡ Test effective connection'}
+        {busy ? t(language, 'Testing…', 'Đang kiểm tra…') : t(language, '⚡ Test effective connection', '⚡ Kiểm tra kết nối hiện dùng')}
       </Button>
     </>
   );
