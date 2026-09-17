@@ -1,8 +1,10 @@
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 
 const CONTEXT_MODE_HELP = 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.';
+const CONTEXT_MODE_HELP_VI = 'Tắt Chế độ tự do: phù hợp với POV nhân vật, hội thoại trực tiếp hoặc nội tâm.\nBật Chế độ tự do: phù hợp với cảnh miêu tả, hành động chung hoặc bối cảnh thời gian/không gian.';
 
 export function ContextPanel({
+  language = 'en',
   config,
   updateConfig,
   keepFocus,
@@ -15,6 +17,9 @@ export function ContextPanel({
   onTooltip,
   onTooltipLeave,
 }) {
+  const vi = language === 'vi';
+  const text = (en, viText) => (vi ? viText : en);
+  const contextHelp = vi ? CONTEXT_MODE_HELP_VI : CONTEXT_MODE_HELP;
   const displayRadarText = String(radarText || '').replace(/^[^A-Za-z0-9]+/, '');
   const tokenBreakdown = tokenInfo.parts
     ? Object.entries(tokenInfo.parts)
@@ -24,33 +29,33 @@ export function ContextPanel({
     : '';
   const tokenTitle = tokenInfo.error
     || [
-      'Estimated prompt size; not a provider billing/tokenizer count.',
+      text('Estimated prompt size; not a provider billing/tokenizer count.', 'Ước lượng kích thước prompt; không phải số token tính phí hoặc tokenizer chính xác của provider.'),
       tokenBreakdown,
     ].filter(Boolean).join(' ');
   const tokenLabel = tokenInfo.loading
-    ? 'Selection + context ≈ calculating…'
+    ? text('Selection + context ≈ calculating…', 'Vùng chọn + ngữ cảnh ≈ đang tính…')
     : tokenInfo.parts
-      ? `Selection + context ≈ ${tokenInfo.parts.total.toLocaleString()} tok`
-      : 'Selection + context ≈ — tok';
+      ? text(`Selection + context ≈ ${tokenInfo.parts.total.toLocaleString()} tok`, `Vùng chọn + ngữ cảnh ≈ ${tokenInfo.parts.total.toLocaleString()} tok`)
+      : text('Selection + context ≈ — tok', 'Vùng chọn + ngữ cảnh ≈ — tok');
 
   return (
-    <section className="rwa2-context-rail" aria-label="Context controls">
+    <section className="rwa2-context-rail" aria-label={text('Context controls', 'Điều khiển ngữ cảnh')}>
       <div className="rwa2-context-region rwa2-context-identity">
         <div className="rwa2-region-head">
           <div className="rwa2-region-label-row">
-            <span className="rwa2-region-label">Context</span>
+            <span className="rwa2-region-label">{text('Context', 'Ngữ cảnh')}</span>
             <button
               type="button"
               className="rwa2-info"
-              onMouseEnter={(event) => onTooltip(event, CONTEXT_MODE_HELP)}
+              onMouseEnter={(event) => onTooltip(event, contextHelp)}
               onMouseLeave={onTooltipLeave}
-              onFocus={(event) => onTooltip(event, CONTEXT_MODE_HELP)}
+              onFocus={(event) => onTooltip(event, contextHelp)}
               onBlur={onTooltipLeave}
-              aria-label="Context mode help"
-              aria-description={CONTEXT_MODE_HELP}
+              aria-label={text('Context mode help', 'Trợ giúp chế độ ngữ cảnh')}
+              aria-description={contextHelp}
             >i</button>
           </div>
-          <div className="rwa2-target-chip" aria-label={`Rewrite target: ${displayRadarText}`}>
+          <div className="rwa2-target-chip" aria-label={text(`Rewrite target: ${displayRadarText}`, `Đối tượng viết lại: ${displayRadarText}`)}>
             <span className="rwa2-target-dot" style={{ backgroundColor: radarColor }}></span>
             <span>{displayRadarText}</span>
           </div>
@@ -63,28 +68,28 @@ export function ContextPanel({
       </div>
 
       <div className="rwa2-context-region rwa2-context-sources">
-        <div className="rwa2-region-label">Sources</div>
+        <div className="rwa2-region-label">{text('Sources', 'Nguồn')}</div>
         <div className="rwa2-free-mode-row">
           <ToggleSwitch
-            label="Free Mode"
+            label={text('Free Mode', 'Chế độ tự do')}
             labelStyle={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--rwa2-brand)' }}
             checked={config.freeMode}
             onChange={(value) => { updateConfig({ freeMode: value }); keepFocus(); }}
           />
-          <span className="rwa2-free-note">Ignore character, persona and lore injection</span>
+          <span className="rwa2-free-note">{text('Ignore character, persona and lore injection', 'Bỏ qua chèn character, persona và lore')}</span>
         </div>
 
-        <div className="rwa2-source-grid" role="group" aria-label="Persistent context sources">
-          <ToggleSwitch label="Character" checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
+        <div className="rwa2-source-grid" role="group" aria-label={text('Persistent context sources', 'Nguồn ngữ cảnh cố định')}>
+          <ToggleSwitch label={text('Character', 'Nhân vật')} checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
           <ToggleSwitch label="Persona" checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
           <ToggleSwitch label="Lore" checked={config.injectLorebook} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectLorebook: value }); keepFocus(); }} />
-          <ToggleSwitch label="Around" checked={config.localContextEnabled} onChange={(value) => { updateConfig({ localContextEnabled: value }); keepFocus(); }} />
+          <ToggleSwitch label={text('Around', 'Xung quanh')} checked={config.localContextEnabled} onChange={(value) => { updateConfig({ localContextEnabled: value }); keepFocus(); }} />
         </div>
 
         {contextSources.length > 0 && (
           <div className="rwa2-one-shot">
-            <span className="rwa2-one-shot-label">This rewrite:</span>
-            <div className="rwa2-one-shot-chips" role="group" aria-label="Sources for this rewrite only">
+            <span className="rwa2-one-shot-label">{text('This rewrite:', 'Lần viết lại này:')}</span>
+            <div className="rwa2-one-shot-chips" role="group" aria-label={text('Sources for this rewrite only', 'Nguồn chỉ dùng cho lần viết lại này')}>
               {contextSources.map((source) => {
                 const excluded = !!contextExclusions[source.key];
                 return (
@@ -93,7 +98,10 @@ export function ContextPanel({
                     type="button"
                     className={`rwa2-chip ${excluded ? 'rwa2-chip-off' : ''}`}
                     aria-pressed={!excluded}
-                    title={`${excluded ? 'Excluded from' : 'Included in'} this rewrite only`}
+                    title={text(
+                      `${excluded ? 'Excluded from' : 'Included in'} this rewrite only`,
+                      `${excluded ? 'Đã loại khỏi' : 'Đã включено trong'} lần viết lại này`,
+                    )}
                     onClick={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
@@ -110,18 +118,18 @@ export function ContextPanel({
       </div>
 
       <div className="rwa2-context-region rwa2-context-modifiers">
-        <div className="rwa2-region-label">Adjust</div>
+        <div className="rwa2-region-label">{text('Adjust', 'Điều chỉnh')}</div>
 
         <div className="rwa2-length-row" style={{ opacity: config.lengthEnabled ? '1' : '0.48' }}>
           <ToggleSwitch
-            ariaLabel="Enable rewrite length adjustment"
+            ariaLabel={text('Enable rewrite length adjustment', 'Bật điều chỉnh độ dài viết lại')}
             checked={config.lengthEnabled}
             onChange={(value) => {
               updateConfig({ lengthEnabled: value, lengthPct: value ? config.lengthPct : 0 });
               keepFocus();
             }}
           />
-          <span className="rwa2-control-label">Length</span>
+          <span className="rwa2-control-label">{text('Length', 'Độ dài')}</span>
           <input
             className="rwa2-range"
             type="range"
@@ -129,7 +137,7 @@ export function ContextPanel({
             max="200"
             value={config.lengthPct || 0}
             disabled={!config.lengthEnabled}
-            aria-label="Rewrite length adjustment"
+            aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
             onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
             onMouseUp={keepFocus}
             onTouchEnd={keepFocus}
@@ -138,14 +146,14 @@ export function ContextPanel({
         </div>
 
         <label className="rwa2-depth-row">
-          <span className="rwa2-control-label">History depth</span>
+          <span className="rwa2-control-label">{text('History depth', 'Độ sâu lịch sử')}</span>
           <input
             type="number"
             className="rwa2-depth-input"
             min="0"
             max="20"
             value={config.contextDepth !== undefined ? config.contextDepth : 0}
-            aria-label="History context depth"
+            aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
             onChange={(event) => updateConfig({ contextDepth: Math.max(0, parseInt(event.target.value, 10) || 0) })}
           />
         </label>
