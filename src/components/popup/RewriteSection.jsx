@@ -3,6 +3,7 @@ import { MultiMessageNotice } from './MultiMessageNotice';
 import { ProfileGrid } from './ProfileGrid';
 
 export function RewriteSection({
+  language = 'en',
   profiles,
   colCount,
   rows,
@@ -14,15 +15,20 @@ export function RewriteSection({
   onTooltip,
   onTooltipLeave,
 }) {
+  const vi = language === 'vi';
+  const text = (en, viText) => (vi ? viText : en);
+
   return (
-    <section className="rwa2-rewrite" aria-label="Rewrite commands">
+    <section className="rwa2-rewrite" aria-label={text('Rewrite commands', 'Lệnh viết lại')}>
       <div className="rwa2-section-head">
         <div>
           <div className="rwa2-kicker">Rewrite</div>
-          <div className="rwa2-section-title">Choose a style</div>
+          <div className="rwa2-section-title">{text('Choose a style', 'Chọn kiểu viết')}</div>
         </div>
         <div className="rwa2-section-meta">
-          {profiles.length} {profiles.length === 1 ? 'style' : 'styles'} · scroll or type
+          {vi
+            ? `${profiles.length} kiểu · cuộn hoặc gõ để tìm`
+            : `${profiles.length} ${profiles.length === 1 ? 'style' : 'styles'} · scroll or type`}
         </div>
       </div>
 
@@ -46,7 +52,7 @@ export function RewriteSection({
         </Button>
       )}
 
-      <MultiMessageNotice selection={selection} mergeMultiMsg={mergeMultiMsg} />
+      <MultiMessageNotice language={language} selection={selection} mergeMultiMsg={mergeMultiMsg} />
 
       <ProfileGrid
         profiles={profiles}
