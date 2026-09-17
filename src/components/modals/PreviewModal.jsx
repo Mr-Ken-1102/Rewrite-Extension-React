@@ -165,9 +165,9 @@ export const PreviewModal = ({
             </section>
           )}
 
-          <section className="rwar-section rwar-raw-section">
+          <section className="rwar-section rwar-raw-section" aria-label="Raw result — always selectable for manual recovery">
             <div className="rwar-section-head">
-              <div className="rwa-plbl rwar-label">Raw result</div>
+              <div className="rwa-plbl rwar-label" title="Raw result — always selectable for manual recovery">Raw result</div>
               <div className="rwar-recovery-note">Selectable recovery copy</div>
             </div>
             <textarea
