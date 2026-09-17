@@ -12,6 +12,20 @@ const CONTEXT_LIMIT_PATTERNS = [
   /token\s+limit/i,
 ];
 
+const TIMEOUT_PATTERNS = [
+  /request\s+timed\s+out/i,
+  /timeout(?:error)?/i,
+  /timed\s+out\s+after/i,
+];
+
+const NETWORK_PATTERNS = [
+  /failed\s+to\s+fetch/i,
+  /networkerror/i,
+  /network\s+request\s+failed/i,
+  /load\s+failed/i,
+  /connection\s+(?:refused|reset|closed)/i,
+];
+
 function stringifyErrorLike(value) {
   if (value == null) return '';
   if (typeof value === 'string') return value;
@@ -27,16 +41,49 @@ function stringifyErrorLike(value) {
   return String(value);
 }
 
+function matchesAny(text, patterns) {
+  return !!text && patterns.some((pattern) => pattern.test(text));
+}
+
 export function isProviderContextLimitError(value) {
-  const text = stringifyErrorLike(value);
-  return !!text && CONTEXT_LIMIT_PATTERNS.some((pattern) => pattern.test(text));
+  return matchesAny(stringifyErrorLike(value), CONTEXT_LIMIT_PATTERNS);
+}
+
+export function isLikelyLocalNetworkUrl(value) {
+  let parsed;
+  try { parsed = new URL(String(value || '').trim()); } catch { return false; }
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'localhost' || host === '::1' || host.endsWith('.localhost')) return true;
+  if (/^127(?:\.\d{1,3}){3}$/.test(host)) return true;
+  if (/^10(?:\.\d{1,3}){3}$/.test(host)) return true;
+  if (/^192\.168(?:\.\d{1,3}){2}$/.test(host)) return true;
+  const match172 = host.match(/^172\.(\d{1,3})(?:\.\d{1,3}){2}$/);
+  if (match172 && Number(match172[1]) >= 16 && Number(match172[1]) <= 31) return true;
+  if (/^(?:fc|fd)[0-9a-f]{2}:/i.test(host) || /^fe80:/i.test(host)) return true;
+  return false;
 }
 
 export function normalizeProviderFailure(value, fallback = 'Provider request failed.') {
-  const raw = stringifyErrorLike(value).trim() || fallback;
+  const source = stringifyErrorLike(value).trim();
+  const raw = source || fallback;
+  const isContextLimit = matchesAny(raw, CONTEXT_LIMIT_PATTERNS);
+  const isTimeout = matchesAny(raw, TIMEOUT_PATTERNS);
+  const isNetwork = matchesAny(raw, NETWORK_PATTERNS);
+  let error = redactSecretText(raw).slice(0, 2000);
+
+  if (isNetwork && /failed\s+to\s+fetch|networkerror|network\s+request\s+failed|load\s+failed/i.test(raw)) {
+    error = 'Network request failed before the provider returned an HTTP response. For a LAN Ollama server, verify the Ollama listen address, firewall, and allowed browser origins (CORS), then retry.';
+  }
+
   return {
-    error: redactSecretText(raw).slice(0, 2000),
-    errorCode: isProviderContextLimitError(value) ? 'RWA_PROVIDER_CONTEXT_LIMIT' : null,
+    error,
+    errorCode: isContextLimit
+      ? 'RWA_PROVIDER_CONTEXT_LIMIT'
+      : isTimeout
+        ? 'RWA_PROVIDER_TIMEOUT'
+        : isNetwork
+          ? 'RWA_PROVIDER_NETWORK'
+          : null,
   };
 }
 
