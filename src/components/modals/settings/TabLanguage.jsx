@@ -24,8 +24,8 @@ export const TabLanguage = () => {
       <div className="rwa-lbl">{vi ? 'NGÔN NGỮ GIAO DIỆN' : 'INTERFACE LANGUAGE'}</div>
       <div className="rwa-prev" style={{ fontSize: '10.5px', lineHeight: 1.55, marginBottom: '14px', resize: 'none' }}>
         {vi
-          ? 'Thay đổi ngôn ngữ có hiệu lực ngay và được lưu cùng cấu hình của Rewrite Assistant. Tên style, prompt tùy chỉnh và nội dung do bạn tạo sẽ không bị dịch tự động.'
-          : 'Language changes take effect immediately and are saved with Rewrite Assistant settings. Style names, custom prompts, and user-authored content are never translated automatically.'}
+          ? 'Thay đổi ngôn ngữ có hiệu lực ngay và được lưu cùng cấu hình của Rewrite Assistant. Tên style tùy chỉnh, prompt tùy chỉnh và nội dung do bạn tạo sẽ không bị dịch tự động.'
+          : 'Language changes take effect immediately and are saved with Rewrite Assistant settings. Custom style names, custom prompts, and user-authored content are never translated automatically.'}
       </div>
 
       <fieldset style={{ border: 0, padding: 0, margin: 0 }} aria-label={vi ? 'Chọn ngôn ngữ giao diện' : 'Choose interface language'}>
@@ -72,8 +72,8 @@ export const TabLanguage = () => {
 
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginTop: '14px', marginBottom: 0, resize: 'none' }}>
         {vi
-          ? 'Ghi chú: các tên preset mặc định như Expand, Compress, Grammar Fix là dữ liệu style và được giữ nguyên để không làm thay đổi preset hoặc prompt của bạn.'
-          : 'Note: default preset names such as Expand, Compress, and Grammar Fix are style data and remain unchanged so switching UI language never mutates your presets or prompts.'}
+          ? 'Ghi chú: nhãn hiển thị của preset mặc định có thể được dịch sang tiếng Việt, nhưng ID, prompt và dữ liệu preset gốc vẫn giữ nguyên. Style do bạn tự tạo luôn giữ nguyên tên và prompt.'
+          : 'Note: built-in preset display labels may be translated for the interface, but their IDs, prompts, and stored preset data remain unchanged. User-created styles always keep their original names and prompts.'}
       </div>
     </>
   );
