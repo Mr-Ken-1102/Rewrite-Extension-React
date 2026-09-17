@@ -6,8 +6,10 @@ export const Modal = ({
   title,
   children,
   onClose,
-  width = "560px",
+  width = '560px',
   zIndex = 10002,
+  className = '',
+  bodyClassName = '',
 }) => {
   const dialogRef = useRef(null);
 
@@ -17,7 +19,7 @@ export const Modal = ({
     <div className="rwa-ov" style={{ zIndex }}>
       <div
         ref={dialogRef}
-        className="rwa-win"
+        className={`rwa-win ${className}`.trim()}
         style={{ width }}
         role="dialog"
         aria-modal="true"
@@ -29,6 +31,7 @@ export const Modal = ({
           <div className="rwa-title">{title}</div>
           {onClose && (
             <Button
+              glow={false}
               className="rwa-btn-close"
               onClick={onClose}
               aria-label="Close dialog"
@@ -37,7 +40,7 @@ export const Modal = ({
             </Button>
           )}
         </div>
-        <div className="rwa-body">
+        <div className={`rwa-body ${bodyClassName}`.trim()}>
           {children}
         </div>
       </div>
