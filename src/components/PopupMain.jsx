@@ -45,7 +45,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const tooltipRef = useRef(null);
   const language = config.uiLanguage === 'vi' ? 'vi' : 'en';
   const vi = language === 'vi';
-  const text = (en, viText) => (vi ? viText : en);
+  const text = useCallback((en, viText) => (vi ? viText : en), [vi]);
 
   const [tip, setTip] = useState({ show: false, text: '', x: 0, y: 0 });
   const [contextExclusions, setContextExclusions] = useState({});
@@ -123,7 +123,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     if (activeRole === 'user') return { radarText: text('✍️ User Persona', '✍️ Persona người dùng'), radarColor: 'var(--rwa2-positive)' };
     if (activeRole === 'assistant') return { radarText: text('🤖 Character Card', '🤖 Thẻ nhân vật'), radarColor: 'var(--rwa2-brand)' };
     return { radarText: text('❓ System Context', '❓ Ngữ cảnh hệ thống'), radarColor: 'var(--rwa2-text-2)' };
-  }, [config.freeMode, activeRole, vi]);
+  }, [config.freeMode, activeRole, text]);
 
   const contextSources = useMemo(() => {
     const sources = [];
@@ -134,7 +134,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     if (config.localContextEnabled) sources.push({ key: 'surrounding', label: text('Around', 'Xung quanh') });
     if ((config.contextDepth || 0) > 0) sources.push({ key: 'history', label: text('History', 'Lịch sử') });
     return sources;
-  }, [config.contextDepth, config.freeMode, config.injectChar, config.injectLorebook, config.injectUser, config.localContextEnabled, config.useExtenderMemory, vi]);
+  }, [config.contextDepth, config.freeMode, config.injectChar, config.injectLorebook, config.injectUser, config.localContextEnabled, config.useExtenderMemory, text]);
 
   const rewriteSelection = useCallback(() => ({
     ...selection,
@@ -178,7 +178,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     if (!rect) return;
     updateConfig({ pinnedPos: { left: Math.max(0, rect.left), top: Math.max(0, rect.top) } });
     showToast(text('Popup pinned to this viewport position.', 'Đã ghim popup tại vị trí này trong khung nhìn.'), 'ok');
-  }, [config.pinnedPos, showToast, updateConfig, vi]);
+  }, [config.pinnedPos, showToast, text, updateConfig]);
 
   const openTrim = useCallback((event) => {
     event?.preventDefault?.();
@@ -192,7 +192,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     }
     setTrimText(selection?.text || '');
     setTrimOpen(true);
-  }, [selection, showToast, vi]);
+  }, [selection, showToast, text]);
 
   const applyTrim = useCallback(() => {
     const { selection: nextSelection, error } = deriveTrimmedSelection(selection, trimText);
@@ -206,7 +206,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
       `Selection trimmed to ${nextSelection.text.length.toLocaleString()} characters.`,
       `Đã cắt vùng chọn còn ${nextSelection.text.length.toLocaleString()} ký tự.`,
     ), 'ok');
-  }, [selection, showToast, trimText, vi]);
+  }, [selection, showToast, text, trimText]);
 
   if (config.onlyAltR && !selection?.forced) return null;
 
