@@ -21,6 +21,8 @@ export const PreviewModal = ({
   onClose,
 }) => {
   const { config } = usePersistentStore();
+  const vi = config.uiLanguage === 'vi';
+  const text = (en, viText) => (vi ? viText : en);
   const showToast = useToastStore((state) => state.showToast);
   const [diffOps, setDiffOps] = useState(null);
   const [typewriterText, setTypewriterText] = useState('');
@@ -78,18 +80,30 @@ export const PreviewModal = ({
     const b = wc(result);
     const d = b - a;
     const p = a ? Math.round((d / a) * 100) : 0;
-    return `${d >= 0 ? '+' : ''}${d} words (${p >= 0 ? '+' : ''}${p}%)`;
+    return vi
+      ? `${d >= 0 ? '+' : ''}${d} từ (${p >= 0 ? '+' : ''}${p}%)`
+      : `${d >= 0 ? '+' : ''}${d} words (${p >= 0 ? '+' : ''}${p}%)`;
   };
 
   const handleCopy = async () => {
     const copied = await DOMUtils.safeCopy(result || '');
-    showToast(copied ? '✓ Copied result to clipboard' : '✕ Clipboard copy failed. The raw result remains selectable below and can also be saved as .txt.', copied ? 'ok' : 'warn');
+    showToast(
+      copied
+        ? text('✓ Copied result to clipboard', '✓ Đã sao chép kết quả vào clipboard')
+        : text('✕ Clipboard copy failed. The raw result remains selectable below and can also be saved as .txt.', '✕ Không thể sao chép vào clipboard. Kết quả thô bên dưới vẫn có thể chọn và lưu thành .txt.'),
+      copied ? 'ok' : 'warn',
+    );
   };
 
   const handleSaveFile = () => {
     const mid = String(selection?.mid || 'selection').replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 50);
     const saved = DOMUtils.saveTextFile(result || '', `rewrite-${mid}.txt`);
-    showToast(saved ? '✓ Saved rewrite result as a .txt file' : 'Could not create the .txt download. The result remains selectable in this window.', saved ? 'ok' : 'warn');
+    showToast(
+      saved
+        ? text('✓ Saved rewrite result as a .txt file', '✓ Đã lưu kết quả viết lại thành file .txt')
+        : text('Could not create the .txt download. The result remains selectable in this window.', 'Không thể tạo file .txt. Kết quả vẫn có thể chọn trực tiếp trong cửa sổ này.'),
+      saved ? 'ok' : 'warn',
+    );
   };
 
   const handleReplaceAllClick = () => {
@@ -98,13 +112,20 @@ export const PreviewModal = ({
       const fullSel = { ...selection, source: 'textarea', text: ta.value, originalValue: ta.value, start: 0, end: ta.value.length, el: ta };
       onReplaceAll?.(result, fullSel);
     } else {
-      showToast('⚠️ Replace All is available only while the original edit box is still open.', 'warn');
+      showToast(text('⚠️ Replace All is available only while the original edit box is still open.', '⚠️ Chỉ có thể Thay thế toàn bộ khi ô chỉnh sửa gốc vẫn đang mở.'), 'warn');
     }
   };
 
+  const profileName = profile?.name || text('Result', 'Kết quả');
+  const modalTitle = isLoading
+    ? `${profileName} — ${text('Processing…', 'Đang xử lý…')}`
+    : isApplying
+      ? `${profileName} — ${text('Applying…', 'Đang áp dụng…')}`
+      : `${profileName} — ${text('Result', 'Kết quả')}`;
+
   return (
     <Modal
-      title={isLoading ? `${profile?.name} — Processing…` : (isApplying ? `${profile?.name || 'Result'} — Applying…` : `${profile?.name || 'Result'} — Result`)}
+      title={modalTitle}
       onClose={isApplying ? () => {} : onClose}
       width="600px"
       className="rwar-window"
@@ -114,15 +135,15 @@ export const PreviewModal = ({
         <div className="rwar-loading">
           {progress ? <div className="rwa-prev rwar-progress">{progress}</div> : null}
           <section className="rwar-section">
-            <div className="rwa-plbl rwar-label">Selected Passage</div>
+            <div className="rwa-plbl rwar-label">{text('Selected Passage', 'Đoạn đã chọn')}</div>
             <div className="rwa-prev rwa-shimmer rwar-selected">{selection?.text}</div>
           </section>
           <div className="rwar-writing" aria-live="polite">
             <div className="rwa-pulse" />
-            <div className="rwar-writing-copy">Writing with Intelligence…</div>
+            <div className="rwar-writing-copy">{text('Writing with Intelligence…', 'Đang viết lại…')}</div>
           </div>
           <div className="rwar-loading-actions">
-            <Button glow={false} onClick={onClose}>Cancel</Button>
+            <Button glow={false} onClick={onClose}>{text('Cancel', 'Hủy')}</Button>
           </div>
         </div>
       ) : (
@@ -131,17 +152,17 @@ export const PreviewModal = ({
           {applyReport ? <div role="status" className="rwa-prev rwar-apply-report">{applyReport}</div> : null}
 
           <section className="rwar-section">
-            <div className="rwa-plbl rwar-label">Original Text</div>
+            <div className="rwa-plbl rwar-label">{text('Original Text', 'Văn bản gốc')}</div>
             <div className="rwa-prev rwar-original">{selection?.text || ''}</div>
           </section>
 
           {isMerged ? (
             <section className="rwar-section">
-              <div className="rwa-plbl rwar-label">Validated merged result — split by message</div>
+              <div className="rwa-plbl rwar-label">{text('Validated merged result — split by message', 'Kết quả gộp đã xác thực — tách theo từng tin nhắn')}</div>
               <div className="rwa-prev rwar-merged">
                 {pieces.map((piece, index) => (
                   <div key={index} className="rwar-message-piece">
-                    <div className="rwa-plbl rwar-message-label">Message {index + 1}</div>
+                    <div className="rwa-plbl rwar-message-label">{text(`Message ${index + 1}`, `Tin nhắn ${index + 1}`)}</div>
                     <div className="rwar-message-text">{piece}</div>
                   </div>
                 ))}
@@ -150,31 +171,36 @@ export const PreviewModal = ({
           ) : (
             <section className="rwar-section">
               <div className="rwar-section-head">
-                <div className="rwa-plbl rwar-label">{config.showDiff ? 'Diff Breakdown' : 'Result Preview'}</div>
+                <div className="rwa-plbl rwar-label">{config.showDiff ? text('Diff Breakdown', 'So sánh thay đổi') : text('Result Preview', 'Xem trước kết quả')}</div>
                 <div className="rwar-word-delta">{getWcDiff()}</div>
               </div>
-              {config.showDiff ? <div className="rwar-diff-legend"><span className="rwar-added">Added</span><span className="rwar-removed">Removed</span></div> : null}
+              {config.showDiff ? (
+                <div className="rwar-diff-legend">
+                  <span className="rwar-added">{text('Added', 'Thêm')}</span>
+                  <span className="rwar-removed">{text('Removed', 'Xóa')}</span>
+                </div>
+              ) : null}
               <div className="rwa-prev rwar-result-preview">
                 {config.showDiff ? (
                   diffOps ? diffOps.map((op, idx) => {
                     if (op.t === 'eq') return <Fragment key={idx}>{op.v}</Fragment>;
                     return <span key={idx} className={op.t === 'ins' ? 'rwar-diff-add' : 'rwar-diff-remove'}>{op.v}</span>;
-                  }) : <div className="rwar-diff-loading"><div className="rwa-pulse" /><span>Computing diff…</span></div>
+                  }) : <div className="rwar-diff-loading"><div className="rwa-pulse" /><span>{text('Computing diff…', 'Đang tính phần thay đổi…')}</span></div>
                 ) : (config.typewriter ? typewriterText : result)}
               </div>
             </section>
           )}
 
-          <section className="rwar-section rwar-raw-section" aria-label="Raw result — always selectable for manual recovery">
+          <section className="rwar-section rwar-raw-section" aria-label={text('Raw result — always selectable for manual recovery', 'Kết quả thô — luôn có thể chọn để khôi phục thủ công')}>
             <div className="rwar-section-head">
-              <div className="rwa-plbl rwar-label" title="Raw result — always selectable for manual recovery">Raw result</div>
-              <div className="rwar-recovery-note">Selectable recovery copy</div>
+              <div className="rwa-plbl rwar-label" title={text('Raw result — always selectable for manual recovery', 'Kết quả thô — luôn có thể chọn để khôi phục thủ công')}>{text('Raw result', 'Kết quả thô')}</div>
+              <div className="rwar-recovery-note">{text('Selectable recovery copy', 'Bản sao có thể chọn')}</div>
             </div>
             <textarea
               className="rwa-inp rwar-raw"
               readOnly
               value={result || ''}
-              aria-label="Raw rewrite result"
+              aria-label={text('Raw rewrite result', 'Kết quả viết lại thô')}
               onFocus={(event) => event.currentTarget.select()}
             />
           </section>
@@ -182,20 +208,24 @@ export const PreviewModal = ({
           <div className="rwar-actions">
             <div className="rwar-actions-primary">
               <Button glow={false} variant="rwa-accept" onClick={() => onAccept?.(result, selection)} disabled={isApplying} className="rwar-accept">
-                {isApplying ? 'Applying…' : (isMerged ? '✓ Accept All' : '✓ Accept')}
+                {isApplying
+                  ? text('Applying…', 'Đang áp dụng…')
+                  : isMerged
+                    ? text('✓ Accept All', '✓ Chấp nhận tất cả')
+                    : text('✓ Accept', '✓ Chấp nhận')}
               </Button>
               {!isMerged && onManualSave ? (
-                <Button glow={false} onClick={() => onManualSave(result, selection)} disabled={isApplying}>Open native editor</Button>
+                <Button glow={false} onClick={() => onManualSave(result, selection)} disabled={isApplying}>{text('Open native editor', 'Mở trình chỉnh sửa gốc')}</Button>
               ) : null}
               {selection?.source === 'textarea' && !isMerged ? (
-                <Button glow={false} variant="rwa-replace" onClick={handleReplaceAllClick} disabled={isApplying}>Replace All</Button>
+                <Button glow={false} variant="rwa-replace" onClick={handleReplaceAllClick} disabled={isApplying}>{text('Replace All', 'Thay thế toàn bộ')}</Button>
               ) : null}
             </div>
             <div className="rwar-actions-tools">
-              <Button glow={false} onClick={handleCopy} disabled={isApplying || !result}>Copy</Button>
-              <Button glow={false} onClick={handleSaveFile} disabled={isApplying || !result}>Save .txt</Button>
-              <Button glow={false} onClick={onRetry} disabled={isApplying}>Retry</Button>
-              <Button glow={false} onClick={onClose} disabled={isApplying}>Close</Button>
+              <Button glow={false} onClick={handleCopy} disabled={isApplying || !result}>{text('Copy', 'Sao chép')}</Button>
+              <Button glow={false} onClick={handleSaveFile} disabled={isApplying || !result}>{text('Save .txt', 'Lưu .txt')}</Button>
+              <Button glow={false} onClick={onRetry} disabled={isApplying}>{text('Retry', 'Thử lại')}</Button>
+              <Button glow={false} onClick={onClose} disabled={isApplying}>{text('Close', 'Đóng')}</Button>
             </div>
           </div>
         </>
