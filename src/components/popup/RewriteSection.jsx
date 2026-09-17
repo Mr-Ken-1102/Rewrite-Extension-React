@@ -55,6 +55,7 @@ export function RewriteSection({
       <MultiMessageNotice language={language} selection={selection} mergeMultiMsg={mergeMultiMsg} />
 
       <ProfileGrid
+        language={language}
         profiles={profiles}
         colCount={colCount}
         rows={rows}
