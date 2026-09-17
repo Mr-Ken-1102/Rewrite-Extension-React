@@ -1,7 +1,7 @@
 import { usePersistentStore } from '../../store/usePersistentStore';
 import { MarinaraHost } from '../marinaraHost';
 import { debugLogService } from '../debugLogService';
-import { normalizeProviderFailure, validateProviderHttpUrl } from '../policies/providerPolicy.js';
+import { isLikelyLocalNetworkUrl, normalizeProviderFailure, validateProviderHttpUrl } from '../policies/providerPolicy.js';
 
 const ENDPOINTS = {
   tracker: '/sidecar/tracker',
@@ -93,8 +93,19 @@ export class ProviderService {
     const config = { ...usePersistentStore.getState().config, ...override };
     const mode = ['marinara', 'sidecar', 'direct', 'extender'].includes(config.connMode) ? config.connMode : 'marinara';
     const configuredTimeout = Math.max(5000, Math.min(180000, Number(config.requestTimeoutMs) || 45000));
-    const timeout = mode === 'marinara' ? Math.max(90000, configuredTimeout) : configuredTimeout;
-    debugLogService.add('inference.request', { mode, systemChars: systemPrompt.length, userChars: userPrompt.length });
+    const directLocalNetwork = mode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl);
+    const timeout = mode === 'marinara'
+      ? Math.max(90000, configuredTimeout)
+      : directLocalNetwork
+        ? Math.max(120000, configuredTimeout)
+        : configuredTimeout;
+    debugLogService.add('inference.request', {
+      mode,
+      systemChars: systemPrompt.length,
+      userChars: userPrompt.length,
+      timeoutMs: timeout,
+      localNetwork: directLocalNetwork || undefined,
+    });
 
     if (mode === 'marinara') {
       const resolved = await this.resolveMarinaraConnection(config, signal, override.chatId);
@@ -228,6 +239,12 @@ export class ProviderService {
       return { result };
     } catch (err) {
       if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
+      debugLogService.add('inference.error', {
+        mode,
+        timeoutMs: timeout,
+        localNetwork: directLocalNetwork,
+        message: err?.message || String(err),
+      });
       return normalizeProviderFailure(err, 'Direct API request failed.');
     }
   }
@@ -252,7 +269,8 @@ export class ProviderService {
       if (!response.ok) return { models: [], error: `HTTP ${response.status}` };
       return { models };
     } catch (err) {
-      return { models: [], error: err?.message || String(err) };
+      const failure = normalizeProviderFailure(err, 'Model discovery failed.');
+      return { models: [], error: failure.error, errorCode: failure.errorCode };
     }
   }
 }
