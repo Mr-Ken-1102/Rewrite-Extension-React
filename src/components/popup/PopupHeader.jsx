@@ -1,4 +1,6 @@
-export function PopupHeader({ selection, pinned, onDragStart, onTrim, onPinToggle }) {
+export function PopupHeader({ language = 'en', selection, pinned, onDragStart, onTrim, onPinToggle }) {
+  const vi = language === 'vi';
+  const text = (en, viText) => (vi ? viText : en);
   const multiCount = Array.isArray(selection?.segments) ? selection.segments.length : 0;
   const iconProps = {
     width: 14,
@@ -25,8 +27,12 @@ export function PopupHeader({ selection, pinned, onDragStart, onTrim, onPinToggl
           className="rwa2-icon-button"
           onClick={onTrim}
           disabled={multiCount > 1}
-          title={multiCount > 1 ? 'Trim is available only for a single-message selection' : 'Trim selection before sending'}
-          aria-label={multiCount > 1 ? 'Trim unavailable for multi-message selection' : 'Trim selection before sending'}
+          title={multiCount > 1
+            ? text('Trim is available only for a single-message selection', 'Chỉ có thể cắt vùng chọn khi chọn trong một tin nhắn')
+            : text('Trim selection before sending', 'Cắt vùng chọn trước khi gửi')}
+          aria-label={multiCount > 1
+            ? text('Trim unavailable for multi-message selection', 'Không thể cắt vùng chọn qua nhiều tin nhắn')
+            : text('Trim selection before sending', 'Cắt vùng chọn trước khi gửi')}
         >
           <svg {...iconProps}>
             <circle cx="6" cy="7" r="3" />
@@ -38,8 +44,8 @@ export function PopupHeader({ selection, pinned, onDragStart, onTrim, onPinToggl
           type="button"
           className={`rwa2-icon-button ${pinned ? 'rwa2-icon-button-active' : ''}`}
           onClick={onPinToggle}
-          title={pinned ? 'Unpin popup' : 'Pin popup here'}
-          aria-label={pinned ? 'Unpin popup' : 'Pin popup here'}
+          title={pinned ? text('Unpin popup', 'Bỏ ghim popup') : text('Pin popup here', 'Ghim popup tại đây')}
+          aria-label={pinned ? text('Unpin popup', 'Bỏ ghim popup') : text('Pin popup here', 'Ghim popup tại đây')}
         >
           <svg {...iconProps}>
             <path d="M8 3h8M9 3v5l-3 4h12l-3-4V3M12 12v9" />
