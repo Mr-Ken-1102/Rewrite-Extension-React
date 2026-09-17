@@ -3,8 +3,28 @@ import { getProfileViewportHeight } from '../../popupGeometry';
 import { Button } from '../ui/Button';
 
 const TYPEAHEAD_RESET_MS = 650;
+const PROFILE_LABELS_VI = Object.freeze({
+  expand: 'Mở rộng',
+  compress: 'Rút gọn',
+  thoughts: 'Thêm nội tâm',
+  dialogue: 'Chuyển thành hội thoại',
+  active: 'Bị động → Chủ động',
+  diffwords: 'Dùng từ khác',
+  showdont: 'Tả, đừng kể',
+  emotion: 'Tăng cảm xúc',
+  transitions: 'Sửa chuyển ý',
+  noai: 'Bỏ văn phong AI',
+  expdialogue: 'Mở rộng hội thoại',
+  romance: 'Tăng lãng mạn',
+  grammar: 'Sửa ngữ pháp',
+});
 
-export function ProfileGrid({ profiles, colCount, rows, compact, onRun, onTooltip, onTooltipLeave }) {
+function profileDisplayName(profile, language) {
+  if (language !== 'vi') return profile.name;
+  return PROFILE_LABELS_VI[profile.id] || profile.name;
+}
+
+export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact, onRun, onTooltip, onTooltipLeave }) {
   const requestedCols = Math.max(1, Number(colCount) || 1);
   const effectiveCols = compact ? Math.min(requestedCols, 6) : Math.min(requestedCols, 4);
   const viewportHeight = getProfileViewportHeight(rows, compact);
@@ -107,37 +127,42 @@ export function ProfileGrid({ profiles, colCount, rows, compact, onRun, onToolti
       className={classes}
       role="toolbar"
       aria-orientation="horizontal"
-      aria-label="Rewrite styles. Use arrow keys to move or type a style name to jump."
+      aria-label={language === 'vi'
+        ? 'Các kiểu viết lại. Dùng phím mũi tên để di chuyển hoặc gõ tên kiểu để nhảy tới.'
+        : 'Rewrite styles. Use arrow keys to move or type a style name to jump.'}
       style={{ maxHeight: `${viewportHeight}px` }}
       onKeyDown={moveFocus}
     >
-      {profiles.map((profile, index) => (
-        <Button
-          key={profile.id}
-          glow={false}
-          className="rwa2-profile-btn"
-          data-profile-index={index}
-          data-profile-name={profile.name}
-          tabIndex={index === activeIndex ? 0 : -1}
-          aria-label={profile.name}
-          aria-description={profile.prompt}
-          onMouseEnter={(event) => onTooltip(event, `${profile.name}: ${profile.prompt}`)}
-          onMouseLeave={onTooltipLeave}
-          onFocus={(event) => {
-            setActiveIndex(index);
-            onTooltip(event, `${profile.name}: ${profile.prompt}`);
-          }}
-          onBlur={onTooltipLeave}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRun(profile);
-          }}
-        >
-          <span className="rwa2-profile-name" style={profile.color ? { color: profile.color } : {}}>
-            {compact ? profile.name.slice(0, 2).toUpperCase() : profile.name}
-          </span>
-        </Button>
-      ))}
+      {profiles.map((profile, index) => {
+        const displayName = profileDisplayName(profile, language);
+        return (
+          <Button
+            key={profile.id}
+            glow={false}
+            className="rwa2-profile-btn"
+            data-profile-index={index}
+            data-profile-name={displayName}
+            tabIndex={index === activeIndex ? 0 : -1}
+            aria-label={displayName}
+            aria-description={profile.prompt}
+            onMouseEnter={(event) => onTooltip(event, `${displayName}: ${profile.prompt}`)}
+            onMouseLeave={onTooltipLeave}
+            onFocus={(event) => {
+              setActiveIndex(index);
+              onTooltip(event, `${displayName}: ${profile.prompt}`);
+            }}
+            onBlur={onTooltipLeave}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRun(profile);
+            }}
+          >
+            <span className="rwa2-profile-name" style={profile.color ? { color: profile.color } : {}}>
+              {compact ? displayName.slice(0, 2).toUpperCase() : displayName}
+            </span>
+          </Button>
+        );
+      })}
     </div>
   );
 }
