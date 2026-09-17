@@ -51,6 +51,9 @@ jobs:
       - name: Dependency-free popup interaction and tooltip gate
         run: node interactioncheck.mjs
 
+      - name: Dependency-free modal performance and semantics gate
+        run: node modalcheck.mjs
+
       - name: Dependency-free settings architecture gate
         run: node settingscheck.mjs
 

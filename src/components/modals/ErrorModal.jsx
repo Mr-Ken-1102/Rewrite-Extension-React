@@ -1,17 +1,14 @@
 import { useRef } from 'react';
 import { Button } from '../ui/Button';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { useGlowPointer } from '../../hooks/useGlowPointer';
 
 export const ErrorModal = ({ message, onClose }) => {
   const dialogRef = useRef(null);
   useDialogFocusTrap(dialogRef, onClose);
   const stepStyle = { fontSize: '12.5px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px', lineHeight: '1.55' };
 
-  const handleGlowPointerMove = useGlowPointer();
-
   return (
-    <div className="rwa-ov" style={{ zIndex: 10005 }} onPointerMove={handleGlowPointerMove}>
+    <div className="rwa-ov" style={{ zIndex: 10005 }}>
       <div ref={dialogRef} className="rwa-err-window" role="alertdialog" aria-modal="true" aria-label="Connection diagnostics" tabIndex={-1}>
         <div className="rwa-err-hdr" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

@@ -16,7 +16,7 @@ export const LedgerModal = ({ ledger, onRetry, onToggleSkip, onReview, onClose }
         Large selection: {slices.length} lossless slices. Rewrites are held in session RAM only; closing this window keeps resumable progress for this browser session, but nothing is persisted to Marinara storage.
       </div>
       <div className="rwa-plbl">Progress</div>
-      <div style={{ fontSize: '11px', marginBottom: '10px', opacity: 0.8 }}>
+      <div role="status" aria-live="polite" style={{ fontSize: '11px', marginBottom: '10px', opacity: 0.8 }}>
         {done}/{slices.length} resolved · {counts.error || 0} error · slice target ≤ {Number(ledger?.sliceBudget || 0).toLocaleString()} chars
       </div>
       <div style={{ maxHeight: '330px', overflowY: 'auto', display: 'grid', gap: '7px' }}>
@@ -28,10 +28,10 @@ export const LedgerModal = ({ ledger, onRetry, onToggleSkip, onReview, onClose }
                 {slice.status === 'done' ? '✓ done' : slice.status === 'skipped' ? '↷ original kept' : slice.status === 'running' ? '… rewriting' : slice.status === 'error' ? '✕ error' : 'pending'}
               </span>
               {(slice.status === 'error' || slice.status === 'done') ? (
-                <Button className="rwa-glow-button" onClick={() => onRetry(index)} style={{ height: '28px', padding: '0 9px', fontSize: '10px' }}>Retry</Button>
+                <Button glow={false} onClick={() => onRetry(index)} style={{ height: '28px', padding: '0 9px', fontSize: '10px' }}>Retry</Button>
               ) : null}
               {slice.status !== 'running' ? (
-                <Button className="rwa-glow-button" onClick={() => onToggleSkip(index)} style={{ height: '28px', padding: '0 9px', fontSize: '10px' }}>
+                <Button glow={false} onClick={() => onToggleSkip(index)} style={{ height: '28px', padding: '0 9px', fontSize: '10px' }}>
                   {slice.status === 'skipped' ? 'Unskip' : 'Skip'}
                 </Button>
               ) : null}
@@ -44,8 +44,8 @@ export const LedgerModal = ({ ledger, onRetry, onToggleSkip, onReview, onClose }
         ))}
       </div>
       <div className="rwa-foot" style={{ marginTop: '12px' }}>
-        <Button className="rwa-glow-button" onClick={onClose} style={{ flex: 1 }}>Close — keep in RAM</Button>
-        <Button className="rwa-glow-button" variant="rwa-accept" disabled={blocked || slices.length === 0} onClick={onReview} style={{ flex: 1.6 }}>
+        <Button glow={false} onClick={onClose} style={{ flex: 1 }}>Close — keep in RAM</Button>
+        <Button glow={false} variant="rwa-accept" disabled={blocked || slices.length === 0} onClick={onReview} style={{ flex: 1.6 }}>
           Review assembled result
         </Button>
       </div>

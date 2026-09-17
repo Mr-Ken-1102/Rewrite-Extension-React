@@ -42,7 +42,6 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
     onRunRewrite({ id: 'custom', name: 'Custom', order: -1, prompt: v });
   };
 
-
   const handleSaveAsProfile = () => {
     const value = promptValue.trim();
     if (!value) {
@@ -97,78 +96,67 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
     updateCustoms(newCustoms);
   };
 
-  const handleGlowMouseMove = (e) => {
-    const target = e.target.closest('.rwa-glow-button');
-    if (target) {
-      const rect = target.getBoundingClientRect();
-      target.style.setProperty('--x', `${e.clientX - rect.left}px`);
-      target.style.setProperty('--y', `${e.clientY - rect.top}px`);
-    }
-  };
-
   return (
-    <div onMouseMove={handleGlowMouseMove}>
-      <Modal title="✉️ Compile Custom Prompt" onClose={handleClose} width="640px">
-        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', lineHeight: '1.5' }}>
-          Describe detailed rewrite instructions. Prompt registers automatically in the history log for reuse. Refine uses the same model source configured in API &amp; LLM.
-        </div>
+    <Modal title="✉️ Compile Custom Prompt" onClose={handleClose} width="640px">
+      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', lineHeight: '1.5' }}>
+        Describe detailed rewrite instructions. Prompt registers automatically in the history log for reuse. Refine uses the same model source configured in API &amp; LLM.
+      </div>
 
-        <textarea
-          ref={textareaRef}
-          className="rwa-inp"
-          placeholder='e.g., "Make Sarah sound incredibly furious, stammering under her breath, and expand prose by 30%"'
-          value={promptValue}
-          onChange={(e) => setPromptValue(e.target.value)}
-          maxLength={5000}
-          aria-label="Custom rewrite instructions"
-          disabled={isRefining}
-          style={{ height: '140px', resize: 'vertical', marginBottom: '10px', fontSize: '13px', borderRadius: '12px' }}
-        />
+      <textarea
+        ref={textareaRef}
+        className="rwa-inp"
+        placeholder='e.g., "Make Sarah sound incredibly furious, stammering under her breath, and expand prose by 30%"'
+        value={promptValue}
+        onChange={(event) => setPromptValue(event.target.value)}
+        maxLength={5000}
+        aria-label="Custom rewrite instructions"
+        disabled={isRefining}
+        style={{ height: '140px', resize: 'vertical', marginBottom: '10px', fontSize: '13px', borderRadius: '12px' }}
+      />
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
-          <Button className="rwa-glow-button" onClick={handleRefine} disabled={isRefining || !promptValue.trim()}>
-            {isRefining ? 'Refining…' : '✨ Refine with AI'}
-          </Button>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '12px' }}>
+        <Button glow={false} onClick={handleRefine} disabled={isRefining || !promptValue.trim()}>
+          {isRefining ? 'Refining…' : '✨ Refine with AI'}
+        </Button>
+      </div>
 
-        {customs.length > 0 && (
-          <>
-            <div className="rwa-lbl">History Log (Custom Prompts)</div>
-            <div style={{ maxHeight: '130px', overflowY: 'auto', marginBottom: '10px' }}>
-              {customs.map((c, i) => (
-                <div
-                  key={`${c.slice(0, 80)}-${i}`}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 12px', background: 'rgba(255,255,255,0.015)', borderRadius: '10px', marginBottom: '6px', border: '1px solid rgba(255,255,255,0.04)' }}
-                >
-                  <div style={{ flex: '1', fontSize: '11.5px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.45' }}>
-                    {c}
-                  </div>
-
-                  <Button className="rwa-glow-button" onClick={() => setPromptValue(c)} style={{ flexShrink: 0, fontSize: '10px', padding: '4px 8px', borderRadius: '6px' }}>
-                    Use
-                  </Button>
-
-                  <Button className="rwa-glow-button" variant="rwa-dng" onClick={() => handleDeleteCustom(i)} aria-label={`Delete saved custom prompt ${i + 1}`} style={{ flexShrink: 0, fontSize: '10px', padding: '4px 8px', borderRadius: '6px' }}>
-                    ✕
-                  </Button>
+      {customs.length > 0 && (
+        <>
+          <div className="rwa-lbl">History Log (Custom Prompts)</div>
+          <div style={{ maxHeight: '130px', overflowY: 'auto', marginBottom: '10px' }}>
+            {customs.map((custom, index) => (
+              <div
+                key={`${custom.slice(0, 80)}-${index}`}
+                style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 12px', background: 'rgba(255,255,255,0.015)', borderRadius: '10px', marginBottom: '6px', border: '1px solid rgba(255,255,255,0.04)' }}
+              >
+                <div style={{ flex: '1', fontSize: '11.5px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.45' }}>
+                  {custom}
                 </div>
-              ))}
-            </div>
-          </>
-        )}
 
-        <div className="rwa-foot">
-          <Button className="rwa-glow-button" variant="rwa-accept" onClick={handleRun} disabled={isRefining} style={{ flex: 1 }}>
-            Run
-          </Button>
-          <Button className="rwa-glow-button" onClick={handleSaveAsProfile} disabled={isRefining || !promptValue.trim()} style={{ flex: 1 }}>
-            Save as Profile
-          </Button>
-          <Button className="rwa-glow-button" onClick={handleClose} style={{ flex: 1 }}>
-            Cancel
-          </Button>
-        </div>
-      </Modal>
-    </div>
+                <Button glow={false} onClick={() => setPromptValue(custom)} style={{ flexShrink: 0, fontSize: '10px', padding: '4px 8px', borderRadius: '6px' }}>
+                  Use
+                </Button>
+
+                <Button glow={false} variant="rwa-dng" onClick={() => handleDeleteCustom(index)} aria-label={`Delete saved custom prompt ${index + 1}`} style={{ flexShrink: 0, fontSize: '10px', padding: '4px 8px', borderRadius: '6px' }}>
+                  ✕
+                </Button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className="rwa-foot">
+        <Button glow={false} variant="rwa-accept" onClick={handleRun} disabled={isRefining} style={{ flex: 1 }}>
+          Run
+        </Button>
+        <Button glow={false} onClick={handleSaveAsProfile} disabled={isRefining || !promptValue.trim()} style={{ flex: 1 }}>
+          Save as Profile
+        </Button>
+        <Button glow={false} onClick={handleClose} style={{ flex: 1 }}>
+          Cancel
+        </Button>
+      </div>
+    </Modal>
   );
 };

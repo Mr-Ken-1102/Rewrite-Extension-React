@@ -4,12 +4,11 @@ import { Button } from '../ui/Button';
 import { usePersistentStore } from '../../store/usePersistentStore';
 import { APIService } from '../../services/apiService';
 import { DOMUtils } from '../../utils/domUtils';
-import { useGlowPointer } from '../../hooks/useGlowPointer';
 
 const ARCHITECT_SYSTEM_PROMPT = `You design concise rewrite presets for a writing assistant.
 Return ONLY one valid JSON object with exactly these string keys:
 {"name":"1-3 word preset name","prompt":"Rewrite the following text ..."}
-The prompt must be a direct editing instruction, must begin with \"Rewrite the following text\", and must not contain markdown fences.`;
+The prompt must be a direct editing instruction, must begin with "Rewrite the following text", and must not contain markdown fences.`;
 
 function parseArchitectPayload(raw) {
   let text = String(raw || '').trim();
@@ -96,71 +95,66 @@ export const AIArchitectModal = ({ onClose, onDone }) => {
     onDone?.();
   };
 
-  const handleGlowPointerMove = useGlowPointer();
-
   return (
-    <div onPointerMove={handleGlowPointerMove}>
-      <Modal title="✨ AI Prompt Architect" onClose={handleClose} width="640px">
-        <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', lineHeight: '1.55' }}>
-          Describe the rewrite tone or editing behavior. The architect uses the same model connection configured in API &amp; LLM.
+    <Modal title="✨ AI Prompt Architect" onClose={handleClose} width="640px">
+      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', lineHeight: '1.55' }}>
+        Describe the rewrite tone or editing behavior. The architect uses the same model connection configured in API &amp; LLM.
+      </div>
+
+      <textarea
+        className="rwa-inp"
+        aria-label="Desired rewrite style"
+        placeholder='e.g., "A cynical, old, grumbling sailor who uses heavy nautical metaphors"'
+        value={inputValue}
+        onChange={(event) => setInputValue(event.target.value)}
+        disabled={isGenerating}
+        maxLength={4000}
+        style={{ height: '120px', resize: 'vertical', borderRadius: '12px' }}
+      />
+
+      {hasResult && (
+        <div>
+          <div className="rwa-lbl">Generated Preset Name</div>
+          <input
+            type="text"
+            className="rwa-inp"
+            aria-label="Generated preset name"
+            value={generatedName}
+            maxLength={80}
+            onChange={(event) => setGeneratedName(event.target.value)}
+            disabled={isGenerating}
+          />
+
+          <div className="rwa-lbl">Generated Instruction Prompt</div>
+          <textarea
+            className="rwa-inp"
+            aria-label="Generated instruction prompt"
+            value={generatedPrompt}
+            maxLength={5000}
+            onChange={(event) => setGeneratedPrompt(event.target.value)}
+            disabled={isGenerating}
+            style={{ height: '200px', resize: 'vertical', fontSize: '13px', borderRadius: '12px' }}
+          />
         </div>
+      )}
 
-        <textarea
-          className="rwa-inp"
-          aria-label="Desired rewrite style"
-          placeholder='e.g., "A cynical, old, grumbling sailor who uses heavy nautical metaphors"'
-          value={inputValue}
-          onChange={(event) => setInputValue(event.target.value)}
-          disabled={isGenerating}
-          maxLength={4000}
-          style={{ height: '120px', resize: 'vertical', borderRadius: '12px' }}
-        />
+      <div role="status" aria-live="polite" style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.4)', minHeight: '16px', marginBottom: '8px' }}>
+        {statusText}
+      </div>
 
+      <div className="rwa-foot">
         {hasResult && (
-          <div>
-            <div className="rwa-lbl">Generated Preset Name</div>
-            <input
-              type="text"
-              className="rwa-inp"
-              aria-label="Generated preset name"
-              value={generatedName}
-              maxLength={80}
-              onChange={(event) => setGeneratedName(event.target.value)}
-              disabled={isGenerating}
-            />
-
-            <div className="rwa-lbl">Generated Instruction Prompt</div>
-            <textarea
-              className="rwa-inp"
-              aria-label="Generated instruction prompt"
-              value={generatedPrompt}
-              maxLength={5000}
-              onChange={(event) => setGeneratedPrompt(event.target.value)}
-              disabled={isGenerating}
-              style={{ height: '200px', resize: 'vertical', fontSize: '13px', borderRadius: '12px' }}
-            />
-          </div>
+          <Button glow={false} variant="rwa-replace" onClick={handleAddStyle} disabled={isGenerating} style={{ flex: '1 1 0%', justifyContent: 'center' }}>
+            Add Style
+          </Button>
         )}
-
-        <div role="status" aria-live="polite" style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.4)', minHeight: '16px', marginBottom: '8px' }}>
-          {statusText}
-        </div>
-
-        <div className="rwa-foot">
-          {hasResult && (
-            <Button className="rwa-glow-button" variant="rwa-replace" onClick={handleAddStyle} disabled={isGenerating} style={{ flex: '1 1 0%', justifyContent: 'center' }}>
-              Add Style
-            </Button>
-          )}
-          <Button className="rwa-glow-button" variant="rwa-accept" onClick={handleGenerate} disabled={isGenerating || !inputValue.trim()} style={{ flex: '1 1 0%', color: hasResult ? 'white' : undefined }}>
-            {isGenerating ? '...' : (hasResult ? 'ReGenerate' : 'Generate')}
-          </Button>
-          <Button className="rwa-glow-button" onClick={handleClose} style={{ flex: '1 1 0%' }}>
-            Cancel
-          </Button>
-        </div>
-      </Modal>
-    </div>
+        <Button glow={false} variant="rwa-accept" onClick={handleGenerate} disabled={isGenerating || !inputValue.trim()} style={{ flex: '1 1 0%', color: hasResult ? 'white' : undefined }}>
+          {isGenerating ? '...' : (hasResult ? 'ReGenerate' : 'Generate')}
+        </Button>
+        <Button glow={false} onClick={handleClose} style={{ flex: '1 1 0%' }}>
+          Cancel
+        </Button>
+      </div>
+    </Modal>
   );
 };
-
