@@ -59,7 +59,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     const rect = event.currentTarget.getBoundingClientRect();
     let x = rect.right + 10;
     const y = rect.top;
-    if (x + 200 > window.innerWidth) x = rect.left - 210;
+    if (x + 240 > window.innerWidth) x = rect.left - 250;
     setTip({ show: true, text, x, y });
   }, []);
 
@@ -79,10 +79,10 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
 
   const activeRole = useRoleRadar(selection);
   const { radarText, radarColor } = useMemo(() => {
-    if (config.freeMode) return { radarText: '✨ Free Mode', radarColor: 'var(--rwa-primary)' };
-    if (activeRole === 'user') return { radarText: '✍️ User Persona', radarColor: 'var(--rwa-accent)' };
-    if (activeRole === 'assistant') return { radarText: '🤖 Character Card', radarColor: 'var(--rwa-primary)' };
-    return { radarText: '❓ System Context', radarColor: 'var(--rwa-primary)' };
+    if (config.freeMode) return { radarText: '✨ Free Mode', radarColor: 'var(--rwa2-brand)' };
+    if (activeRole === 'user') return { radarText: '✍️ User Persona', radarColor: 'var(--rwa2-positive)' };
+    if (activeRole === 'assistant') return { radarText: '🤖 Character Card', radarColor: 'var(--rwa2-brand)' };
+    return { radarText: '❓ System Context', radarColor: 'var(--rwa2-text-2)' };
   }, [config.freeMode, activeRole]);
 
   const contextSources = useMemo(() => {
@@ -168,7 +168,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     <>
       <div
         ref={popupRef}
-        className="rwa rwa-popup-main"
+        className="rwa2-popup"
         style={{ left: finalLeft, top: finalTop, visibility: finalVisibility }}
       >
         <PopupHeader
@@ -179,7 +179,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           onPinToggle={handlePinToggle}
         />
 
-        <div className="rwa-popup-workbench">
+        <main className="rwa2-workbench">
           <RewriteSection
             profiles={sortedProfiles}
             colCount={layoutColCount}
@@ -206,7 +206,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             onTooltip={showTooltip}
             onTooltipLeave={hideTooltip}
           />
-        </div>
+        </main>
 
         <PopupFooter
           msgHistory={msgHistory}
@@ -241,7 +241,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
         </Modal>
       )}
 
-      <div className={`rwa-tip rwa-popup-tip ${tip.show ? 'rwa-tip-show' : ''}`} style={{ left: tip.x, top: tip.y }}>
+      <div className={`rwa2-tooltip ${tip.show ? 'rwa2-tooltip-show' : ''}`} style={{ left: tip.x, top: tip.y }}>
         {tip.text}
       </div>
     </>

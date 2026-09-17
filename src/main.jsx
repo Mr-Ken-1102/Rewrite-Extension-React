@@ -82,7 +82,7 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
     stopFocusSteal = (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-      const insideUi = target.closest('.rwa, .rwa-tip, .rwa-ov, .rwa-win');
+      const insideUi = target.closest('.rwa, .rwa-tip, .rwa-ov, .rwa-win, .rwa2-popup, .rwa2-tooltip');
       if (!insideUi) return;
       const interactive = target.closest('input, select, textarea, label, button, [draggable], .rwa-tog-wrap, .rwa-item');
       if (!interactive) event.preventDefault();

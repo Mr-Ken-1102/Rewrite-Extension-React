@@ -21,41 +21,50 @@ ok('popup geometry constants encode the 688px / 12-column contract', () => {
   assert.match(source, /POPUP_PROFILE_ROW_GAP = 6/);
 });
 
-ok('popup geometry stylesheet is loaded after legacy visual layers', () => {
+ok('popup visual system is loaded last after legacy extension layers', () => {
   const main = read('./src/main.jsx');
   assert.match(main, /import \{ RWA_POPUP_CSS \} from '\.\/styles-popup\.js';/);
   assert.match(main, /RWA_PERFORMANCE_CSS\}\\n\$\{RWA_POPUP_CSS\}/);
 });
 
-ok('popup geometry stylesheet owns desktop width and neutralizes the old two-pane workbench', () => {
-  const css = read('./src/styles-popup.js');
+ok('popup stylesheet is modular instead of another monolithic override layer', () => {
+  const source = read('./src/styles-popup.js');
+  assert.match(source, /RWA_POPUP_BASE_CSS/);
+  assert.match(source, /RWA_POPUP_CONTEXT_CSS/);
+  assert.match(source, /RWA_POPUP_RESPONSIVE_CSS/);
+});
+
+ok('popup root uses the isolated rwa2 namespace and preserves geometry contract', () => {
+  const popup = read('./src/components/PopupMain.jsx');
+  const css = read('./src/styles-popup-base.js');
+  assert.match(popup, /className="rwa2-popup"/);
+  assert.doesNotMatch(popup, /className="rwa rwa-popup-main"/);
   assert.match(css, /POPUP_DESKTOP_WIDTH/);
-  assert.match(css, /\.rwa-popup-workbench\s*\{[\s\S]*display:\s*contents\s*!important/);
-  assert.match(css, /\.rwa-popup-main\s*\{[\s\S]*width:\s*min\(\$\{POPUP_DESKTOP_WIDTH\}px/);
+  assert.match(css, /\.rwa2-popup\s*\{[\s\S]*width:\s*min\(\$\{POPUP_DESKTOP_WIDTH\}px/);
 });
 
 ok('context rail uses an explicit 12-column 4-5-3 layout', () => {
-  const css = read('./src/styles-popup.js');
+  const css = read('./src/styles-popup-context.js');
   const context = read('./src/components/popup/ContextPanel.jsx');
-  assert.match(css, /grid-template-columns:\s*repeat\(\$\{POPUP_GRID_COLUMNS\}, minmax\(0, 1fr\)\)/);
-  assert.match(css, /\.rwa-context-identity\s*\{[\s\S]*grid-column:\s*span 4/);
-  assert.match(css, /\.rwa-context-sources\s*\{[\s\S]*grid-column:\s*span 5/);
-  assert.match(css, /\.rwa-context-modifiers\s*\{[\s\S]*grid-column:\s*span 3/);
-  assert.match(context, /rwa-context-region rwa-context-identity/);
-  assert.match(context, /rwa-context-region rwa-context-sources/);
-  assert.match(context, /rwa-context-region rwa-context-modifiers/);
+  assert.match(css, /grid-template-columns:\s*repeat\(12, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.rwa2-context-identity \{ grid-column: span 4; \}/);
+  assert.match(css, /\.rwa2-context-sources \{ grid-column: span 5; \}/);
+  assert.match(css, /\.rwa2-context-modifiers \{ grid-column: span 3; \}/);
+  assert.match(context, /rwa2-context-region rwa2-context-identity/);
+  assert.match(context, /rwa2-context-region rwa2-context-sources/);
+  assert.match(context, /rwa2-context-region rwa2-context-modifiers/);
 });
 
 ok('profile grid derives viewport height from shared geometry and exposes deterministic column classes', () => {
   const source = read('./src/components/popup/ProfileGrid.jsx');
   assert.match(source, /getProfileViewportHeight/);
-  assert.match(source, /rwa-profile-cols-\$\{effectiveCols\}/);
-  assert.match(source, /rwa-profile-grid-compact/);
+  assert.match(source, /rwa2-cols-\$\{effectiveCols\}/);
+  assert.match(source, /rwa2-profile-grid-compact/);
   assert.doesNotMatch(source, /gridTemplateColumns:/);
 });
 
 ok('normal profile grid degrades before cells become narrower than the 156px contract', () => {
-  const css = read('./src/styles-popup.js');
+  const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /POPUP_NORMAL_MIN_CELL/);
   assert.match(css, /POPUP_NORMAL_BREAKPOINTS\.fourToThree - 1/);
   assert.match(css, /POPUP_NORMAL_BREAKPOINTS\.threeToTwo - 1/);
@@ -82,10 +91,30 @@ ok('popup main passes geometry-relevant state without changing rewrite semantics
 });
 
 ok('responsive context geometry stacks before horizontal overflow', () => {
-  const css = read('./src/styles-popup.js');
+  const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /@media \(max-width: 559px\)/);
-  assert.match(css, /\.rwa-context-identity \{ grid-column: 1 \/ -1; \}/);
+  assert.match(css, /\.rwa2-context-identity \{ grid-column: 1 \/ -1; \}/);
   assert.match(css, /@media \(max-width: 419px\)/);
+});
+
+ok('popup visual layer is low-paint and uses subdued amber', () => {
+  const base = read('./src/styles-popup-base.js');
+  const context = read('./src/styles-popup-context.js');
+  assert.match(base, /--rwa2-brand:\s*#d19a45/);
+  assert.doesNotMatch(`${base}\n${context}`, /backdrop-filter|filter:\s*blur/);
+  assert.doesNotMatch(`${base}\n${context}`, /#ffb020/i);
+});
+
+ok('main-popup buttons disable cursor-following glow work', () => {
+  const button = read('./src/components/ui/Button.jsx');
+  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const grid = read('./src/components/popup/ProfileGrid.jsx');
+  const footer = read('./src/components/popup/PopupFooter.jsx');
+  assert.match(button, /glow = true/);
+  assert.match(button, /if \(glow && btnRef\.current/);
+  assert.match(rewrite, /glow=\{false\}/);
+  assert.match(grid, /glow=\{false\}/);
+  assert.equal((footer.match(/glow=\{false\}/g) || []).length, 4);
 });
 
 console.log(`\npopupcheck: ${passed}/${passed} assertions passed`);

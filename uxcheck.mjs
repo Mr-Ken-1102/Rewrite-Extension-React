@@ -72,7 +72,6 @@ ok('preset reorder pointermove stays DOM-only and store commits once on drop', (
   const component = read('./src/components/modals/settings/TabProfiles.jsx');
   const source = read('./src/hooks/useProfileReorder.js');
   assert.doesNotMatch(component, /setDraggedId|setDragOverId/);
-
   const moveMatch = source.match(/const onPointerMove = \(moveEvent\) => \{([\s\S]*?)\n    \};/);
   assert.ok(moveMatch, 'preset onPointerMove handler must be present');
   const moveBody = moveMatch[1];
@@ -80,7 +79,6 @@ ok('preset reorder pointermove stays DOM-only and store commits once on drop', (
   assert.doesNotMatch(moveBody, /requestAnimationFrame|setTimeout/);
   assert.doesNotMatch(moveBody, /onCommit|setState|updateProfiles/);
   assert.match(moveBody, /updateVisual\(latest\.clientY\)/);
-
   assert.match(source, /draggedNode\.style\.transform = `translate3d/);
   assert.equal((source.match(/onCommit\(/g) || []).length, 1);
 });
@@ -140,7 +138,7 @@ ok('popup keeps explicit one-shot and token-estimate copy contracts', () => {
   const source = read('./src/components/popup/ContextPanel.jsx');
   assert.match(source, /This rewrite:/);
   assert.match(source, /Selection \+ context ≈/);
-  assert.match(source, /rwa-context-switch-grid/);
+  assert.match(source, /rwa2-source-grid/);
 });
 
 ok('profile columns are configurable beyond two on the wide popup', () => {
@@ -153,41 +151,53 @@ ok('profile columns are configurable beyond two on the wide popup', () => {
   assert.doesNotMatch(settings, /Math\.min\(config\.cols \|\| 2, 2\)/);
 });
 
-ok('popup geometry is delegated to the 688px architecture contract', () => {
+ok('popup geometry is delegated to the 688px isolated visual contract', () => {
   const popup = read('./src/components/PopupMain.jsx');
   const position = read('./src/hooks/usePopupPosition.js');
   const geometry = read('./src/popupGeometry.js');
-  const css = read('./src/styles-popup.js');
-  assert.match(popup, /rwa-popup-workbench/);
+  const css = read('./src/styles-popup-base.js');
+  assert.match(popup, /className="rwa2-popup"/);
+  assert.match(popup, /rwa2-workbench/);
   assert.match(position, /POPUP_DESKTOP_WIDTH/);
   assert.match(geometry, /POPUP_DESKTOP_WIDTH = 688/);
   assert.match(geometry, /POPUP_GRID_COLUMNS = 12/);
-  assert.match(css, /RWA_POPUP_CSS/);
-  assert.match(css, /display:\s*contents\s*!important/);
+  assert.match(css, /POPUP_DESKTOP_WIDTH/);
 });
 
-ok('popup geometry layer is loaded after the performance visual layer', () => {
+ok('popup visual layer is loaded after the performance layer', () => {
   const main = read('./src/main.jsx');
   assert.match(main, /RWA_PERFORMANCE_CSS/);
   assert.match(main, /RWA_POPUP_CSS/);
   assert.match(main, /RWA_PERFORMANCE_CSS\}\\n\$\{RWA_POPUP_CSS\}/);
 });
 
-ok('muted amber palette avoids the previous fluorescent primary fill', () => {
-  const css = read('./src/styles-performance.js');
-  assert.match(css, /--rwa-brand:\s*#d6a04a/);
-  assert.match(css, /--rwa-action:\s*#bd8435/);
-  assert.match(css, /\.rwa-accept[\s\S]*var\(--rwa-action\)/);
+ok('popup visual system uses subdued amber and no blur paint tax', () => {
+  const base = read('./src/styles-popup-base.js');
+  const context = read('./src/styles-popup-context.js');
+  assert.match(base, /--rwa2-brand:\s*#d19a45/);
+  assert.doesNotMatch(`${base}\n${context}`, /backdrop-filter|filter:\s*blur/);
+  assert.doesNotMatch(`${base}\n${context}`, /#ffb020/i);
 });
 
-ok('settings and presets use low-paint dense surfaces', () => {
+ok('settings and presets retain low-paint dense surfaces', () => {
   const css = read('./src/styles-performance.js');
   assert.match(css, /\.rwa-settings-win[\s\S]*backdrop-filter:\s*none/);
   assert.match(css, /\.rwa-profile-row[\s\S]*min-height:\s*42px/);
   assert.match(css, /\.rwa-profile-search[\s\S]*min-height:\s*38px/);
 });
 
-ok('cursor-following glow no longer performs layout reads on pointermove', () => {
+ok('main-popup buttons opt out of cursor-following glow layout reads', () => {
+  const button = read('./src/components/ui/Button.jsx');
+  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const grid = read('./src/components/popup/ProfileGrid.jsx');
+  const footer = read('./src/components/popup/PopupFooter.jsx');
+  assert.match(button, /if \(glow && btnRef\.current/);
+  assert.match(rewrite, /glow=\{false\}/);
+  assert.match(grid, /glow=\{false\}/);
+  assert.equal((footer.match(/glow=\{false\}/g) || []).length, 4);
+});
+
+ok('cursor-following global glow hook no longer performs layout reads on pointermove', () => {
   const source = read('./src/hooks/useGlowPointer.js');
   assert.doesNotMatch(source, /getBoundingClientRect/);
   assert.doesNotMatch(source, /requestAnimationFrame/);

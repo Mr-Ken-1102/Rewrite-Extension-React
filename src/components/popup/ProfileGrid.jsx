@@ -6,10 +6,9 @@ export function ProfileGrid({ profiles, colCount, rows, compact, onRun, onToolti
   const effectiveCols = compact ? Math.min(requestedCols, 6) : Math.min(requestedCols, 4);
   const viewportHeight = getProfileViewportHeight(rows, compact);
   const classes = [
-    'rwa-grid',
-    'rwa-profile-grid',
-    `rwa-profile-cols-${effectiveCols}`,
-    compact ? 'rwa-profile-grid-compact' : '',
+    'rwa2-profile-grid',
+    `rwa2-cols-${effectiveCols}`,
+    compact ? 'rwa2-profile-grid-compact' : '',
   ].filter(Boolean).join(' ');
 
   return (
@@ -22,7 +21,8 @@ export function ProfileGrid({ profiles, colCount, rows, compact, onRun, onToolti
       {profiles.map((profile) => (
         <Button
           key={profile.id}
-          className="rwa-pb rwa-profile-btn"
+          glow={false}
+          className="rwa2-profile-btn"
           onMouseEnter={(event) => onTooltip(event, `${profile.name}: ${profile.prompt}`)}
           onMouseLeave={onTooltipLeave}
           onClick={(event) => {
@@ -30,7 +30,7 @@ export function ProfileGrid({ profiles, colCount, rows, compact, onRun, onToolti
             onRun(profile);
           }}
         >
-          <span className="rwa-profile-name" style={profile.color ? { color: profile.color } : {}}>
+          <span className="rwa2-profile-name" style={profile.color ? { color: profile.color } : {}}>
             {compact ? profile.name.slice(0, 2).toUpperCase() : profile.name}
           </span>
         </Button>

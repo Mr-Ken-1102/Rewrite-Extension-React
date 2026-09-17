@@ -15,18 +15,19 @@ export function RewriteSection({
   onTooltipLeave,
 }) {
   return (
-    <section className="rwa-command-section rwa-rewrite-section" aria-label="Rewrite commands">
-      <div className="rwa-command-head">
+    <section className="rwa2-rewrite" aria-label="Rewrite commands">
+      <div className="rwa2-section-head">
         <div>
-          <div className="rwa-command-kicker">Rewrite</div>
-          <div className="rwa-command-title">Choose a style</div>
+          <div className="rwa2-kicker">Rewrite</div>
+          <div className="rwa2-section-title">Choose a style</div>
         </div>
-        <div className="rwa-command-count">{profiles.length} {profiles.length === 1 ? 'style' : 'styles'}</div>
+        <div className="rwa2-section-meta">{profiles.length} {profiles.length === 1 ? 'style' : 'styles'}</div>
       </div>
 
       {autoProfile && (
         <Button
-          className="rwa-auto-profile"
+          glow={false}
+          className="rwa2-auto-profile"
           onMouseEnter={(event) => onTooltip(event, `${autoProfile.name}: ${autoProfile.prompt}`)}
           onMouseLeave={onTooltipLeave}
           onClick={(event) => {
@@ -34,7 +35,8 @@ export function RewriteSection({
             onRun(autoProfile);
           }}
         >
-          ✨ {autoProfile.name}
+          <span aria-hidden="true">✦</span>
+          <span>{autoProfile.name}</span>
         </Button>
       )}
 
