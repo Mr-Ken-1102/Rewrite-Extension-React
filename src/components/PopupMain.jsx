@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePersistentStore } from '../store/usePersistentStore';
 import { useRuntimeStore } from '../store/useRuntimeStore';
 import { useToastStore } from '../store/useToastStore';
@@ -17,6 +17,18 @@ import { ContextPanel } from './popup/ContextPanel';
 import { PopupFooter } from './popup/PopupFooter';
 
 const EMPTY_HISTORY = Object.freeze({ undo: [], redo: [] });
+const TOOLTIP_GAP = 10;
+const TOOLTIP_MAX_WIDTH = 240;
+const TOOLTIP_VIEWPORT_GUTTER = 8;
+
+function getTooltipViewportBounds() {
+  const visualViewport = window.visualViewport;
+  const left = Number(visualViewport?.offsetLeft) || 0;
+  const top = Number(visualViewport?.offsetTop) || 0;
+  const width = Math.max(1, Number(visualViewport?.width) || Number(window.innerWidth) || 1);
+  const height = Math.max(1, Number(visualViewport?.height) || Number(window.innerHeight) || 1);
+  return { left, top, right: left + width, bottom: top + height };
+}
 
 export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const profiles = usePersistentStore((state) => state.profiles);
@@ -30,6 +42,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const popupPosition = useRuntimeStore((state) => state.popupPosition);
   const isProcessing = useRuntimeStore((state) => state.isProcessing);
   const popupRef = useRef(null);
+  const tooltipRef = useRef(null);
 
   const [tip, setTip] = useState({ show: false, text: '', x: 0, y: 0 });
   const [contextExclusions, setContextExclusions] = useState({});
@@ -57,15 +70,39 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
 
   const showTooltip = useCallback((event, text) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    let x = rect.right + 10;
-    const y = rect.top;
-    if (x + 240 > window.innerWidth) x = rect.left - 250;
-    setTip({ show: true, text, x, y });
+    const bounds = getTooltipViewportBounds();
+    const rightCandidate = rect.right + TOOLTIP_GAP;
+    const leftCandidate = rect.left - TOOLTIP_MAX_WIDTH - TOOLTIP_GAP;
+    const x = rightCandidate + TOOLTIP_MAX_WIDTH <= bounds.right - TOOLTIP_VIEWPORT_GUTTER
+      ? rightCandidate
+      : leftCandidate;
+    setTip({ show: true, text, x, y: rect.top });
   }, []);
 
   const hideTooltip = useCallback(() => {
     setTip((current) => ({ ...current, show: false }));
   }, []);
+
+  useLayoutEffect(() => {
+    if (!tip.show || !tooltipRef.current) return;
+    const bounds = getTooltipViewportBounds();
+    const rect = tooltipRef.current.getBoundingClientRect();
+    let nextX = tip.x;
+    let nextY = tip.y;
+    const minX = bounds.left + TOOLTIP_VIEWPORT_GUTTER;
+    const maxX = bounds.right - TOOLTIP_VIEWPORT_GUTTER;
+    const minY = bounds.top + TOOLTIP_VIEWPORT_GUTTER;
+    const maxY = bounds.bottom - TOOLTIP_VIEWPORT_GUTTER;
+
+    if (rect.right > maxX) nextX -= rect.right - maxX;
+    if (rect.left < minX) nextX += minX - rect.left;
+    if (rect.bottom > maxY) nextY -= rect.bottom - maxY;
+    if (rect.top < minY) nextY += minY - rect.top;
+
+    if (Math.abs(nextX - tip.x) > 0.5 || Math.abs(nextY - tip.y) > 0.5) {
+      setTip((current) => current.show ? { ...current, x: nextX, y: nextY } : current);
+    }
+  }, [tip.show, tip.text, tip.x, tip.y]);
 
   const colCount = useMemo(() => Math.max(1, config.cols || 3), [config.cols]);
   const layoutColCount = useMemo(
@@ -169,6 +206,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
       <div
         ref={popupRef}
         className="rwa2-popup"
+        role="region"
+        aria-label="Rewrite selected text"
         style={{ left: finalLeft, top: finalTop, visibility: finalVisibility }}
       >
         <PopupHeader
@@ -235,13 +274,19 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             Safety rule: this tool only accepts one unambiguous subspan of the captured selection. It cannot edit interior words.
           </div>
           <div className="rwa-foot">
-            <Button className="rwa-glow-button" onClick={() => setTrimOpen(false)} style={{ flex: 1 }}>Cancel</Button>
-            <Button className="rwa-glow-button" variant="rwa-accept" onClick={applyTrim} style={{ flex: 1 }}>Use trimmed selection</Button>
+            <Button glow={false} onClick={() => setTrimOpen(false)} style={{ flex: 1 }}>Cancel</Button>
+            <Button glow={false} variant="rwa-accept" onClick={applyTrim} style={{ flex: 1 }}>Use trimmed selection</Button>
           </div>
         </Modal>
       )}
 
-      <div className={`rwa2-tooltip ${tip.show ? 'rwa2-tooltip-show' : ''}`} style={{ left: tip.x, top: tip.y }}>
+      <div
+        ref={tooltipRef}
+        className={`rwa2-tooltip ${tip.show ? 'rwa2-tooltip-show' : ''}`}
+        role="tooltip"
+        aria-hidden={!tip.show}
+        style={{ left: tip.x, top: tip.y }}
+      >
         {tip.text}
       </div>
     </>

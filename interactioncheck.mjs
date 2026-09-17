@@ -25,14 +25,14 @@ ok('profile grid supports roving keyboard navigation without adding a tab stop p
   assert.match(source, /getComputedStyle\(gridRef\.current\)\.gridTemplateColumns/);
 });
 
-ok('profile toolbar supports low-chrome typeahead discovery', () => {
+ok('profile toolbar supports low-chrome typeahead and overflow discovery', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   assert.match(grid, /TYPEAHEAD_RESET_MS = 650/);
   assert.match(grid, /data-profile-name=\{profile\.name\}/);
   assert.match(grid, /findTypeaheadMatch/);
   assert.match(grid, /typeaheadRef\.current/);
-  assert.match(rewrite, /type to jump/);
+  assert.match(rewrite, /scroll or type/);
 });
 
 ok('profile and auto-profile explanations are available from keyboard focus', () => {
@@ -54,6 +54,23 @@ ok('context help tooltip is keyboard reachable and exposes an accessible descrip
   assert.match(source, /onBlur=\{onTooltipLeave\}/);
 });
 
+ok('popup tooltip is collision-aware across visual viewport edges', () => {
+  const source = read('./src/components/PopupMain.jsx');
+  assert.match(source, /useLayoutEffect/);
+  assert.match(source, /TOOLTIP_VIEWPORT_GUTTER = 8/);
+  assert.match(source, /window\.visualViewport/);
+  assert.match(source, /tooltipRef\.current\.getBoundingClientRect\(\)/);
+  assert.match(source, /rect\.right > maxX/);
+  assert.match(source, /rect\.bottom > maxY/);
+  assert.match(source, /role="tooltip"/);
+});
+
+ok('non-modal popup exposes a named region without interfering with dialog Escape ownership', () => {
+  const source = read('./src/components/PopupMain.jsx');
+  assert.match(source, /className="rwa2-popup"[\s\S]*role="region"[\s\S]*aria-label="Rewrite selected text"/);
+  assert.doesNotMatch(source, /className="rwa2-popup"[\s\S]*role="dialog"/);
+});
+
 ok('popup switches have switch semantics and every icon-only switch is named', () => {
   const toggle = read('./src/components/ui/ToggleSwitch.jsx');
   const context = read('./src/components/popup/ContextPanel.jsx');
@@ -62,6 +79,13 @@ ok('popup switches have switch semantics and every icon-only switch is named', (
   assert.match(context, /ariaLabel="Enable rewrite length adjustment"/);
   assert.match(context, /role="group" aria-label="Persistent context sources"/);
   assert.match(context, /role="group" aria-label="Sources for this rewrite only"/);
+});
+
+ok('trim-selection dialog opts out of cursor-following glow work', () => {
+  const source = read('./src/components/PopupMain.jsx');
+  assert.doesNotMatch(source, /rwa-glow-button/);
+  const trimBlock = source.match(/\{trimOpen && \([\s\S]*?<\/Modal>\s*\)\}/)?.[0] || '';
+  assert.equal((trimBlock.match(/<Button\b[^>]*glow=\{false\}/g) || []).length, 2);
 });
 
 ok('Escape dismisses the non-modal selection popup but never preempts an active dialog', () => {

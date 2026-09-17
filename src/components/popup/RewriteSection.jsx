@@ -22,7 +22,7 @@ export function RewriteSection({
           <div className="rwa2-section-title">Choose a style</div>
         </div>
         <div className="rwa2-section-meta">
-          {profiles.length} {profiles.length === 1 ? 'style' : 'styles'} · type to jump
+          {profiles.length} {profiles.length === 1 ? 'style' : 'styles'} · scroll or type
         </div>
       </div>
 
