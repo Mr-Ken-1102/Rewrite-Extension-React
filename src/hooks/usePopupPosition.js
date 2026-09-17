@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   estimatePopupHeight,
   POPUP_DESKTOP_WIDTH,
@@ -8,13 +8,45 @@ import {
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 const ANCHOR_GAP = 12;
 
-function textareaSourceRect(selection) {
+function getViewportSize() {
+  return {
+    width: Math.max(1, Number(window.innerWidth) || POPUP_DESKTOP_WIDTH),
+    height: Math.max(1, Number(window.innerHeight) || 600),
+  };
+}
+
+function useViewportSize() {
+  const [viewport, setViewport] = useState(getViewportSize);
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setViewport(getViewportSize());
+      });
+    };
+
+    window.addEventListener('resize', update, { passive: true });
+    window.visualViewport?.addEventListener?.('resize', update, { passive: true });
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener?.('resize', update);
+    };
+  }, []);
+
+  return viewport;
+}
+
+function textareaSourceRect(selection, viewportHeight) {
   if (selection?.source !== 'textarea' || !selection?.el?.isConnected) return null;
   try {
     const rect = selection.el.getBoundingClientRect?.();
     if (!rect) return null;
     if (![rect.top, rect.bottom, rect.left, rect.right].every(Number.isFinite)) return null;
-    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return null;
+    if (rect.bottom <= 0 || rect.top >= viewportHeight) return null;
     return rect;
   } catch {
     return null;
@@ -32,6 +64,8 @@ export function usePopupPosition({
   pinnedPos,
   hasAutoProfile,
 }) {
+  const viewport = useViewportSize();
+
   return useMemo(() => {
     let finalLeft = '0px';
     let finalTop = '0px';
@@ -40,29 +74,30 @@ export function usePopupPosition({
     if (popupPosition && selection) {
       const panelWidth = Math.min(
         POPUP_DESKTOP_WIDTH,
-        Math.max(280, window.innerWidth - (POPUP_VIEWPORT_GUTTER * 2)),
+        Math.max(280, viewport.width - (POPUP_VIEWPORT_GUTTER * 2)),
       );
-      const maxLeft = Math.max(POPUP_VIEWPORT_GUTTER, window.innerWidth - panelWidth - POPUP_VIEWPORT_GUTTER);
+      const maxLeft = Math.max(POPUP_VIEWPORT_GUTTER, viewport.width - panelWidth - POPUP_VIEWPORT_GUTTER);
 
       if (pinnedPos) {
         finalLeft = `${clamp(Number(pinnedPos.left) || POPUP_VIEWPORT_GUTTER, POPUP_VIEWPORT_GUTTER, maxLeft)}px`;
-        finalTop = `${clamp(Number(pinnedPos.top) || POPUP_VIEWPORT_GUTTER, POPUP_VIEWPORT_GUTTER, Math.max(POPUP_VIEWPORT_GUTTER, window.innerHeight - 60))}px`;
+        finalTop = `${clamp(Number(pinnedPos.top) || POPUP_VIEWPORT_GUTTER, POPUP_VIEWPORT_GUTTER, Math.max(POPUP_VIEWPORT_GUTTER, viewport.height - 60))}px`;
         finalVisibility = 'visible';
       } else if (popupPosition.isDragged) {
         finalLeft = `${clamp(Number(popupPosition.left) || POPUP_VIEWPORT_GUTTER, POPUP_VIEWPORT_GUTTER, maxLeft)}px`;
-        finalTop = `${clamp(Number(popupPosition.top) || POPUP_VIEWPORT_GUTTER, POPUP_VIEWPORT_GUTTER, Math.max(POPUP_VIEWPORT_GUTTER, window.innerHeight - 60))}px`;
+        finalTop = `${clamp(Number(popupPosition.top) || POPUP_VIEWPORT_GUTTER, POPUP_VIEWPORT_GUTTER, Math.max(POPUP_VIEWPORT_GUTTER, viewport.height - 60))}px`;
         finalVisibility = 'visible';
       } else {
         const actualRows = Math.ceil(sortedProfilesLength / Math.max(1, colCount));
         const visibleRows = Math.min(actualRows || 1, Math.max(1, rows || 3));
         const multiMessage = Array.isArray(selection?.segments) && selection.segments.length > 1;
         const estimatedHeight = Math.min(
-          window.innerHeight - (POPUP_VIEWPORT_GUTTER * 2),
+          viewport.height - (POPUP_VIEWPORT_GUTTER * 2),
           estimatePopupHeight({
             visibleRows,
             compact,
             hasAutoProfile,
             multiMessage,
+            viewportWidth: viewport.width,
           }),
         );
 
@@ -82,8 +117,8 @@ export function usePopupPosition({
 
         const belowCandidate = anchorY + ANCHOR_GAP;
         const aboveCandidate = anchorY - estimatedHeight - ANCHOR_GAP;
-        const maxTop = Math.max(POPUP_VIEWPORT_GUTTER, window.innerHeight - estimatedHeight - POPUP_VIEWPORT_GUTTER);
-        const sourceRect = textareaSourceRect(selection);
+        const maxTop = Math.max(POPUP_VIEWPORT_GUTTER, viewport.height - estimatedHeight - POPUP_VIEWPORT_GUTTER);
+        const sourceRect = textareaSourceRect(selection, viewport.height);
         const sourceBelowCandidate = sourceRect ? sourceRect.bottom + ANCHOR_GAP : null;
         const sourceAboveCandidate = sourceRect ? sourceRect.top - estimatedHeight - ANCHOR_GAP : null;
         let top;
@@ -112,5 +147,7 @@ export function usePopupPosition({
     popupPos,
     pinnedPos,
     hasAutoProfile,
+    viewport.width,
+    viewport.height,
   ]);
 }

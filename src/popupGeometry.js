@@ -10,6 +10,8 @@ export const POPUP_COMPACT_ROW_HEIGHT = 27;
 export const POPUP_PROFILE_ROW_GAP = 5;
 export const POPUP_FIXED_HEIGHT = 266;
 export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
+export const POPUP_STACKED_CONTEXT_EXTRA = 78;
+export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 36;
 
 export const POPUP_NORMAL_BREAKPOINTS = Object.freeze({
   fourToThree: 598,
@@ -31,9 +33,22 @@ export function getProfileViewportHeight(rows, compact = false) {
   return (visibleRows * rowHeight) + (Math.max(0, visibleRows - 1) * POPUP_PROFILE_ROW_GAP);
 }
 
-export function estimatePopupHeight({ visibleRows, compact = false, hasAutoProfile = false, multiMessage = false }) {
+export function getResponsivePopupExtra(viewportWidth) {
+  const width = Number(viewportWidth) || POPUP_DESKTOP_WIDTH;
+  return (width <= 459 ? POPUP_STACKED_CONTEXT_EXTRA : 0)
+    + (width <= 419 ? POPUP_WRAPPED_ACTIONBAR_EXTRA : 0);
+}
+
+export function estimatePopupHeight({
+  visibleRows,
+  compact = false,
+  hasAutoProfile = false,
+  multiMessage = false,
+  viewportWidth = POPUP_DESKTOP_WIDTH,
+}) {
   return POPUP_FIXED_HEIGHT
     + getProfileViewportHeight(visibleRows, compact)
     + (hasAutoProfile ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
-    + (multiMessage ? POPUP_TRANSIENT_ROW_HEIGHT : 0);
+    + (multiMessage ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
+    + getResponsivePopupExtra(viewportWidth);
 }

@@ -22,6 +22,16 @@ ok('popup geometry constants encode the rebalanced 620px / 12-column contract', 
   assert.match(source, /POPUP_FIXED_HEIGHT = 266/);
 });
 
+ok('popup geometry accounts for responsive context stacking and wrapped actions', () => {
+  const source = read('./src/popupGeometry.js');
+  assert.match(source, /POPUP_STACKED_CONTEXT_EXTRA = 78/);
+  assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 36/);
+  assert.match(source, /getResponsivePopupExtra/);
+  assert.match(source, /width <= 459 \? POPUP_STACKED_CONTEXT_EXTRA : 0/);
+  assert.match(source, /width <= 419 \? POPUP_WRAPPED_ACTIONBAR_EXTRA : 0/);
+  assert.match(source, /viewportWidth = POPUP_DESKTOP_WIDTH/);
+});
+
 ok('popup visual system loads after legacy popup-affecting layers', () => {
   const main = read('./src/main.jsx');
   assert.match(main, /import \{ RWA_POPUP_CSS \} from '\.\/styles-popup\.js';/);
@@ -94,6 +104,16 @@ ok('auto placement avoids covering a connected textarea when its edge has room',
   assert.match(source, /sourceAboveCandidate = sourceRect \? sourceRect\.top - estimatedHeight - ANCHOR_GAP/);
   assert.match(source, /sourceRect && sourceBelowCandidate <= maxTop/);
   assert.match(source, /sourceRect && sourceAboveCandidate >= POPUP_VIEWPORT_GUTTER/);
+});
+
+ok('popup placement reacts to viewport resizing and responsive height changes', () => {
+  const source = read('./src/hooks/usePopupPosition.js');
+  assert.match(source, /function useViewportSize\(\)/);
+  assert.match(source, /window\.addEventListener\('resize', update/);
+  assert.match(source, /visualViewport\?\.addEventListener\?\.\('resize', update/);
+  assert.match(source, /viewportWidth:\s*viewport\.width/);
+  assert.match(source, /viewport\.width/);
+  assert.match(source, /viewport\.height/);
 });
 
 ok('popup positioning consumes shared geometry and accounts for transient rows', () => {
