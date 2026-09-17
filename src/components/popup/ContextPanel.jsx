@@ -100,7 +100,7 @@ export function ContextPanel({
                     aria-pressed={!excluded}
                     title={text(
                       `${excluded ? 'Excluded from' : 'Included in'} this rewrite only`,
-                      `${excluded ? 'Đã loại khỏi' : 'Đã включено trong'} lần viết lại này`,
+                      `${excluded ? 'Đã loại khỏi' : 'Đã đưa vào'} lần viết lại này`,
                     )}
                     onClick={(event) => {
                       event.preventDefault();
