@@ -31,6 +31,7 @@ assert.match(css, /prefers-reduced-motion/);
 assert.doesNotMatch(css, /transition:\s*all/);
 
 assert.match(main, /import \{ RWA_SETTINGS_CSS \} from '\.\/styles-settings\.js';/);
-assert.match(main, /RWA_PERFORMANCE_CSS\}\\n\$\{RWA_SETTINGS_CSS\}\\n\$\{RWA_POPUP_CSS\}/);
+assert.match(main, /RWA_PERFORMANCE_CSS\}\\n\$\{RWA_POPUP_CSS\}\\n\$\{RWA_SETTINGS_CSS\}/);
+assert.doesNotMatch(css, /\.rwa2-/);
 
-console.log('settingscheck: S-A shell/semantics contract passed');
+console.log('settingscheck: isolated settings shell/semantics contract passed');
