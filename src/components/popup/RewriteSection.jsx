@@ -21,7 +21,9 @@ export function RewriteSection({
           <div className="rwa2-kicker">Rewrite</div>
           <div className="rwa2-section-title">Choose a style</div>
         </div>
-        <div className="rwa2-section-meta">{profiles.length} {profiles.length === 1 ? 'style' : 'styles'}</div>
+        <div className="rwa2-section-meta">
+          {profiles.length} {profiles.length === 1 ? 'style' : 'styles'} · type to jump
+        </div>
       </div>
 
       {autoProfile && (

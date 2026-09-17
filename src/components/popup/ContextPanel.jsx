@@ -74,7 +74,7 @@ export function ContextPanel({
           <span className="rwa2-free-note">Ignore character, persona and lore injection</span>
         </div>
 
-        <div className="rwa2-source-grid">
+        <div className="rwa2-source-grid" role="group" aria-label="Persistent context sources">
           <ToggleSwitch label="Character" checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
           <ToggleSwitch label="Persona" checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
           <ToggleSwitch label="Lore" checked={config.injectLorebook} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectLorebook: value }); keepFocus(); }} />
@@ -84,7 +84,7 @@ export function ContextPanel({
         {contextSources.length > 0 && (
           <div className="rwa2-one-shot">
             <span className="rwa2-one-shot-label">This rewrite:</span>
-            <div className="rwa2-one-shot-chips">
+            <div className="rwa2-one-shot-chips" role="group" aria-label="Sources for this rewrite only">
               {contextSources.map((source) => {
                 const excluded = !!contextExclusions[source.key];
                 return (
@@ -114,6 +114,7 @@ export function ContextPanel({
 
         <div className="rwa2-length-row" style={{ opacity: config.lengthEnabled ? '1' : '0.48' }}>
           <ToggleSwitch
+            ariaLabel="Enable rewrite length adjustment"
             checked={config.lengthEnabled}
             onChange={(value) => {
               updateConfig({ lengthEnabled: value, lengthPct: value ? config.lengthPct : 0 });
