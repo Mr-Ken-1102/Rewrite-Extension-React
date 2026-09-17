@@ -15,6 +15,8 @@ const SETTINGS_SECTIONS = [
   { id: 'data', label: 'Data & Debug', meta: 'Storage & diagnostics', description: 'Export portable data, inspect diagnostics, and manage local extension state.' },
 ];
 
+const NAV_KEYS = new Set(['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End']);
+
 const NavGlyph = ({ type }) => {
   const common = {
     width: 16,
@@ -54,10 +56,40 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
   const scrollPositionsRef = useRef({});
   useDialogFocusTrap(dialogRef, onClose);
 
+  const rememberSectionScroll = () => {
+    if (bodyRef.current && !showAbout) scrollPositionsRef.current[activeTab] = bodyRef.current.scrollTop;
+  };
+
   const handleTabChange = (tab) => {
-    if (bodyRef.current) scrollPositionsRef.current[activeTab] = bodyRef.current.scrollTop;
+    rememberSectionScroll();
     setShowAbout(false);
     setActiveTab(tab);
+  };
+
+  const handleAboutOpen = () => {
+    rememberSectionScroll();
+    setShowAbout(true);
+  };
+
+  const handleNavKeyDown = (event) => {
+    if (!NAV_KEYS.has(event.key)) return;
+    const target = event.target instanceof Element ? event.target.closest('[role="tab"]') : null;
+    if (!target) return;
+    const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+    const currentIndex = tabs.indexOf(target);
+    if (currentIndex < 0 || tabs.length === 0) return;
+
+    let nextIndex = currentIndex;
+    if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = tabs.length - 1;
+    else if (event.key === 'ArrowDown' || event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+    else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+
+    event.preventDefault();
+    const nextTab = tabs[nextIndex];
+    if (!(nextTab instanceof HTMLElement)) return;
+    nextTab.focus({ preventScroll: true });
+    nextTab.click();
   };
 
   useEffect(() => {
@@ -65,6 +97,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
   }, [activeTab, showAbout]);
 
   const activeSection = SETTINGS_SECTIONS.find((section) => section.id === activeTab) || SETTINGS_SECTIONS[0];
+  const activeTabId = showAbout ? 'rwas-tab-about' : `rwas-tab-${activeSection.id}`;
 
   return (
     <div className="rwa-ov rwas-overlay">
@@ -84,41 +117,56 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
         <div className="rwas-shell">
           <aside className="rwas-sidebar" data-legacy-contract="rwa-settings-sidebar" aria-label="Settings navigation">
             <div className="rwas-nav-label">Settings</div>
-            <div className="rwas-nav" role="tablist" aria-label="Settings sections">
-              {SETTINGS_SECTIONS.map((section) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={!showAbout && activeTab === section.id}
-                  className={`rwas-nav-btn ${!showAbout && activeTab === section.id ? 'rwas-active' : ''}`}
-                  onClick={() => handleTabChange(section.id)}
-                >
-                  <span className="rwas-nav-icon"><NavGlyph type={section.id} /></span>
-                  <span className="rwas-nav-copy">
-                    <strong>{section.label}</strong>
-                    <small>{section.meta}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
+            <div className="rwas-nav" role="tablist" aria-label="Settings sections" onKeyDown={handleNavKeyDown}>
+              {SETTINGS_SECTIONS.map((section) => {
+                const selected = !showAbout && activeTab === section.id;
+                return (
+                  <button
+                    key={section.id}
+                    id={`rwas-tab-${section.id}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    aria-controls="rwas-settings-panel"
+                    tabIndex={selected ? 0 : -1}
+                    className={`rwas-nav-btn ${selected ? 'rwas-active' : ''}`}
+                    onClick={() => handleTabChange(section.id)}
+                  >
+                    <span className="rwas-nav-icon"><NavGlyph type={section.id} /></span>
+                    <span className="rwas-nav-copy">
+                      <strong>{section.label}</strong>
+                      <small>{section.meta}</small>
+                    </span>
+                  </button>
+                );
+              })}
 
-            <button
-              type="button"
-              role="tab"
-              aria-selected={showAbout}
-              className={`rwas-nav-btn rwas-nav-about ${showAbout ? 'rwas-active' : ''}`}
-              onClick={() => setShowAbout(true)}
-            >
-              <span className="rwas-nav-icon"><NavGlyph type="about" /></span>
-              <span className="rwas-nav-copy">
-                <strong>About</strong>
-                <small>Version 3.0.1</small>
-              </span>
-            </button>
+              <button
+                id="rwas-tab-about"
+                type="button"
+                role="tab"
+                aria-selected={showAbout}
+                aria-controls="rwas-settings-panel"
+                tabIndex={showAbout ? 0 : -1}
+                className={`rwas-nav-btn rwas-nav-about ${showAbout ? 'rwas-active' : ''}`}
+                onClick={handleAboutOpen}
+              >
+                <span className="rwas-nav-icon"><NavGlyph type="about" /></span>
+                <span className="rwas-nav-copy">
+                  <strong>About</strong>
+                  <small>Version 3.0.1</small>
+                </span>
+              </button>
+            </div>
           </aside>
 
-          <section className="rwas-workspace" data-legacy-contract="rwa-settings-workspace">
+          <section
+            id="rwas-settings-panel"
+            role="tabpanel"
+            aria-labelledby={activeTabId}
+            className="rwas-workspace"
+            data-legacy-contract="rwa-settings-workspace"
+          >
             <div className="rwas-page-head">
               <div className="rwas-page-copy">
                 <div className="rwas-page-kicker">{showAbout ? 'About' : activeSection.meta}</div>

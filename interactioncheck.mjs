@@ -88,6 +88,17 @@ ok('trim-selection dialog opts out of cursor-following glow work', () => {
   assert.equal((trimBlock.match(/<Button\b[^>]*glow=\{false\}/g) || []).length, 2);
 });
 
+ok('toast feedback uses live-region semantics and readable dwell times', () => {
+  const source = read('./src/components/ui/ToastContainer.jsx');
+  assert.match(source, /variant === 'err'\) return 6000/);
+  assert.match(source, /variant === 'warn'\) return 5000/);
+  assert.match(source, /return 3500/);
+  assert.match(source, /role=\{isError \? 'alert' : 'status'\}/);
+  assert.match(source, /aria-live=\{isError \? 'assertive' : 'polite'\}/);
+  assert.match(source, /aria-atomic="true"/);
+  assert.match(source, /aria-hidden="true"/);
+});
+
 ok('Escape dismisses the non-modal selection popup but never preempts an active dialog', () => {
   const source = read('./src/hooks/useNativeEvents.js');
   assert.match(source, /event\.key === 'Escape' && runtime\.popupPosition/);

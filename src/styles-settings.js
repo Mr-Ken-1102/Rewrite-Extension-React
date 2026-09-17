@@ -141,6 +141,7 @@ export const RWA_SETTINGS_CSS = `
 
 .rwas-nav {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 4px;
 }
@@ -380,7 +381,7 @@ export const RWA_SETTINGS_CSS = `
   }
 
   .rwas-nav-label { display: none; }
-  .rwas-nav { display: inline-flex; flex-direction: row; gap: 4px; }
+  .rwas-nav { display: inline-flex; flex: 0 0 auto; flex-direction: row; gap: 4px; }
 
   .rwas-nav-btn {
     width: auto;

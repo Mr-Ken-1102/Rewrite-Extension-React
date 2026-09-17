@@ -24,9 +24,26 @@ assert.match(modal, /\+ Add Style/);
 assert.match(modal, /AI Architect/);
 assert.doesNotMatch(modal, /useGlowPointer/);
 
+assert.match(modal, /role="tablist"/);
+assert.match(modal, /onKeyDown=\{handleNavKeyDown\}/);
+assert.match(modal, /NAV_KEYS/);
+assert.match(modal, /ArrowDown/);
+assert.match(modal, /ArrowUp/);
+assert.match(modal, /ArrowRight/);
+assert.match(modal, /ArrowLeft/);
+assert.match(modal, /event\.key === 'Home'/);
+assert.match(modal, /event\.key === 'End'/);
+assert.match(modal, /tabIndex=\{selected \? 0 : -1\}/);
+assert.match(modal, /tabIndex=\{showAbout \? 0 : -1\}/);
+assert.match(modal, /aria-controls="rwas-settings-panel"/);
+assert.match(modal, /id="rwas-settings-panel"/);
+assert.match(modal, /role="tabpanel"/);
+assert.match(modal, /aria-labelledby=\{activeTabId\}/);
+
 assert.match(css, /width:\s*min\(960px/);
 assert.match(css, /height:\s*min\(720px/);
 assert.match(css, /grid-template-columns:\s*224px minmax\(0, 1fr\)/);
+assert.match(css, /\.rwas-nav\s*\{[\s\S]*flex:\s*1 1 auto/);
 assert.match(css, /\.rwas-statusbar/);
 assert.match(css, /backdrop-filter:\s*none/);
 assert.match(css, /:focus-visible/);

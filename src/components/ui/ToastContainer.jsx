@@ -1,37 +1,46 @@
 import { useEffect, useState } from 'react';
 import { useToastStore } from '../../store/useToastStore';
 
+function toastLifetime(variant) {
+  if (variant === 'err') return 6000;
+  if (variant === 'warn') return 5000;
+  return 3500;
+}
+
 const ToastItem = ({ toast }) => {
   const [show, setShow] = useState(false);
-  // Gọi hàm xóa toast từ store (Giả định store có hàm removeToast)
   const removeToast = useToastStore((state) => state.removeToast);
+  const lifetime = toastLifetime(toast.variant);
+  const isError = toast.variant === 'err';
 
   useEffect(() => {
-    // 1. Sau 10ms: Thêm class rwa-toast-show để trượt lên
-    const showTimer = setTimeout(() => setShow(true), 10);
-    
-    // 2. Sau 3000ms: Gỡ class rwa-toast-show để trượt xuống / mờ dần
+    const showTimer = window.setTimeout(() => setShow(true), 10);
     let removeTimer = null;
-    const hideTimer = setTimeout(() => {
+    const hideTimer = window.setTimeout(() => {
       setShow(false);
-      removeTimer = setTimeout(() => {
+      removeTimer = window.setTimeout(() => {
         removeToast?.(toast.id);
       }, 400);
-    }, 3000);
+    }, lifetime);
 
     return () => {
-      clearTimeout(showTimer);
-      clearTimeout(hideTimer);
-      if (removeTimer) clearTimeout(removeTimer);
+      window.clearTimeout(showTimer);
+      window.clearTimeout(hideTimer);
+      if (removeTimer) window.clearTimeout(removeTimer);
     };
-  }, [toast.id, removeToast]);
+  }, [lifetime, toast.id, removeToast]);
 
-  const iconMap = { ok: "✓", err: "✕", warn: "⚠️" };
-  const classMap = { ok: "rwa-toast-icon-ok", err: "rwa-toast-icon-err", warn: "rwa-toast-icon-warn" };
-  
+  const iconMap = { ok: '✓', err: '✕', warn: '⚠️' };
+  const classMap = { ok: 'rwa-toast-icon-ok', err: 'rwa-toast-icon-err', warn: 'rwa-toast-icon-warn' };
+
   return (
-    <div className={`rwa-toast-container ${show ? 'rwa-toast-show' : ''}`}>
-      <span className={classMap[toast.variant] || classMap.warn}>
+    <div
+      className={`rwa-toast-container ${show ? 'rwa-toast-show' : ''}`}
+      role={isError ? 'alert' : 'status'}
+      aria-live={isError ? 'assertive' : 'polite'}
+      aria-atomic="true"
+    >
+      <span className={classMap[toast.variant] || classMap.warn} aria-hidden="true">
         {iconMap[toast.variant] || iconMap.warn}
       </span>
       <span>{toast.message}</span>
@@ -41,7 +50,7 @@ const ToastItem = ({ toast }) => {
 
 export const ToastContainer = () => {
   const toasts = useToastStore((state) => state.toasts);
-  
+
   return (
     <>
       {toasts.map((toast) => (
