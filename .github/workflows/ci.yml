@@ -45,6 +45,9 @@ jobs:
       - name: Dependency-free popup architecture gate
         run: node popupcheck.mjs
 
+      - name: Dependency-free popup readability and focus gate
+        run: node popupcalibrationcheck.mjs
+
       - name: Install locked dependencies
         run: npm ci
 
