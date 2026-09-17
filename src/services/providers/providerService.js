@@ -19,6 +19,12 @@ function extenderRoot(value) {
   return String(value || '').trim().replace(/\/+$/, '').replace(/\/v1$/, '');
 }
 
+function extractMarinaraContent(payload) {
+  if (typeof payload?.content === 'string') return payload.content;
+  if (typeof payload?.result === 'string') return payload.result;
+  return '';
+}
+
 export class ProviderService {
   static async listConnections(signal) {
     const result = await MarinaraHost.apiFetch(ENDPOINTS.connections, { signal }, 15000);
@@ -87,9 +93,6 @@ export class ProviderService {
     const config = { ...usePersistentStore.getState().config, ...override };
     const mode = ['marinara', 'sidecar', 'direct', 'extender'].includes(config.connMode) ? config.connMode : 'marinara';
     const configuredTimeout = Math.max(5000, Math.min(180000, Number(config.requestTimeoutMs) || 45000));
-    // /generate/raw is deliberately non-streaming. Cold local models can take
-    // longer than 45s to return their first complete response, so Marinara mode
-    // gets a transparent 90s floor while Direct/Sidecar keep the configured value.
     const timeout = mode === 'marinara' ? Math.max(90000, configuredTimeout) : configuredTimeout;
     debugLogService.add('inference.request', { mode, systemChars: systemPrompt.length, userChars: userPrompt.length });
 
@@ -98,7 +101,8 @@ export class ProviderService {
       if (resolved.error || !resolved.connectionId) return { error: resolved.error || 'No Marinara connection is available.' };
       const connectionId = resolved.connectionId;
       debugLogService.add('inference.connection', { mode, source: resolved.source, chatId: resolved.chatId || null });
-      const result = await MarinaraHost.apiFetch(ENDPOINTS.generateRaw, {
+
+      const requestRaw = (parameters) => MarinaraHost.apiFetch(ENDPOINTS.generateRaw, {
         method: 'POST',
         body: JSON.stringify({
           connectionId,
@@ -107,13 +111,44 @@ export class ProviderService {
             { role: 'user', content: userPrompt },
           ],
           streaming: false,
+          ...(parameters ? { parameters } : {}),
         }),
         signal,
       }, timeout);
-      if (!result) return { error: 'Marinara returned an unreadable response.' };
-      if (result.aborted === true) return { aborted: true };
-      if (result.error) return normalizeProviderFailure(result.error);
-      const content = typeof result.content === 'string' ? result.content : (result.result || '');
+
+      const first = await requestRaw();
+      if (!first) return { error: 'Marinara returned an unreadable response.' };
+      if (first.aborted === true) return { aborted: true };
+      if (first.error) return normalizeProviderFailure(first.error);
+
+      let content = extractMarinaraContent(first);
+      if (!content.trim()) {
+        debugLogService.add('inference.empty_response', {
+          mode,
+          stage: 'initial',
+          connectionId,
+          retry: 'reasoning-disabled',
+        });
+
+        const retry = await requestRaw({ reasoningEffort: null });
+        if (!retry) return { error: 'Marinara returned an unreadable response while retrying an empty generation.' };
+        if (retry.aborted === true) return { aborted: true };
+        if (retry.error) return normalizeProviderFailure(retry.error);
+        content = extractMarinaraContent(retry);
+
+        if (!content.trim()) {
+          debugLogService.add('inference.empty_response', {
+            mode,
+            stage: 'reasoning-disabled-retry',
+            connectionId,
+          });
+          return {
+            error: 'Marinara completed the request but returned no usable text. Rewrite Assistant retried once with reasoning disabled and still received an empty answer. Check the active chat model/output-token settings, or disable reasoning for this connection.',
+            errorCode: 'RWA_PROVIDER_EMPTY_RESPONSE',
+          };
+        }
+      }
+
       debugLogService.add('inference.response', { mode, resultChars: content.length });
       return { result: content };
     }
