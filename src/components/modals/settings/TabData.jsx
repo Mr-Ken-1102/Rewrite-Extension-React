@@ -1,5 +1,10 @@
 import { useRef, useState } from 'react';
-import { usePersistentStore } from '../../../store/usePersistentStore';
+import {
+  usePersistentStore,
+  STORAGE_KEY,
+  LEGACY_BACKUP_KEY,
+  safeLocalStorage,
+} from '../../../store/usePersistentStore';
 import { useToastStore } from '../../../store/useToastStore';
 import { createPortableExport, parsePortableImport } from '../../../services/portableDataService';
 import { debugLogService } from '../../../services/debugLogService';
@@ -30,6 +35,7 @@ export const TabData = () => {
   const [options, setOptions] = useState({ profiles: true, settings: true, customs: true, autoProfiles: true });
   const [, setDebugRevision] = useState(0);
   const [pendingImport, setPendingImport] = useState(null);
+  const [showCleanConfirm, setShowCleanConfirm] = useState(false);
   const debugEntries = debugLogService.list();
 
   const toggle = (key) => setOptions((current) => ({ ...current, [key]: !current[key] }));
@@ -71,6 +77,24 @@ export const TabData = () => {
     showToast(value ? 'Session debug logging enabled.' : 'Session debug logging disabled and cleared.', value ? 'ok' : 'warn');
   };
 
+  const handleCleanData = async () => {
+    try {
+      await usePersistentStore.persist.clearStorage();
+    } catch (err) {
+      setShowCleanConfirm(false);
+      showToast(`Could not clear Marinara private storage: ${err?.message || String(err)}`, 'err');
+      return;
+    }
+
+    [STORAGE_KEY, LEGACY_BACKUP_KEY].forEach((key) => safeLocalStorage.removeItem(key));
+    state.clearAllData();
+    debugLogService.clear();
+    debugLogService.setEnabled(false);
+    setDebugRevision((revision) => revision + 1);
+    setShowCleanConfirm(false);
+    showToast('Rewrite Assistant data reset to defaults.', 'ok');
+  };
+
   return (
     <>
       <div className="rwa-lbl">PORTABLE EXPORT / IMPORT</div>
@@ -91,8 +115,8 @@ export const TabData = () => {
         ))}
       </div>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
-        <Button className="rwa-glow-button" onClick={doExport} style={{ flex: 1 }}>Export selected</Button>
-        <Button className="rwa-glow-button" onClick={() => importRef.current?.click()} style={{ flex: 1 }}>Import…</Button>
+        <Button glow={false} onClick={doExport} style={{ flex: 1 }}>Export selected</Button>
+        <Button glow={false} onClick={() => importRef.current?.click()} style={{ flex: 1 }}>Import…</Button>
         <input ref={importRef} type="file" accept="application/json,.json" onChange={onImport} style={{ display: 'none' }} />
       </div>
 
@@ -107,11 +131,24 @@ export const TabData = () => {
       <div className="rwa-prev" style={{ maxHeight: '150px', fontFamily: 'monospace', fontSize: '9px', whiteSpace: 'pre-wrap', marginBottom: '10px' }}>
         {state.config.debugEnabled !== true ? 'Debug logging is OFF.' : debugEntries.length ? debugEntries.slice(0, 40).map((entry) => `${entry.when}  ${entry.event}  ${JSON.stringify(entry.details)}`).join('\n') : 'No debug events in this session.'}
       </div>
-      <div style={{ display: 'flex', gap: '8px' }}>
-        <Button className="rwa-glow-button" disabled={state.config.debugEnabled !== true} onClick={() => { downloadText('rewrite-assistant-debug.json', debugLogService.exportText()); }} style={{ flex: 1 }}>Export debug log</Button>
-        <Button className="rwa-glow-button" variant="rwa-dng" onClick={() => { debugLogService.clear(); setDebugRevision((v) => v + 1); }} style={{ flex: 1 }}>Clear session log</Button>
-        <Button className="rwa-glow-button" onClick={() => setDebugRevision((v) => v + 1)}>Refresh</Button>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '22px' }}>
+        <Button glow={false} disabled={state.config.debugEnabled !== true} onClick={() => { downloadText('rewrite-assistant-debug.json', debugLogService.exportText()); }} style={{ flex: 1 }}>Export debug log</Button>
+        <Button glow={false} variant="rwa-dng" onClick={() => { debugLogService.clear(); setDebugRevision((v) => v + 1); }} style={{ flex: 1 }}>Clear session log</Button>
+        <Button glow={false} onClick={() => setDebugRevision((v) => v + 1)}>Refresh</Button>
       </div>
+
+      <div className="rwa-lbl">DATA RESET</div>
+      <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
+        Reset removes Rewrite Assistant profiles, non-routing settings, custom prompts, auto-profiles, and private extension state, then restores safe defaults. This action cannot be undone.
+      </div>
+      <Button
+        glow={false}
+        variant="rwa-dng"
+        onClick={() => setShowCleanConfirm(true)}
+        style={{ width: '100%', minHeight: '34px' }}
+      >
+        Reset Rewrite Assistant data…
+      </Button>
 
       {pendingImport ? (
         <ConfirmModal
@@ -119,6 +156,15 @@ export const TabData = () => {
           message={`Import ${pendingImport.name}? This can replace selected profiles, non-provider settings, custom prompts, and auto-profiles. Provider routing remains untouched.`}
           onCancel={() => setPendingImport(null)}
           onConfirm={confirmImport}
+        />
+      ) : null}
+
+      {showCleanConfirm ? (
+        <ConfirmModal
+          zIndex={26000}
+          message="Reset all Rewrite Assistant data to defaults? Profiles, settings, custom prompts, auto-profiles, and private extension state will be cleared. This cannot be undone."
+          onConfirm={handleCleanData}
+          onCancel={() => setShowCleanConfirm(false)}
         />
       ) : null}
     </>

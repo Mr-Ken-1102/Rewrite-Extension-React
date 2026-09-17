@@ -110,6 +110,25 @@ export const TabContext = () => {
       >
         <ToggleSwitch checked={config.mergeMultiMsg} onChange={(value) => updateConfig({ mergeMultiMsg: value })} />
       </Row>
+      <Row
+        title="Surrounding context words / side"
+        note="Applies when Around context is enabled. Controls how much captured prose before and after the selection participates in the rewrite prompt."
+      >
+        <input
+          type="number"
+          className="rwa-inp"
+          min="50"
+          max="400"
+          value={config.localContextWords}
+          aria-label="Surrounding context words per side"
+          onChange={(event) => {
+            const parsed = parseInt(event.target.value, 10);
+            if (Number.isNaN(parsed)) return;
+            updateConfig({ localContextWords: Math.max(50, Math.min(400, parsed)) });
+          }}
+          style={{ width: '72px', margin: 0, padding: '6px 8px', fontSize: '12px', textAlign: 'center' }}
+        />
+      </Row>
 
       <div className="rwa-lbl" style={{ marginTop: '22px' }}>CHARACTER CONTEXT PICKER</div>
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
@@ -121,6 +140,7 @@ export const TabContext = () => {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder={loadingChars ? 'Loading characters…' : 'Search current-chat characters'}
+        aria-label="Search current-chat characters"
         style={{ marginBottom: '8px' }}
       />
       <div style={{ maxHeight: '160px', overflowY: 'auto', marginBottom: '12px' }}>
@@ -137,18 +157,18 @@ export const TabContext = () => {
         {!loadingChars && !characterLoadError && filtered.length === 0 ? <div style={{ fontSize: '10px', opacity: 0.6 }}>No matching current-chat characters.</div> : null}
       </div>
       {selected.size ? (
-        <Button className="rwa-glow-button" onClick={() => updateConfig({ charCardIds: [] })} style={{ width: '100%', marginBottom: '16px' }}>
+        <Button glow={false} onClick={() => updateConfig({ charCardIds: [] })} style={{ width: '100%', marginBottom: '16px' }}>
           Clear explicit character selection ({selected.size})
         </Button>
       ) : null}
 
       <div className="rwa-lbl" style={{ marginTop: '20px' }}>AUTO-PROFILE</div>
       <div style={{ display: 'flex', gap: '8px' }}>
-        <Button className="rwa-glow-button" onClick={generateNow} disabled={!chatId || generating} style={{ flex: 1 }}>
+        <Button glow={false} onClick={generateNow} disabled={!chatId || generating} style={{ flex: 1 }}>
           {generating ? 'Generating…' : 'Generate for current chat'}
         </Button>
         <Button
-          className="rwa-glow-button"
+          glow={false}
           variant="rwa-dng"
           disabled={!chatId || !autoProfiles?.[chatId]}
           onClick={() => { if (chatId) removeAutoProfile(chatId); }}

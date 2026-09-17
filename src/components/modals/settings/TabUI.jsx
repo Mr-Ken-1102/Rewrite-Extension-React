@@ -1,9 +1,5 @@
-import { useState } from 'react';
-import { usePersistentStore, STORAGE_KEY, LEGACY_BACKUP_KEY, safeLocalStorage } from '../../../store/usePersistentStore';
-import { useToastStore } from '../../../store/useToastStore';
+import { usePersistentStore } from '../../../store/usePersistentStore';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
-import { Button } from '../../ui/Button';
-import { ConfirmModal } from '../ConfirmModal';
 
 const ConfigRow = ({ label, children }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
@@ -21,8 +17,8 @@ const NumericInput = ({ min, max, value, onChangeKey, updateConfig }) => (
     min={min}
     max={max}
     value={value !== undefined ? value : 3}
-    onChange={(e) => {
-      const parsed = parseInt(e.target.value, 10);
+    onChange={(event) => {
+      const parsed = parseInt(event.target.value, 10);
       if (Number.isNaN(parsed)) return;
       updateConfig({ [onChangeKey]: Math.max(min, Math.min(max, parsed)) });
     }}
@@ -30,54 +26,36 @@ const NumericInput = ({ min, max, value, onChangeKey, updateConfig }) => (
   />
 );
 
-export const TabUI = ({ onCloseModal }) => {
-  const { config, updateConfig, clearAllData } = usePersistentStore();
-  const showToast = useToastStore((state) => state.showToast);
-  const [showCleanConfirm, setShowCleanConfirm] = useState(false);
+export const TabUI = () => {
+  const { config, updateConfig } = usePersistentStore();
   const profileColumnMax = config.compact ? 6 : 4;
   const visibleProfileColumns = Math.min(Math.max(1, config.cols || 3), profileColumnMax);
-
-  const handleCleanData = async () => {
-    try {
-      await usePersistentStore.persist.clearStorage();
-    } catch (err) {
-      setShowCleanConfirm(false);
-      showToast(`Could not clear Marinara private storage: ${err?.message || String(err)}`, 'err');
-      return;
-    }
-
-    [STORAGE_KEY, LEGACY_BACKUP_KEY].forEach((key) => safeLocalStorage.removeItem(key));
-    clearAllData();
-    setShowCleanConfirm(false);
-    onCloseModal();
-    showToast('All Rewrite Assistant data cleaned successfully!', 'ok');
-  };
 
   return (
     <>
       <div className="rwa-lbl">Behavior &amp; Viewports</div>
 
       <ConfigRow label="Typewriter reveal on final output:">
-        <ToggleSwitch checked={config.typewriter} onChange={(v) => updateConfig({ typewriter: v })} />
+        <ToggleSwitch checked={config.typewriter} onChange={(value) => updateConfig({ typewriter: value })} />
       </ConfigRow>
       <ConfigRow label="Show inline visual word diff:">
-        <ToggleSwitch checked={config.showDiff} onChange={(v) => updateConfig({ showDiff: v })} />
+        <ToggleSwitch checked={config.showDiff} onChange={(value) => updateConfig({ showDiff: value })} />
       </ConfigRow>
       <ConfigRow label="Auto-apply result (skip preview):">
-        <ToggleSwitch checked={config.autoApply} onChange={(v) => updateConfig({ autoApply: v })} />
+        <ToggleSwitch checked={config.autoApply} onChange={(value) => updateConfig({ autoApply: value })} />
       </ConfigRow>
       <ConfigRow label="Compact grid (2-letter labels):">
         <ToggleSwitch
           checked={config.compact}
-          onChange={(v) => updateConfig({
-            compact: v,
-            cols: Math.min(config.cols || 3, v ? 6 : 4),
+          onChange={(value) => updateConfig({
+            compact: value,
+            cols: Math.min(config.cols || 3, value ? 6 : 4),
           })}
         />
       </ConfigRow>
 
       <ConfigRow label="Only show on ALT + R (always hide popup):">
-        <ToggleSwitch checked={config.onlyAltR} onChange={(v) => updateConfig({ onlyAltR: v })} />
+        <ToggleSwitch checked={config.onlyAltR} onChange={(value) => updateConfig({ onlyAltR: value })} />
       </ConfigRow>
 
       <ConfigRow label={config.compact ? 'Profile columns (compact):' : 'Profile columns:'}>
@@ -90,15 +68,11 @@ export const TabUI = ({ onCloseModal }) => {
         <NumericInput min={1} max={20} value={config.historyDepth} onChangeKey="historyDepth" updateConfig={updateConfig} />
       </ConfigRow>
 
-      <ConfigRow label="Surrounding context words / side:">
-        <NumericInput min={50} max={400} value={config.localContextWords} onChangeKey="localContextWords" updateConfig={updateConfig} />
-      </ConfigRow>
-
       <ConfigRow label="Popup viewport alignment:">
         <select
           className="rwa-inp"
           value={config.popupPos || 'auto'}
-          onChange={(e) => updateConfig({ popupPos: e.target.value })}
+          onChange={(event) => updateConfig({ popupPos: event.target.value })}
           style={{ width: 'auto', margin: '0', padding: '6px 12px', fontSize: '12px', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }}
         >
           <option value="auto" style={{ background: '#12121a' }}>Auto flipping viewport</option>
@@ -106,24 +80,6 @@ export const TabUI = ({ onCloseModal }) => {
           <option value="below" style={{ background: '#12121a' }}>Always below highlight</option>
         </select>
       </ConfigRow>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: 'auto' }}>
-        <Button
-          variant="rwa-dng"
-          onClick={() => setShowCleanConfirm(true)}
-          style={{ fontSize: '12px', padding: '6px 14px', borderRadius: '8px', fontWeight: 700, height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        >
-          🧹 Clean Data
-        </Button>
-      </div>
-
-      {showCleanConfirm && (
-        <ConfirmModal
-          message="Warning: Are you sure you want to clear ALL settings, history, and custom styles? This cannot be undone."
-          onConfirm={handleCleanData}
-          onCancel={() => setShowCleanConfirm(false)}
-        />
-      )}
     </>
   );
 };
