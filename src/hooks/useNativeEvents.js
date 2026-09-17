@@ -98,8 +98,17 @@ export const useNativeEvents = () => {
     }, true);
 
     add(document, 'keydown', (event) => {
-      if (!event.altKey || event.code !== 'KeyR') return;
       const runtime = useRuntimeStore.getState();
+      if (event.key === 'Escape' && runtime.popupPosition) {
+        const activeDialog = runtime.shadowRoot?.querySelector?.('[role="dialog"], [role="alertdialog"]');
+        if (!activeDialog) {
+          event.preventDefault();
+          runtime.reset();
+          return;
+        }
+      }
+
+      if (!event.altKey || event.code !== 'KeyR') return;
       const config = usePersistentStore.getState().config;
       const saved = DOMUtils.getSelectionData(null, config, runtime.lastClickedMid);
       if (!saved) {

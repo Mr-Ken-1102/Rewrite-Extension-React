@@ -1,5 +1,7 @@
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 
+const CONTEXT_MODE_HELP = 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.';
+
 export function ContextPanel({
   config,
   updateConfig,
@@ -40,9 +42,12 @@ export function ContextPanel({
             <button
               type="button"
               className="rwa2-info"
-              onMouseEnter={(event) => onTooltip(event, 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.')}
+              onMouseEnter={(event) => onTooltip(event, CONTEXT_MODE_HELP)}
               onMouseLeave={onTooltipLeave}
+              onFocus={(event) => onTooltip(event, CONTEXT_MODE_HELP)}
+              onBlur={onTooltipLeave}
               aria-label="Context mode help"
+              aria-description={CONTEXT_MODE_HELP}
             >i</button>
           </div>
           <div className="rwa2-target-chip" aria-label={`Rewrite target: ${displayRadarText}`}>

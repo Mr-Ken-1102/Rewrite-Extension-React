@@ -28,8 +28,12 @@ export function RewriteSection({
         <Button
           glow={false}
           className="rwa2-auto-profile"
+          aria-label={autoProfile.name}
+          aria-description={autoProfile.prompt}
           onMouseEnter={(event) => onTooltip(event, `${autoProfile.name}: ${autoProfile.prompt}`)}
           onMouseLeave={onTooltipLeave}
+          onFocus={(event) => onTooltip(event, `${autoProfile.name}: ${autoProfile.prompt}`)}
+          onBlur={onTooltipLeave}
           onClick={(event) => {
             event.stopPropagation();
             onRun(autoProfile);

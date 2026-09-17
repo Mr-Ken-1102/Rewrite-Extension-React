@@ -48,6 +48,9 @@ jobs:
       - name: Dependency-free popup readability and focus gate
         run: node popupcalibrationcheck.mjs
 
+      - name: Dependency-free popup interaction and tooltip gate
+        run: node interactioncheck.mjs
+
       - name: Dependency-free settings architecture gate
         run: node settingscheck.mjs
 
