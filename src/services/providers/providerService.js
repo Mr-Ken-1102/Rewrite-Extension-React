@@ -116,12 +116,12 @@ export class ProviderService {
         signal,
       }, timeout);
 
-      const first = await requestRaw();
-      if (!first) return { error: 'Marinara returned an unreadable response.' };
-      if (first.aborted === true) return { aborted: true };
-      if (first.error) return normalizeProviderFailure(first.error);
+      const result = await requestRaw();
+      if (!result) return { error: 'Marinara returned an unreadable response.' };
+      if (result.aborted === true) return { aborted: true };
+      if (result.error) return normalizeProviderFailure(result.error);
 
-      let content = extractMarinaraContent(first);
+      let content = extractMarinaraContent(result);
       if (!content.trim()) {
         debugLogService.add('inference.empty_response', {
           mode,
