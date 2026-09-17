@@ -6,7 +6,6 @@ import { TabAPI } from './settings/TabAPI';
 import { TabContext } from './settings/TabContext';
 import { TabData } from './settings/TabData';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { useGlowPointer } from '../../hooks/useGlowPointer';
 
 const SETTINGS_SECTIONS = [
   { id: 'profiles', label: 'Style Presets', meta: 'Rewrite styles', description: 'Create, organize, hide, and refine the rewrite actions shown in the popup.' },
@@ -65,51 +64,38 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
     if (bodyRef.current) bodyRef.current.scrollTop = showAbout ? 0 : (scrollPositionsRef.current[activeTab] || 0);
   }, [activeTab, showAbout]);
 
-  const handleGlowPointerMove = useGlowPointer();
   const activeSection = SETTINGS_SECTIONS.find((section) => section.id === activeTab) || SETTINGS_SECTIONS[0];
 
   return (
-    <div className="rwa-ov" onPointerMove={handleGlowPointerMove}>
-      <div ref={dialogRef} className="rwa-win rwa-settings-win" role="dialog" aria-modal="true" aria-label="Rewrite Assistant Settings" tabIndex={-1}>
-        <div className="rwa-topbar"></div>
-
-        <div className="rwa-hdr rwa-settings-hdr">
-          <div className="rwa-settings-brand">
-            <div className="rwa-settings-brand-line">
-              <span className="rwa-settings-product">Rewrite Assistant</span>
-              <span className="rwa-version-badge">V3</span>
+    <div className="rwa-ov rwas-overlay">
+      <div ref={dialogRef} className="rwa-win rwas-settings" role="dialog" aria-modal="true" aria-label="Rewrite Assistant Settings" tabIndex={-1}>
+        <header className="rwas-header">
+          <div className="rwas-brand">
+            <div className="rwas-brand-line">
+              <span className="rwas-product">Rewrite Assistant</span>
+              <span className="rwas-version">V3</span>
             </div>
-            <div className="rwa-settings-window-title">Settings</div>
+            <div className="rwas-window-title">Settings</div>
           </div>
 
-          <div className="rwa-hdr-actions">
-            <Button
-              className={`rwa-btn-info ${showAbout ? 'rwa-settings-about-active' : ''}`}
-              onClick={() => setShowAbout((value) => !value)}
-              title="About & Info"
-              aria-label="About Rewrite Assistant"
-            >
-              <NavGlyph type="about" />
-            </Button>
-            <Button className="rwa-btn-close" onClick={onClose} aria-label="Close settings">✕</Button>
-          </div>
-        </div>
+          <Button glow={false} className="rwas-close" onClick={onClose} aria-label="Close settings">✕</Button>
+        </header>
 
-        <div className="rwa-settings-shell">
-          <aside className="rwa-settings-sidebar" aria-label="Settings navigation">
-            <div className="rwa-settings-nav-label">Settings</div>
-            <div className="rwa-settings-nav" role="tablist" aria-label="Settings sections">
+        <div className="rwas-shell">
+          <aside className="rwas-sidebar" aria-label="Settings navigation">
+            <div className="rwas-nav-label">Settings</div>
+            <div className="rwas-nav" role="tablist" aria-label="Settings sections">
               {SETTINGS_SECTIONS.map((section) => (
                 <button
                   key={section.id}
                   type="button"
                   role="tab"
                   aria-selected={!showAbout && activeTab === section.id}
-                  className={`rwa-settings-nav-btn ${!showAbout && activeTab === section.id ? 'rwa-active' : ''}`}
+                  className={`rwas-nav-btn ${!showAbout && activeTab === section.id ? 'rwas-active' : ''}`}
                   onClick={() => handleTabChange(section.id)}
                 >
-                  <span className="rwa-settings-nav-icon"><NavGlyph type={section.id} /></span>
-                  <span className="rwa-settings-nav-copy">
+                  <span className="rwas-nav-icon"><NavGlyph type={section.id} /></span>
+                  <span className="rwas-nav-copy">
                     <strong>{section.label}</strong>
                     <small>{section.meta}</small>
                   </span>
@@ -119,29 +105,40 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
 
             <button
               type="button"
-              className={`rwa-settings-nav-btn rwa-settings-nav-about ${showAbout ? 'rwa-active' : ''}`}
+              role="tab"
+              aria-selected={showAbout}
+              className={`rwas-nav-btn rwas-nav-about ${showAbout ? 'rwas-active' : ''}`}
               onClick={() => setShowAbout(true)}
             >
-              <span className="rwa-settings-nav-icon"><NavGlyph type="about" /></span>
-              <span className="rwa-settings-nav-copy">
+              <span className="rwas-nav-icon"><NavGlyph type="about" /></span>
+              <span className="rwas-nav-copy">
                 <strong>About</strong>
                 <small>Version 3.0.1</small>
               </span>
             </button>
           </aside>
 
-          <section className="rwa-settings-workspace">
-            <div className="rwa-settings-page-head">
-              <div className="rwa-settings-page-kicker">{showAbout ? 'About' : activeSection.meta}</div>
-              <div className="rwa-settings-page-title">{showAbout ? 'Rewrite Assistant' : activeSection.label}</div>
-              <div className="rwa-settings-page-description">
-                {showAbout
-                  ? 'Rewrite Assistant v3.0.1 for Marinara Engine — a focused toolkit for precise, context-aware rewrites.'
-                  : activeSection.description}
+          <section className="rwas-workspace">
+            <div className="rwas-page-head">
+              <div className="rwas-page-copy">
+                <div className="rwas-page-kicker">{showAbout ? 'About' : activeSection.meta}</div>
+                <div className="rwas-page-title">{showAbout ? 'Rewrite Assistant' : activeSection.label}</div>
+                <div className="rwas-page-description">
+                  {showAbout
+                    ? 'Rewrite Assistant v3.0.1 for Marinara Engine — a focused toolkit for precise, context-aware rewrites.'
+                    : activeSection.description}
+                </div>
               </div>
+
+              {!showAbout && activeTab === 'profiles' && (
+                <div className="rwas-page-actions" aria-label="Style Preset actions">
+                  <Button glow={false} className="rwas-secondary-action" onClick={() => openEditProfile(null)}>+ Add Style</Button>
+                  <Button glow={false} className="rwas-primary-action" variant="rwa-accept" onClick={openAIArchitect}>AI Architect</Button>
+                </div>
+              )}
             </div>
 
-            <div ref={bodyRef} className="rwa-body rwa-settings-body">
+            <div ref={bodyRef} className="rwa-body rwas-body">
               {showAbout ? (
                 <div className="rwa-about-container">
                   <div className="rwa-about-box">
@@ -184,22 +181,10 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
               )}
             </div>
 
-            {!showAbout && (
-              <div className={`rwa-foot rwa-settings-foot ${activeTab === 'profiles' ? 'rwa-settings-foot-four' : 'rwa-settings-foot-two'}`}>
-                <div className="rwa-settings-foot-leading">
-                  {activeTab === 'profiles' && (
-                    <>
-                      <Button className="rwa-btn-add-style" onClick={() => openEditProfile(null)}>+ Add Style</Button>
-                      <Button className="rwa-btn-flex-1" variant="rwa-accept" onClick={openAIArchitect}>AI Architect</Button>
-                    </>
-                  )}
-                </div>
-                <div className="rwa-settings-foot-trailing">
-                  <Button className="rwa-btn-flex-1" onClick={onClose}>Cancel</Button>
-                  <Button className="rwa-btn-flex-1" variant="rwa-accept" onClick={onClose}>OK</Button>
-                </div>
-              </div>
-            )}
+            <footer className="rwas-statusbar">
+              <span className="rwas-save-status">Changes save automatically</span>
+              <Button glow={false} className="rwas-done" variant="rwa-accept" onClick={onClose}>Done</Button>
+            </footer>
           </section>
         </div>
       </div>
