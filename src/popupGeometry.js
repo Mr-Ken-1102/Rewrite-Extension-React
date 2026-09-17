@@ -8,7 +8,7 @@ export const POPUP_COMPACT_MIN_CELL = 100;
 export const POPUP_PROFILE_ROW_HEIGHT = 30;
 export const POPUP_COMPACT_ROW_HEIGHT = 27;
 export const POPUP_PROFILE_ROW_GAP = 5;
-export const POPUP_FIXED_HEIGHT = 240;
+export const POPUP_FIXED_HEIGHT = 266;
 export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
 
 export const POPUP_NORMAL_BREAKPOINTS = Object.freeze({

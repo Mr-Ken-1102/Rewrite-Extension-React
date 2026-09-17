@@ -127,8 +127,8 @@ export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-free-note { display: none; }
 .rwa2-source-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 2px 5px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 12px;
   margin-top: 2px;
 }
 .rwa2-source-grid > label,

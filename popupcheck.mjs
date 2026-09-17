@@ -19,7 +19,7 @@ ok('popup geometry constants encode the rebalanced 620px / 12-column contract', 
   assert.match(source, /POPUP_NORMAL_MIN_CELL = 140/);
   assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 30/);
   assert.match(source, /POPUP_PROFILE_ROW_GAP = 5/);
-  assert.match(source, /POPUP_FIXED_HEIGHT = 240/);
+  assert.match(source, /POPUP_FIXED_HEIGHT = 266/);
 });
 
 ok('popup visual system loads after legacy popup-affecting layers', () => {
@@ -85,6 +85,17 @@ ok('selection popup uses a release-point anchor with viewport flipping', () => {
   assert.match(position, /const aboveCandidate = anchorY - estimatedHeight - ANCHOR_GAP/);
 });
 
+ok('auto placement avoids covering a connected textarea when its edge has room', () => {
+  const source = read('./src/hooks/usePopupPosition.js');
+  assert.match(source, /selection\?\.source !== 'textarea'/);
+  assert.match(source, /selection\?\.el\?\.isConnected/);
+  assert.match(source, /getBoundingClientRect/);
+  assert.match(source, /sourceBelowCandidate = sourceRect \? sourceRect\.bottom \+ ANCHOR_GAP/);
+  assert.match(source, /sourceAboveCandidate = sourceRect \? sourceRect\.top - estimatedHeight - ANCHOR_GAP/);
+  assert.match(source, /sourceRect && sourceBelowCandidate <= maxTop/);
+  assert.match(source, /sourceRect && sourceAboveCandidate >= POPUP_VIEWPORT_GUTTER/);
+});
+
 ok('popup positioning consumes shared geometry and accounts for transient rows', () => {
   const source = read('./src/hooks/usePopupPosition.js');
   assert.match(source, /POPUP_DESKTOP_WIDTH/);
@@ -128,11 +139,12 @@ ok('popup density removes redundant hierarchy without shrinking core controls', 
   assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*32px !important;[\s\S]*height:\s*32px !important/);
 });
 
-ok('context controls avoid stretch-created dead space', () => {
+ok('context controls avoid stretch-created dead space and preserve readable source labels', () => {
   const css = read('./src/styles-popup-context.js');
   assert.doesNotMatch(css, /\.rwa2-depth-row\s*\{[\s\S]*margin-top:\s*auto/);
   assert.match(css, /\.rwa2-depth-row\s*\{[\s\S]*margin-top:\s*0/);
-  assert.match(css, /\.rwa2-source-grid\s*\{[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.rwa2-source-grid\s*\{[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.doesNotMatch(css, /\.rwa2-source-grid\s*\{[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
 });
 
 ok('footer fills available width without vacant grid columns', () => {

@@ -8,6 +8,19 @@ import {
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 const ANCHOR_GAP = 12;
 
+function textareaSourceRect(selection) {
+  if (selection?.source !== 'textarea' || !selection?.el?.isConnected) return null;
+  try {
+    const rect = selection.el.getBoundingClientRect?.();
+    if (!rect) return null;
+    if (![rect.top, rect.bottom, rect.left, rect.right].every(Number.isFinite)) return null;
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return null;
+    return rect;
+  } catch {
+    return null;
+  }
+}
+
 export function usePopupPosition({
   popupPosition,
   selection,
@@ -70,9 +83,14 @@ export function usePopupPosition({
         const belowCandidate = anchorY + ANCHOR_GAP;
         const aboveCandidate = anchorY - estimatedHeight - ANCHOR_GAP;
         const maxTop = Math.max(POPUP_VIEWPORT_GUTTER, window.innerHeight - estimatedHeight - POPUP_VIEWPORT_GUTTER);
+        const sourceRect = textareaSourceRect(selection);
+        const sourceBelowCandidate = sourceRect ? sourceRect.bottom + ANCHOR_GAP : null;
+        const sourceAboveCandidate = sourceRect ? sourceRect.top - estimatedHeight - ANCHOR_GAP : null;
         let top;
         if (popupPos === 'above') top = aboveCandidate;
         else if (popupPos === 'below') top = belowCandidate;
+        else if (sourceRect && sourceBelowCandidate <= maxTop) top = sourceBelowCandidate;
+        else if (sourceRect && sourceAboveCandidate >= POPUP_VIEWPORT_GUTTER) top = sourceAboveCandidate;
         else if (belowCandidate <= maxTop) top = belowCandidate;
         else if (aboveCandidate >= POPUP_VIEWPORT_GUTTER) top = aboveCandidate;
         else top = clamp(anchorY - (estimatedHeight / 2), POPUP_VIEWPORT_GUTTER, maxTop);
