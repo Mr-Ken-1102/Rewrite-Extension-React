@@ -9,6 +9,7 @@ const main = read('./src/main.jsx');
 const ui = read('./src/components/modals/settings/TabUI.jsx');
 const context = read('./src/components/modals/settings/TabContext.jsx');
 const data = read('./src/components/modals/settings/TabData.jsx');
+const profiles = read('./src/components/modals/settings/TabProfiles.jsx');
 const language = read('./src/components/modals/settings/TabLanguage.jsx');
 const api = read('./src/components/modals/settings/TabAPI.jsx');
 const schema = read('./src/store/persistence/schema.js');
@@ -73,14 +74,20 @@ assert.doesNotMatch(css, /\.rwa2-/);
 
 assert.doesNotMatch(ui, /Surrounding context words \/ side/);
 assert.doesNotMatch(ui, /Clean Data|Reset Rewrite Assistant data/);
+assert.match(ui, /Behavior & Viewports/);
+assert.match(ui, /Hành vi & khung nhìn/);
 assert.match(context, /Surrounding context words \/ side/);
+assert.match(context, /Số từ ngữ cảnh xung quanh \/ mỗi phía/);
 assert.match(context, /localContextWords/);
-assert.match(context, /aria-label="Surrounding context words per side"/);
+assert.match(context, /aria-label=\{text\('Surrounding context words per side', 'Số từ ngữ cảnh xung quanh mỗi phía'\)\}/);
 assert.match(data, /DATA RESET/);
+assert.match(data, /ĐẶT LẠI DỮ LIỆU/);
 assert.match(data, /Reset Rewrite Assistant data/);
 assert.match(data, /usePersistentStore\.persist\.clearStorage/);
 assert.match(data, /STORAGE_KEY/);
 assert.match(data, /LEGACY_BACKUP_KEY/);
+assert.match(profiles, /Search profiles/);
+assert.match(profiles, /Tìm style/);
 assert.doesNotMatch(`${context}\n${data}`, /rwa-glow-button/);
 
 assert.match(api, /Diagnose LAN access/);
@@ -88,5 +95,6 @@ assert.match(api, /Chẩn đoán kết nối LAN/);
 assert.match(api, /OLLAMA_HOST=0\.0\.0\.0:11434/);
 assert.match(api, /OLLAMA_ORIGINS=\$\{browserOrigin\}/);
 assert.match(api, /Local Network/);
+assert.match(api, /NGUỒN MODEL/);
 
 console.log('settingscheck: isolated bilingual settings shell/semantics/information-architecture contract passed');
