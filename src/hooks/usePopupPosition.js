@@ -6,6 +6,7 @@ import {
 } from '../popupGeometry';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+const ANCHOR_GAP = 12;
 
 export function usePopupPosition({
   popupPosition,
@@ -51,13 +52,33 @@ export function usePopupPosition({
             multiMessage,
           }),
         );
-        let top = popupPosition.bottom + 12;
 
-        if (popupPos === 'above') top = popupPosition.top - estimatedHeight - 12;
-        else if (popupPos !== 'below' && top + estimatedHeight > window.innerHeight) top = popupPosition.top - estimatedHeight - 12;
+        const anchorX = Number.isFinite(Number(popupPosition.anchorX))
+          ? Number(popupPosition.anchorX)
+          : Number(popupPosition.right ?? popupPosition.left ?? POPUP_VIEWPORT_GUTTER);
+        const anchorY = Number.isFinite(Number(popupPosition.anchorY))
+          ? Number(popupPosition.anchorY)
+          : Number(popupPosition.bottom ?? popupPosition.top ?? POPUP_VIEWPORT_GUTTER);
 
-        finalLeft = `${clamp(popupPosition.left, POPUP_VIEWPORT_GUTTER, maxLeft)}px`;
-        finalTop = `${clamp(top, POPUP_VIEWPORT_GUTTER, Math.max(POPUP_VIEWPORT_GUTTER, window.innerHeight - estimatedHeight - POPUP_VIEWPORT_GUTTER))}px`;
+        const rightCandidate = anchorX + ANCHOR_GAP;
+        const leftCandidate = anchorX - panelWidth - ANCHOR_GAP;
+        let left;
+        if (rightCandidate <= maxLeft) left = rightCandidate;
+        else if (leftCandidate >= POPUP_VIEWPORT_GUTTER) left = leftCandidate;
+        else left = clamp(anchorX - (panelWidth / 2), POPUP_VIEWPORT_GUTTER, maxLeft);
+
+        const belowCandidate = anchorY + ANCHOR_GAP;
+        const aboveCandidate = anchorY - estimatedHeight - ANCHOR_GAP;
+        const maxTop = Math.max(POPUP_VIEWPORT_GUTTER, window.innerHeight - estimatedHeight - POPUP_VIEWPORT_GUTTER);
+        let top;
+        if (popupPos === 'above') top = aboveCandidate;
+        else if (popupPos === 'below') top = belowCandidate;
+        else if (belowCandidate <= maxTop) top = belowCandidate;
+        else if (aboveCandidate >= POPUP_VIEWPORT_GUTTER) top = aboveCandidate;
+        else top = clamp(anchorY - (estimatedHeight / 2), POPUP_VIEWPORT_GUTTER, maxTop);
+
+        finalLeft = `${clamp(left, POPUP_VIEWPORT_GUTTER, maxLeft)}px`;
+        finalTop = `${clamp(top, POPUP_VIEWPORT_GUTTER, maxTop)}px`;
         finalVisibility = 'visible';
       }
     }
