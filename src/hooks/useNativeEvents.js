@@ -59,8 +59,6 @@ export const useNativeEvents = () => {
       });
     }, { passive: true });
 
-    // Drag interactions must never leave the global selection guard stuck when
-    // the browser cancels a pointer sequence or the tab/window loses focus.
     add(window, 'pointercancel', () => useRuntimeStore.getState().setDragging(false));
     add(window, 'blur', () => useRuntimeStore.getState().setDragging(false));
     add(document, 'visibilitychange', () => {
@@ -81,13 +79,21 @@ export const useNativeEvents = () => {
       const config = usePersistentStore.getState().config;
       if (runtime.isDragging || config.onlyAltR) return;
       if (runtime.hostElement && event.composedPath().includes(runtime.hostElement)) return;
-      const x = event.clientX || runtime.mouseX;
-      const y = event.clientY || runtime.mouseY;
+      const x = Number.isFinite(event.clientX) ? event.clientX : runtime.mouseX;
+      const y = Number.isFinite(event.clientY) ? event.clientY : runtime.mouseY;
       schedule(() => {
         const saved = DOMUtils.getSelectionData(event.target, config, runtime.lastClickedMid);
         if (!saved) return;
         runtime.setSelection(saved);
-        runtime.setPopupPosition({ left: x, top: y - 20, right: x, bottom: y });
+        runtime.setPopupPosition({
+          left: x,
+          top: y,
+          right: x,
+          bottom: y,
+          anchorX: x,
+          anchorY: y,
+          isDragged: false,
+        });
       }, 100);
     }, true);
 
@@ -103,7 +109,15 @@ export const useNativeEvents = () => {
       event.preventDefault();
       saved.forced = true;
       runtime.setSelection(saved);
-      runtime.setPopupPosition({ left: runtime.mouseX, top: runtime.mouseY - 20, right: runtime.mouseX, bottom: runtime.mouseY });
+      runtime.setPopupPosition({
+        left: runtime.mouseX,
+        top: runtime.mouseY,
+        right: runtime.mouseX,
+        bottom: runtime.mouseY,
+        anchorX: runtime.mouseX,
+        anchorY: runtime.mouseY,
+        isDragged: false,
+      });
     }, true);
 
     add(document, 'mousedown', (event) => {
@@ -112,8 +126,6 @@ export const useNativeEvents = () => {
       if (runtime.popupPosition) runtime.reset();
     }, true);
 
-    // Native edit-mode save/cancel closes the editor. Drop only that editor's
-    // in-memory undo history; no message body is persisted in extension storage.
     add(document, 'click', (event) => {
       const target = event.target instanceof Element ? event.target : null;
       const button = target?.closest('button');
