@@ -82,7 +82,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
         </header>
 
         <div className="rwas-shell">
-          <aside className="rwas-sidebar" aria-label="Settings navigation">
+          <aside className="rwas-sidebar" data-legacy-contract="rwa-settings-sidebar" aria-label="Settings navigation">
             <div className="rwas-nav-label">Settings</div>
             <div className="rwas-nav" role="tablist" aria-label="Settings sections">
               {SETTINGS_SECTIONS.map((section) => (
@@ -118,7 +118,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
             </button>
           </aside>
 
-          <section className="rwas-workspace">
+          <section className="rwas-workspace" data-legacy-contract="rwa-settings-workspace">
             <div className="rwas-page-head">
               <div className="rwas-page-copy">
                 <div className="rwas-page-kicker">{showAbout ? 'About' : activeSection.meta}</div>
