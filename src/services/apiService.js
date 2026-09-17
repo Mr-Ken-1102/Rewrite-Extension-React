@@ -28,6 +28,7 @@ export class APIService {
     return ProviderService.runInference(systemPrompt, userPrompt, signal, override);
   }
   static discoverModels(url, signal) { return ProviderService.discoverModels(url, signal); }
+  static diagnoseDirectApi(url, signal) { return ProviderService.diagnoseDirectApi(url, signal); }
 
   static fetchChat(cid, signal) { return ContextService.fetchChat(cid, signal); }
   static fetchMessages(cid, signal) { return ContextService.fetchMessages(cid, signal); }
