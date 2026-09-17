@@ -60,6 +60,7 @@ export const RWA_RESULT_CSS = `
   margin: 6px 0 0 !important;
   padding: 11px 13px !important;
   border-radius: 9px !important;
+  font-size: 13px !important;
   line-height: 1.55 !important;
   resize: none !important;
 }
@@ -78,7 +79,6 @@ export const RWA_RESULT_CSS = `
   min-height: 84px;
   max-height: 190px !important;
   color: rgba(255,255,255,.88) !important;
-  font-size: 12.5px !important;
 }
 
 .rwar-merged {
@@ -92,7 +92,7 @@ export const RWA_RESULT_CSS = `
 }
 
 .rwar-message-label { margin-bottom: 5px !important; }
-.rwar-message-text { white-space: pre-wrap; font-size: 12px; line-height: 1.55; }
+.rwar-message-text { white-space: pre-wrap; font-size: 13px; line-height: 1.55; }
 
 .rwar-word-delta {
   flex: 0 0 auto;
@@ -158,8 +158,8 @@ export const RWA_RESULT_CSS = `
   resize: vertical !important;
   white-space: pre-wrap;
   font-family: inherit !important;
-  font-size: 11.5px !important;
-  line-height: 1.5 !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
 }
 
 .rwar-actions {
