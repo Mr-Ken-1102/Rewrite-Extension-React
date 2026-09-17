@@ -29,10 +29,19 @@ ok('profile toolbar supports low-chrome typeahead and overflow discovery', () =>
   const grid = read('./src/components/popup/ProfileGrid.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   assert.match(grid, /TYPEAHEAD_RESET_MS = 650/);
-  assert.match(grid, /data-profile-name=\{profile\.name\}/);
+  assert.match(grid, /data-profile-name=\{displayName\}/);
   assert.match(grid, /findTypeaheadMatch/);
   assert.match(grid, /typeaheadRef\.current/);
   assert.match(rewrite, /scroll or type/);
+});
+
+ok('default style labels can localize without mutating profile prompts or ids', () => {
+  const grid = read('./src/components/popup/ProfileGrid.jsx');
+  assert.match(grid, /PROFILE_LABELS_VI/);
+  assert.match(grid, /expand:\s*'Mở rộng'/);
+  assert.match(grid, /grammar:\s*'Sửa ngữ pháp'/);
+  assert.match(grid, /profileDisplayName\(profile, language\)/);
+  assert.match(grid, /onRun\(profile\)/);
 });
 
 ok('profile and auto-profile explanations are available from keyboard focus', () => {
@@ -46,11 +55,13 @@ ok('profile and auto-profile explanations are available from keyboard focus', ()
   assert.match(rewrite, /onBlur=\{onTooltipLeave\}/);
 });
 
-ok('context help tooltip is keyboard reachable and exposes an accessible description', () => {
+ok('context help tooltip is keyboard reachable and bilingual', () => {
   const source = read('./src/components/popup/ContextPanel.jsx');
   assert.match(source, /CONTEXT_MODE_HELP/);
-  assert.match(source, /aria-description=\{CONTEXT_MODE_HELP\}/);
-  assert.match(source, /onFocus=\{\(event\) => onTooltip\(event, CONTEXT_MODE_HELP\)\}/);
+  assert.match(source, /CONTEXT_MODE_HELP_VI/);
+  assert.match(source, /const contextHelp = vi \? CONTEXT_MODE_HELP_VI : CONTEXT_MODE_HELP/);
+  assert.match(source, /aria-description=\{contextHelp\}/);
+  assert.match(source, /onFocus=\{\(event\) => onTooltip\(event, contextHelp\)\}/);
   assert.match(source, /onBlur=\{onTooltipLeave\}/);
 });
 
@@ -65,9 +76,9 @@ ok('popup tooltip is collision-aware across visual viewport edges', () => {
   assert.match(source, /role="tooltip"/);
 });
 
-ok('non-modal popup exposes a named region without interfering with dialog Escape ownership', () => {
+ok('non-modal popup exposes a localized named region without interfering with dialog Escape ownership', () => {
   const source = read('./src/components/PopupMain.jsx');
-  assert.match(source, /className="rwa2-popup"[\s\S]*role="region"[\s\S]*aria-label="Rewrite selected text"/);
+  assert.match(source, /className="rwa2-popup"[\s\S]*role="region"[\s\S]*aria-label=\{text\('Rewrite selected text', 'Viết lại văn bản đã chọn'\)\}/);
   assert.doesNotMatch(source, /className="rwa2-popup"[\s\S]*role="dialog"/);
 });
 
@@ -76,9 +87,9 @@ ok('popup switches have switch semantics and every icon-only switch is named', (
   const context = read('./src/components/popup/ContextPanel.jsx');
   assert.match(toggle, /role="switch"/);
   assert.match(toggle, /aria-label=\{ariaLabel\}/);
-  assert.match(context, /ariaLabel="Enable rewrite length adjustment"/);
-  assert.match(context, /role="group" aria-label="Persistent context sources"/);
-  assert.match(context, /role="group" aria-label="Sources for this rewrite only"/);
+  assert.match(context, /ariaLabel=\{text\('Enable rewrite length adjustment', 'Bật điều chỉnh độ dài viết lại'\)\}/);
+  assert.match(context, /role="group" aria-label=\{text\('Persistent context sources', 'Nguồn ngữ cảnh cố định'\)\}/);
+  assert.match(context, /role="group" aria-label=\{text\('Sources for this rewrite only', 'Nguồn chỉ dùng cho lần viết lại này'\)\}/);
 });
 
 ok('trim-selection dialog opts out of cursor-following glow work', () => {
