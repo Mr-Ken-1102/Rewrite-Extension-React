@@ -17,6 +17,7 @@ export const DEFAULT_PROFILES = [
 ];
 
 export const DEFAULT_CONFIG = {
+  uiLanguage: 'en',
   cols: 3,
   rows: 3,
   typewriter: true,
@@ -80,6 +81,7 @@ export function sanitizeConfig(value, legacyVersion = STORE_VERSION) {
   }
 
   return {
+    uiLanguage: ['en', 'vi'].includes(input.uiLanguage) ? input.uiLanguage : DEFAULT_CONFIG.uiLanguage,
     cols: Math.trunc(clampNumber(input.cols, 1, 6, DEFAULT_CONFIG.cols)),
     rows: Math.trunc(clampNumber(input.rows, 1, 10, DEFAULT_CONFIG.rows)),
     typewriter: cleanBoolean(input.typewriter, DEFAULT_CONFIG.typewriter),
