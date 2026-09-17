@@ -29,6 +29,7 @@ export const RWA_PERFORMANCE_CSS = `
 .rwa-settings-nav-item,
 .rwa-btn,
 .rwa-inp { transition-duration: .10s !important; }
+.rwa-settings-foot-trailing { margin-left: auto !important; }
 
 /* Muted amber: brand remains legible without a fluorescent full-width CTA. */
 .rwa-accept {
@@ -77,7 +78,7 @@ export const RWA_PERFORMANCE_CSS = `
 }
 .rwa-profile-search { min-height: 38px !important; }
 
-/* Wide command surface: commands and inspector share one horizontal workbench. */
+/* Legacy popup selectors below remain only for pre-rwa2 surfaces. The main popup is isolated by rwa2-* classes. */
 .rwa-popup-main {
   width: min(620px, calc(100vw - 16px)) !important;
   min-width: min(620px, calc(100vw - 16px)) !important;
@@ -114,7 +115,6 @@ export const RWA_PERFORMANCE_CSS = `
 }
 .rwa-profile-name { font-size: 10.75px !important; }
 
-/* Inspector density: preserve every control, remove vertical ceremony. */
 .rwa-context-section-head { gap: 8px !important; }
 .rwa-context-subtitle { margin-top: 2px !important; font-size: 9.5px !important; }
 .rwa-radar-target { padding: 4px 7px !important; font-size: 9px !important; }
