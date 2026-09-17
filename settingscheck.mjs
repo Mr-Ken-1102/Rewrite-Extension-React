@@ -9,6 +9,9 @@ const main = read('./src/main.jsx');
 const ui = read('./src/components/modals/settings/TabUI.jsx');
 const context = read('./src/components/modals/settings/TabContext.jsx');
 const data = read('./src/components/modals/settings/TabData.jsx');
+const language = read('./src/components/modals/settings/TabLanguage.jsx');
+const api = read('./src/components/modals/settings/TabAPI.jsx');
+const schema = read('./src/store/persistence/schema.js');
 
 assert.match(modal, /className="rwa-win rwas-settings"/);
 assert.match(modal, /rwas-shell/);
@@ -16,11 +19,13 @@ assert.match(modal, /rwas-sidebar/);
 assert.match(modal, /rwas-workspace/);
 assert.match(modal, /scrollPositionsRef/);
 assert.match(modal, /Changes save automatically/);
-assert.match(modal, />Done<\/Button>/);
+assert.match(modal, /Thay đổi được lưu tự động/);
+assert.match(modal, /'Xong' : 'Done'/);
 assert.doesNotMatch(modal, />Cancel<\/Button>/);
 assert.doesNotMatch(modal, />OK<\/Button>/);
 assert.match(modal, /rwas-page-actions/);
 assert.match(modal, /\+ Add Style/);
+assert.match(modal, /\+ Thêm style/);
 assert.match(modal, /AI Architect/);
 assert.doesNotMatch(modal, /useGlowPointer/);
 
@@ -39,6 +44,18 @@ assert.match(modal, /aria-controls="rwas-settings-panel"/);
 assert.match(modal, /id="rwas-settings-panel"/);
 assert.match(modal, /role="tabpanel"/);
 assert.match(modal, /aria-labelledby=\{activeTabId\}/);
+
+assert.match(modal, /id: 'language'/);
+assert.match(modal, /label: 'Language'/);
+assert.match(modal, /labelVi: 'Ngôn ngữ'/);
+assert.match(modal, /<TabLanguage \/>/);
+assert.match(language, /value: 'vi'/);
+assert.match(language, /name: 'Tiếng Việt'/);
+assert.match(language, /value: 'en'/);
+assert.match(language, /name: 'English'/);
+assert.match(language, /updateConfig\(\{ uiLanguage: option\.value \}\)/);
+assert.match(schema, /uiLanguage:\s*'en'/);
+assert.match(schema, /\['en', 'vi'\]\.includes\(input\.uiLanguage\)/);
 
 assert.match(css, /width:\s*min\(960px/);
 assert.match(css, /height:\s*min\(720px/);
@@ -66,4 +83,10 @@ assert.match(data, /STORAGE_KEY/);
 assert.match(data, /LEGACY_BACKUP_KEY/);
 assert.doesNotMatch(`${context}\n${data}`, /rwa-glow-button/);
 
-console.log('settingscheck: isolated settings shell/semantics/information-architecture contract passed');
+assert.match(api, /Diagnose LAN access/);
+assert.match(api, /Chẩn đoán kết nối LAN/);
+assert.match(api, /OLLAMA_HOST=0\.0\.0\.0:11434/);
+assert.match(api, /OLLAMA_ORIGINS=\$\{browserOrigin\}/);
+assert.match(api, /Local Network/);
+
+console.log('settingscheck: isolated bilingual settings shell/semantics/information-architecture contract passed');
