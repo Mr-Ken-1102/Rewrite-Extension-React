@@ -28,23 +28,25 @@ const NumericInput = ({ min, max, value, onChangeKey, updateConfig }) => (
 
 export const TabUI = () => {
   const { config, updateConfig } = usePersistentStore();
+  const vi = config.uiLanguage === 'vi';
+  const text = (en, viText) => (vi ? viText : en);
   const profileColumnMax = config.compact ? 6 : 4;
   const visibleProfileColumns = Math.min(Math.max(1, config.cols || 3), profileColumnMax);
 
   return (
     <>
-      <div className="rwa-lbl">Behavior &amp; Viewports</div>
+      <div className="rwa-lbl">{text('Behavior & Viewports', 'Hành vi & khung nhìn')}</div>
 
-      <ConfigRow label="Typewriter reveal on final output:">
+      <ConfigRow label={text('Typewriter reveal on final output:', 'Hiệu ứng gõ chữ khi hiện kết quả:')}>
         <ToggleSwitch checked={config.typewriter} onChange={(value) => updateConfig({ typewriter: value })} />
       </ConfigRow>
-      <ConfigRow label="Show inline visual word diff:">
+      <ConfigRow label={text('Show inline visual word diff:', 'Hiển thị so sánh thay đổi trực quan:')}>
         <ToggleSwitch checked={config.showDiff} onChange={(value) => updateConfig({ showDiff: value })} />
       </ConfigRow>
-      <ConfigRow label="Auto-apply result (skip preview):">
+      <ConfigRow label={text('Auto-apply result (skip preview):', 'Tự áp dụng kết quả (bỏ qua xem trước):')}>
         <ToggleSwitch checked={config.autoApply} onChange={(value) => updateConfig({ autoApply: value })} />
       </ConfigRow>
-      <ConfigRow label="Compact grid (2-letter labels):">
+      <ConfigRow label={text('Compact grid (2-letter labels):', 'Lưới gọn (nhãn 2 ký tự):')}>
         <ToggleSwitch
           checked={config.compact}
           onChange={(value) => updateConfig({
@@ -54,30 +56,30 @@ export const TabUI = () => {
         />
       </ConfigRow>
 
-      <ConfigRow label="Only show on ALT + R (always hide popup):">
+      <ConfigRow label={text('Only show on ALT + R (always hide popup):', 'Chỉ hiện bằng ALT + R (ẩn popup mặc định):')}>
         <ToggleSwitch checked={config.onlyAltR} onChange={(value) => updateConfig({ onlyAltR: value })} />
       </ConfigRow>
 
-      <ConfigRow label={config.compact ? 'Profile columns (compact):' : 'Profile columns:'}>
+      <ConfigRow label={config.compact ? text('Profile columns (compact):', 'Số cột style (gọn):') : text('Profile columns:', 'Số cột style:')}>
         <NumericInput min={1} max={profileColumnMax} value={visibleProfileColumns} onChangeKey="cols" updateConfig={updateConfig} />
       </ConfigRow>
-      <ConfigRow label="Visible profile rows:">
+      <ConfigRow label={text('Visible profile rows:', 'Số hàng style hiển thị:')}>
         <NumericInput min={1} max={10} value={config.rows} onChangeKey="rows" updateConfig={updateConfig} />
       </ConfigRow>
-      <ConfigRow label="Prose history (Undo depth):">
+      <ConfigRow label={text('Prose history (Undo depth):', 'Lịch sử văn bản (độ sâu Hoàn tác):')}>
         <NumericInput min={1} max={20} value={config.historyDepth} onChangeKey="historyDepth" updateConfig={updateConfig} />
       </ConfigRow>
 
-      <ConfigRow label="Popup viewport alignment:">
+      <ConfigRow label={text('Popup viewport alignment:', 'Vị trí popup trong khung nhìn:')}>
         <select
           className="rwa-inp"
           value={config.popupPos || 'auto'}
           onChange={(event) => updateConfig({ popupPos: event.target.value })}
           style={{ width: 'auto', margin: '0', padding: '6px 12px', fontSize: '12px', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }}
         >
-          <option value="auto" style={{ background: '#12121a' }}>Auto flipping viewport</option>
-          <option value="above" style={{ background: '#12121a' }}>Always above highlight</option>
-          <option value="below" style={{ background: '#12121a' }}>Always below highlight</option>
+          <option value="auto" style={{ background: '#12121a' }}>{text('Auto flipping viewport', 'Tự động đổi phía')}</option>
+          <option value="above" style={{ background: '#12121a' }}>{text('Always above highlight', 'Luôn ở trên vùng chọn')}</option>
+          <option value="below" style={{ background: '#12121a' }}>{text('Always below highlight', 'Luôn ở dưới vùng chọn')}</option>
         </select>
       </ConfigRow>
     </>
