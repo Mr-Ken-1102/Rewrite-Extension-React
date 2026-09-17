@@ -196,6 +196,20 @@ export const RWA_RESULT_CSS = `
 
 .rwar-actions .rwar-accept { min-width: 96px; }
 
+/* Replace All has broader scope than Accept, so it stays deliberately secondary.
+   The legacy green treatment competed with the primary confirmation action. */
+.rwar-actions .rwa-replace {
+  background: rgba(255,255,255,.025) !important;
+  color: rgba(255,255,255,.78) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  box-shadow: none !important;
+}
+.rwar-actions .rwa-replace:hover:not(:disabled) {
+  background: rgba(255,255,255,.055) !important;
+  color: rgba(255,255,255,.94) !important;
+  border-color: rgba(209,154,69,.28) !important;
+}
+
 .rwar-progress,
 .rwar-apply-report {
   margin: 0 0 12px !important;

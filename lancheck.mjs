@@ -50,6 +50,13 @@ ok('result modal uses an isolated balanced layout and no cursor-following glow p
   assert.match(css, /\.rwar-raw\s*\{/);
 });
 
+ok('Replace All remains visually secondary to the primary Accept action', () => {
+  const css = read('./src/styles-result.js');
+  assert.match(css, /\.rwar-actions \.rwa-replace\s*\{[\s\S]*background:\s*rgba\(255,255,255,\.025\) !important/);
+  assert.match(css, /\.rwar-actions \.rwa-replace:hover:not\(:disabled\)/);
+  assert.doesNotMatch(css, /\.rwar-actions \.rwa-replace\s*\{[\s\S]*var\(--rwa-accent\)/);
+});
+
 ok('isolated visual namespaces load without reintroducing popup cascade coupling', () => {
   const main = read('./src/main.jsx');
   assert.match(main, /RWA_PERFORMANCE_CSS\}\\n\$\{RWA_POPUP_CSS\}\\n\$\{RWA_SETTINGS_CSS\}\\n\$\{RWA_RESULT_CSS\}/);
