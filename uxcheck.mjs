@@ -117,6 +117,15 @@ ok('Marinara inference resolves the current chat connection before fallback', ()
   assert.match(source, /current chat references a Marinara connection that is no longer available/i);
 });
 
+ok('Marinara empty output retries once with reasoning disabled and emits a distinct error code', () => {
+  const source = read('./src/services/providers/providerService.js');
+  assert.match(source, /const requestRaw = \(parameters\) => MarinaraHost\.apiFetch/);
+  assert.match(source, /requestRaw\(\{ reasoningEffort: null \}\)/);
+  assert.match(source, /inference\.empty_response/);
+  assert.match(source, /RWA_PROVIDER_EMPTY_RESPONSE/);
+  assert.match(source, /retried once with reasoning disabled/i);
+});
+
 ok('rewrite and auto-profile inference carry chat identity to the provider', () => {
   const source = read('./src/services/apiService.js');
   assert.match(source, /\{ chatId: savedSel\?\.cid \|\| '' \}/);
@@ -151,7 +160,7 @@ ok('profile columns are configurable beyond two on the wide popup', () => {
   assert.doesNotMatch(settings, /Math\.min\(config\.cols \|\| 2, 2\)/);
 });
 
-ok('popup geometry is delegated to the 688px isolated visual contract', () => {
+ok('popup geometry is delegated to the calibrated 640px isolated visual contract', () => {
   const popup = read('./src/components/PopupMain.jsx');
   const position = read('./src/hooks/usePopupPosition.js');
   const geometry = read('./src/popupGeometry.js');
@@ -159,9 +168,21 @@ ok('popup geometry is delegated to the 688px isolated visual contract', () => {
   assert.match(popup, /className="rwa2-popup"/);
   assert.match(popup, /rwa2-workbench/);
   assert.match(position, /POPUP_DESKTOP_WIDTH/);
-  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 688/);
+  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 640/);
   assert.match(geometry, /POPUP_GRID_COLUMNS = 12/);
   assert.match(css, /POPUP_DESKTOP_WIDTH/);
+});
+
+ok('new selections carry an explicit pointer anchor and clear dragged placement', () => {
+  const native = read('./src/hooks/useNativeEvents.js');
+  const position = read('./src/hooks/usePopupPosition.js');
+  assert.match(native, /anchorX:\s*x/);
+  assert.match(native, /anchorY:\s*y/);
+  assert.match(native, /isDragged:\s*false/);
+  assert.match(position, /rightCandidate/);
+  assert.match(position, /leftCandidate/);
+  assert.match(position, /belowCandidate/);
+  assert.match(position, /aboveCandidate/);
 });
 
 ok('popup visual layer is loaded after the performance layer', () => {
@@ -184,6 +205,11 @@ ok('settings and presets retain low-paint dense surfaces', () => {
   assert.match(css, /\.rwa-settings-win[\s\S]*backdrop-filter:\s*none/);
   assert.match(css, /\.rwa-profile-row[\s\S]*min-height:\s*42px/);
   assert.match(css, /\.rwa-profile-search[\s\S]*min-height:\s*38px/);
+});
+
+ok('settings confirmation actions stay right aligned', () => {
+  const css = read('./src/styles-performance.js');
+  assert.match(css, /\.rwa-settings-foot-trailing \{ margin-left: auto !important; \}/);
 });
 
 ok('main-popup buttons opt out of cursor-following glow layout reads', () => {
