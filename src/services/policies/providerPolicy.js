@@ -45,22 +45,47 @@ function matchesAny(text, patterns) {
   return !!text && patterns.some((pattern) => pattern.test(text));
 }
 
+function parseProviderHost(value) {
+  let parsed;
+  try { parsed = new URL(String(value || '').trim()); } catch { return null; }
+  return {
+    parsed,
+    host: parsed.hostname.toLowerCase().replace(/^\[|\]$/g, ''),
+  };
+}
+
 export function isProviderContextLimitError(value) {
   return matchesAny(stringifyErrorLike(value), CONTEXT_LIMIT_PATTERNS);
 }
 
-export function isLikelyLocalNetworkUrl(value) {
-  let parsed;
-  try { parsed = new URL(String(value || '').trim()); } catch { return false; }
-  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-  if (host === 'localhost' || host === '::1' || host.endsWith('.localhost')) return true;
-  if (/^127(?:\.\d{1,3}){3}$/.test(host)) return true;
-  if (/^10(?:\.\d{1,3}){3}$/.test(host)) return true;
-  if (/^192\.168(?:\.\d{1,3}){2}$/.test(host)) return true;
+export function getProviderTargetAddressSpace(value) {
+  const target = parseProviderHost(value);
+  if (!target) return null;
+  const { host } = target;
+  if (host === 'localhost' || host === '::1' || host.endsWith('.localhost')) return 'loopback';
+  if (/^127(?:\.\d{1,3}){3}$/.test(host)) return 'loopback';
+  if (/^10(?:\.\d{1,3}){3}$/.test(host)) return 'local';
+  if (/^192\.168(?:\.\d{1,3}){2}$/.test(host)) return 'local';
   const match172 = host.match(/^172\.(\d{1,3})(?:\.\d{1,3}){2}$/);
-  if (match172 && Number(match172[1]) >= 16 && Number(match172[1]) <= 31) return true;
-  if (/^(?:fc|fd)[0-9a-f]{2}:/i.test(host) || /^fe80:/i.test(host)) return true;
-  return false;
+  if (match172 && Number(match172[1]) >= 16 && Number(match172[1]) <= 31) return 'local';
+  if (/^(?:fc|fd)[0-9a-f]{2}:/i.test(host) || /^fe80:/i.test(host)) return 'local';
+  return null;
+}
+
+export function isLikelyLocalNetworkUrl(value) {
+  return getProviderTargetAddressSpace(value) !== null;
+}
+
+export function withProviderNetworkHints(value, init = {}) {
+  const targetAddressSpace = getProviderTargetAddressSpace(value);
+  if (!targetAddressSpace) return init;
+  return {
+    ...init,
+    mode: init.mode || 'cors',
+    // Chromium's Local Network Access implementation understands this field.
+    // Browsers that do not implement it ignore the extra RequestInit member.
+    targetAddressSpace,
+  };
 }
 
 export function normalizeProviderFailure(value, fallback = 'Provider request failed.') {
@@ -72,7 +97,7 @@ export function normalizeProviderFailure(value, fallback = 'Provider request fai
   let error = redactSecretText(raw).slice(0, 2000);
 
   if (isNetwork && /failed\s+to\s+fetch|networkerror|network\s+request\s+failed|load\s+failed/i.test(raw)) {
-    error = 'Network request failed before the provider returned an HTTP response. For a LAN Ollama server, verify the Ollama listen address, firewall, and allowed browser origins (CORS), then retry.';
+    error = 'Network request failed before the provider returned an HTTP response. For a LAN Ollama server, verify the Ollama listen address, firewall, allowed browser origin (CORS), and browser Local Network Access permission, then retry.';
   }
 
   return {
