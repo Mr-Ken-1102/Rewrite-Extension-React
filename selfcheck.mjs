@@ -619,9 +619,15 @@ ok('release pipeline runs dependency-free preflights before package-dependent bu
   assert.doesNotMatch(ci, /npm ci --ignore-scripts/);
 });
 
-ok('RC6-equivalent store schema is v5 with privacy-minimal Part 2 defaults', () => {
+ok('store schema v6 keeps privacy-minimal defaults and identity-scoped Voice Profiles', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
-  assert.match(schema, /export const STORE_VERSION = 5/);
+  const adapter = readFileSync('./src/store/persistence/storageAdapter.js', 'utf8');
+  assert.match(schema, /export const STORE_VERSION = 6/);
+  assert.match(adapter, /export const STORE_VERSION = 6/);
+  assert.match(schema, /identityKind/);
+  assert.match(schema, /identityKey/);
+  assert.match(schema, /sourceFingerprint/);
+  assert.match(schema, /legacy.*true/);
   assert.match(schema, /autoProfileEnabled:\s*false/);
   assert.match(schema, /debugEnabled:\s*false/);
   assert.match(schema, /speakerAware:\s*false/);
@@ -933,14 +939,26 @@ ok('merged mode performs semantic preflight before one-shot inference', () => {
   assert.match(controller, /context:\s*mergedContext\.context/);
 });
 
-ok('group-chat auto-profile targeting uses explicit or authoritative character identity', () => {
+ok('Character and Persona Voice Profiles are message-identity scoped in group chats', () => {
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
+  const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
+  const rewriteSection = readFileSync('./src/components/popup/RewriteSection.jsx', 'utf8');
   const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
-  assert.match(api, /resolveAutoProfileCharacter/);
+  const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
+  assert.match(api, /voiceIdentityFromMessage\(targetMessage\)/);
+  assert.match(api, /getMessagePersonaSnapshot\(targetMessage\)/);
+  assert.match(api, /setAutoProfile\(chatId, identity\.key, profile\)/);
+  assert.match(api, /sourceFingerprint/);
   assert.doesNotMatch(api, /const characterId = characters\[0\]\.id/);
-  assert.match(hook, /messageId: selection\?\.mid/);
-  assert.match(contextTab, /preferredCharacterIds: config\.charCardIds/);
+  assert.match(hook, /expectedIdentityKey: identityKey/);
+  assert.match(hook, /PROFILE_REVALIDATE_MS/);
+  assert.match(popup, /autoProfileBucket\[voiceIdentity\.key\]/);
+  assert.match(rewriteSection, /identityKind === 'persona'/);
+  assert.match(contextTab, /Automatic Character \/ Persona voice profiles/);
+  assert.match(contextTab, /Generate for selected identity/);
+  assert.match(identity, /persona:\$\{source\}:/);
+  assert.match(identity, /character:\$\{id\}/);
 });
 
 
@@ -978,10 +996,11 @@ ok('workflow and popup responsibilities are split into focused modules', () => {
 
 
 
-ok('popup history and auto-profile subscriptions are scoped to the active selection', () => {
+ok('popup history and Voice Profile subscriptions stay scoped to the active chat and exact identity', () => {
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   assert.match(popup, /state\.history\[historyKey\]/);
   assert.match(popup, /state\.autoProfiles\?\.\[selection\.cid\]/);
+  assert.match(popup, /autoProfileBucket\[voiceIdentity\.key\]/);
   assert.doesNotMatch(popup, /const history = usePersistentStore\(\(state\) => state\.history\)/);
   assert.doesNotMatch(popup, /const autoProfiles = usePersistentStore\(\(state\) => state\.autoProfiles\)/);
 });
