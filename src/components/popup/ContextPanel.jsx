@@ -23,6 +23,10 @@ export function ContextPanel({
   const text = (en, viText) => (vi ? viText : en);
   const contextHelp = vi ? CONTEXT_MODE_HELP_VI : CONTEXT_MODE_HELP;
   const fastRewriteHelp = vi ? FAST_REWRITE_HELP_VI : FAST_REWRITE_HELP;
+  const characterNames = tokenInfo.identities?.characterNames || [];
+  const personaNames = tokenInfo.identities?.personaNames || [];
+  const characterLabel = characterNames.length ? `Char: ${characterNames.join(' · ')}` : text('Character', 'Nhân vật');
+  const personaLabel = personaNames.length ? `Persona: ${personaNames.join(' · ')}` : 'Persona';
   const displayRadarText = String(radarText || '').replace(/^[^A-Za-z0-9]+/, '');
   const tokenBreakdown = tokenInfo.parts
     ? Object.entries(tokenInfo.parts)
@@ -112,41 +116,12 @@ export function ContextPanel({
         </div>
 
         <div className="rwa2-source-grid" role="group" aria-label={text('Persistent context sources', 'Nguồn ngữ cảnh cố định')}>
-          <ToggleSwitch label={text('Character', 'Nhân vật')} checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
-          <ToggleSwitch label="Persona" checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
+          <ToggleSwitch label={characterLabel} checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
+          <ToggleSwitch label={personaLabel} checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
           <ToggleSwitch label="Lore" checked={config.injectLorebook} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectLorebook: value }); keepFocus(); }} />
           <ToggleSwitch label={text('Around', 'Xung quanh')} checked={config.localContextEnabled} onChange={(value) => { updateConfig({ localContextEnabled: value }); keepFocus(); }} />
         </div>
 
-        {contextSources.length > 0 && (
-          <div className="rwa2-one-shot">
-            <span className="rwa2-one-shot-label">{text('This rewrite:', 'Lần viết lại này:')}</span>
-            <div className="rwa2-one-shot-chips" role="group" aria-label={text('Sources for this rewrite only', 'Nguồn chỉ dùng cho lần viết lại này')}>
-              {contextSources.map((source) => {
-                const excluded = !!contextExclusions[source.key];
-                return (
-                  <button
-                    key={source.key}
-                    type="button"
-                    className={`rwa2-chip ${excluded ? 'rwa2-chip-off' : ''}`}
-                    aria-pressed={!excluded}
-                    title={text(
-                      `${excluded ? 'Excluded from' : 'Included in'} this rewrite only`,
-                      `${excluded ? 'Đã loại khỏi' : 'Đã đưa vào'} lần viết lại này`,
-                    )}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onToggleContext(source.key);
-                    }}
-                  >
-                    {source.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="rwa2-context-region rwa2-context-modifiers">
@@ -190,6 +165,36 @@ export function ContextPanel({
           />
         </label>
       </div>
+
+      {contextSources.length > 0 && (
+        <div className="rwa2-context-region rwa2-context-applied">
+          <span className="rwa2-one-shot-label">{text('This rewrite:', 'Lần viết lại này:')}</span>
+          <div className="rwa2-one-shot-chips" role="group" aria-label={text('Sources for this rewrite only', 'Nguồn chỉ dùng cho lần viết lại này')}>
+            {contextSources.map((source) => {
+              const excluded = !!contextExclusions[source.key];
+              return (
+                <button
+                  key={source.key}
+                  type="button"
+                  className={`rwa2-chip ${excluded ? 'rwa2-chip-off' : ''}`}
+                  aria-pressed={!excluded}
+                  title={text(
+                    `${excluded ? 'Excluded from' : 'Included in'} this rewrite only`,
+                    `${excluded ? 'Đã loại khỏi' : 'Đã đưa vào'} lần viết lại này`,
+                  )}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onToggleContext(source.key);
+                  }}
+                >
+                  {source.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
