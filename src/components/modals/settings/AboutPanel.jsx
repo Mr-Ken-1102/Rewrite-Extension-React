@@ -27,6 +27,12 @@ const EVOLUTION_ROWS = [
 
 const RELEASE_HIGHLIGHTS = [
   {
+    en: 'Fast Rewrite',
+    vi: 'Viết lại nhanh',
+    detailEn: 'Rewrite requests can bypass model reasoning when the provider supports it while keeping live SSE streaming, dramatically reducing wait time without changing the chat model or its saved connection settings.',
+    detailVi: 'Request viết lại có thể bỏ qua reasoning khi provider hỗ trợ nhưng vẫn giữ SSE streaming trực tiếp, giảm mạnh thời gian chờ mà không thay đổi model chat hay cấu hình kết nối đã lưu.',
+  },
+  {
     en: 'Persona Draft Reply',
     vi: 'Soạn trả lời theo Persona',
     detailEn: 'Idea → reply, Continue Draft, suggestions, alternatives, shorter/longer variants, streaming preview, safe composer insertion, and no automatic sending.',
