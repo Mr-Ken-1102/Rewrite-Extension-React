@@ -40,7 +40,7 @@ export function RewriteSection({
         <div className="rwa2-fast-strip" role="status" aria-label={text('Fast Rewrite enabled with live SSE streaming', 'Viết lại nhanh đang bật với SSE streaming trực tiếp')}>
           <div className="rwa2-fast-copy">
             <span className="rwa2-fast-title">{text('Fast Rewrite', 'Viết lại nhanh')}</span>
-            <span className="rwa2-fast-meta">{text('Reasoning bypass · SSE live', 'Bỏ qua reasoning · SSE trực tiếp')}</span>
+            <span className="rwa2-fast-meta">{text('Fast path · SSE live', 'Đường nhanh · SSE trực tiếp')}</span>
           </div>
           <span className="rwa2-fast-live">{text('LIVE', 'NHANH')}</span>
           <span className="rwa2-fast-rail" aria-hidden="true"><span></span></span>
