@@ -995,6 +995,7 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(context, /First message/);
   assert.match(context, /Example dialogue/);
   assert.match(context, /About me/);
+  assert.ok(context.indexOf("'Example dialogue'") < context.indexOf("'Description'"));
   assert.doesNotMatch(context.slice(context.indexOf('function buildVoiceReference'), context.indexOf('export class ContextService')), /system_prompt|post_history_instructions/);
   assert.match(coordinator, /resolved\.selectionKey === selectionKey/);
   assert.match(coordinator, /targetMessage: message/);
