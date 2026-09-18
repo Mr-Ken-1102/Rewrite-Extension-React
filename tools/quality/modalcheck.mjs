@@ -37,6 +37,9 @@ assert.match(ledger, /role="status" aria-live="polite"/);
 const custom = read('./src/components/modals/CustomPromptModal.jsx');
 assert.match(custom, /DOMUtils\.getChatId\(\) \|\| useRuntimeStore\.getState\(\)\.selection\?\.cid \|\| ''/);
 assert.match(custom, /APIService\.runInference\([\s\S]*\{ chatId \},/s);
+assert.match(custom, /rwa-refine-status/);
+assert.match(custom, /rwa-activity-rail/);
+assert.match(custom, /Refining the instruction with the current model/);
 
 const architect = read('./src/components/modals/AIArchitectModal.jsx');
 assert.match(architect, /rwa-architect-status/);
