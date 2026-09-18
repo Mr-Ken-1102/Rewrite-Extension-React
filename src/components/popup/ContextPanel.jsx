@@ -13,6 +13,7 @@ export function ContextPanel({
   radarText,
   radarColor,
   tokenInfo,
+  voiceIdentity = null,
   contextSources,
   contextExclusions,
   onToggleContext,
@@ -25,8 +26,14 @@ export function ContextPanel({
   const fastRewriteHelp = vi ? FAST_REWRITE_HELP_VI : FAST_REWRITE_HELP;
   const characterNames = tokenInfo.identities?.characterNames || [];
   const personaNames = tokenInfo.identities?.personaNames || [];
-  const characterLabel = characterNames.length ? `Char: ${characterNames.join(' · ')}` : text('Character', 'Nhân vật');
-  const personaLabel = personaNames.length ? `Persona: ${personaNames.join(' · ')}` : 'Persona';
+  const targetCharacterName = voiceIdentity?.kind === 'character' ? String(voiceIdentity.name || '').trim() : '';
+  const targetPersonaName = voiceIdentity?.kind === 'persona' ? String(voiceIdentity.name || '').trim() : '';
+  const characterLabel = targetCharacterName
+    ? `Char: ${targetCharacterName}`
+    : (characterNames.length ? `Char: ${characterNames.join(' · ')}` : text('Character', 'Nhân vật'));
+  const personaLabel = targetPersonaName
+    ? `Persona: ${targetPersonaName}`
+    : (personaNames.length ? `Persona: ${personaNames.join(' · ')}` : 'Persona');
   const displayRadarText = String(radarText || '').replace(/^[^A-Za-z0-9]+/, '');
   const tokenBreakdown = tokenInfo.parts
     ? Object.entries(tokenInfo.parts)
