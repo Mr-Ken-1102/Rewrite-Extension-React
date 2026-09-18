@@ -13,11 +13,13 @@ function getLauncherPosition() {
   const viewportLeft = Number(viewport?.offsetLeft) || 0;
   const viewportTop = Number(viewport?.offsetTop) || 0;
   const viewportWidth = Number(viewport?.width) || window.innerWidth;
-  const preferredLeft = shellRect.right - 34;
-  const preferredTop = shellRect.top - 36;
+  const launcherWidth = 118;
+  const preferredLeft = shellRect.right - launcherWidth;
+  const aboveTop = shellRect.top - 38;
+  const preferredTop = aboveTop >= viewportTop + 8 ? aboveTop : shellRect.top + 6;
 
   return {
-    left: Math.max(viewportLeft + 8, Math.min(preferredLeft, viewportLeft + viewportWidth - 40)),
+    left: Math.max(viewportLeft + 8, Math.min(preferredLeft, viewportLeft + viewportWidth - launcherWidth - 8)),
     top: Math.max(viewportTop + 8, preferredTop),
   };
 }
@@ -88,12 +90,14 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
     <button
       type="button"
       className="rwa-draft-launcher"
+      data-rwa-feature="draft-reply"
       style={{ left: position.left, top: position.top }}
       onClick={onOpen}
       title={title}
       aria-label={title}
     >
-      <span aria-hidden="true">✦</span>
+      <span className="rwa-draft-launcher-icon" aria-hidden="true">✦</span>
+      <span>{language === 'vi' ? 'Persona Reply' : 'Persona Reply'}</span>
     </button>
   );
 }
