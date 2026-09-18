@@ -435,7 +435,7 @@ ok('Marinara raw-generation aborted responses propagate as cancellation', () => 
   const provider = readFileSync('./src/services/providers/providerService.js', 'utf8');
   const controller = readFileSync('./src/controllers/rewriteSessionController.js', 'utf8');
   const tab = readFileSync('./src/components/modals/settings/TabAPI.jsx', 'utf8');
-  assert.match(provider, /if \(result\.aborted === true\) return \{ aborted: true \}/);
+  assert.match(provider, /if \(result\?\.aborted === true\) return \{ \.\.\.result, connectionSource: resolved\.source, connectionId \}/);
   assert.match(controller, /if \(resp\?\.aborted\) \{[\s\S]{0,120}setState\(null\)/s);
   assert.match(tab, /if \(response\?\.aborted\)/);
 });
@@ -456,7 +456,8 @@ ok('historical user messages preserve their persona identity', () => {
   assert.equal(getMessagePersonaSnapshot({ extra: {} }), null);
 
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /fetchUserPersona\(savedSel\.cid, signal, getMessagePersonaSnapshot\(info\.message\)\)/);
+  assert.match(context, /const personaSnapshot = getMessagePersonaSnapshot\(info\.message\)/);
+  assert.match(context, /fetchUserPersona\(savedSel\.cid, signal, personaSnapshot\)/);
   assert.match(context, /personaCharacterId/);
   assert.match(context, /identitySource === 'character'/);
   assert.match(context, /if \(snapshot\?\.personaId\) return snapshot\?\.name/);
