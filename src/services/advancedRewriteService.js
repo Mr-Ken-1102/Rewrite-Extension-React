@@ -6,8 +6,8 @@ const MAX_LEDGER_SLICE_CHARS = 24_000;
 
 const LEDGER_INFERENCE_CONFIG_KEYS = Object.freeze([
   'connMode', 'connectionId', 'ollamaUrl', 'ollamaModel', 'extenderUrl',
-  'directTemp', 'requestTimeoutMs', 'maxPromptChars', 'lengthEnabled', 'lengthPct',
-  'conciseSysPrompt', 'freeMode', 'contextDepth', 'injectChar', 'injectUser',
+  'directTemp', 'requestTimeoutMs', 'marinaraTimeoutMs', 'maxPromptChars', 'lengthEnabled', 'lengthPct',
+  'conciseSysPrompt', 'fastRewrite', 'freeMode', 'contextDepth', 'injectChar', 'injectUser',
   'injectLorebook', 'localContextEnabled', 'localContextWords', 'useExtenderMemory',
   'speakerAware', 'charCardIds',
 ]);
