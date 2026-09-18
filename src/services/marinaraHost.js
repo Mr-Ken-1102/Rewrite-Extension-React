@@ -96,6 +96,19 @@ async function attributedFetch(input, init = {}, timeoutMs = 25000) {
   }
 }
 
+async function streamingFetch(input, init = {}) {
+  const host = getHost();
+  const fallbackFetch = globalThis.fetch?.bind(globalThis);
+  const fetchFn = host && typeof host.fetch === 'function' ? host.fetch.bind(host) : fallbackFetch;
+  if (typeof fetchFn !== 'function') throw new Error('No fetch implementation is available.');
+
+  // Deliberately do not wrap/cleanup the caller's AbortSignal here. A streaming
+  // fetch resolves as soon as response headers arrive, but that same signal must
+  // remain attached while the body reader is active so Cancel can stop provider
+  // generation rather than merely closing Rewrite Assistant's UI.
+  return fetchFn(input, init);
+}
+
 function normalizeApiOptions(options = {}) {
   const method = String(options.method || 'GET').toUpperCase();
   const headers = new Headers(options.headers || {});
@@ -168,6 +181,7 @@ export const MarinaraHost = Object.freeze({
   getHost,
   setHost: setMarinaraHost,
   fetch: attributedFetch,
+  fetchStreaming: streamingFetch,
   apiFetch,
   apiJSON,
   onCleanup,
