@@ -49,7 +49,7 @@ export const AIArchitectModal = ({ onClose, onDone }) => {
     const controller = new AbortController();
     requestRef.current = controller;
     setIsGenerating(true);
-    setStatusText('AI engine structural modeling in progress...');
+    setStatusText('Analyzing structure and drafting the preset…');
 
     try {
       const response = await APIService.runInference(
