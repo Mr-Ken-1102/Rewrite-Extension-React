@@ -29,8 +29,8 @@ const RELEASE_HIGHLIGHTS = [
   {
     en: 'Fast Rewrite',
     vi: 'Viết lại nhanh',
-    detailEn: 'Rewrite requests can bypass model reasoning when the provider supports it while keeping live SSE streaming, dramatically reducing wait time without changing the chat model or its saved connection settings.',
-    detailVi: 'Request viết lại có thể bỏ qua reasoning khi provider hỗ trợ nhưng vẫn giữ SSE streaming trực tiếp, giảm mạnh thời gian chờ mà không thay đổi model chat hay cấu hình kết nối đã lưu.',
+    detailEn: 'Rewrite requests can bypass model reasoning when the provider supports it while keeping live SSE streaming, which can significantly reduce wait time without changing the chat model or its saved connection settings.',
+    detailVi: 'Request viết lại có thể bỏ qua reasoning khi provider hỗ trợ nhưng vẫn giữ SSE streaming trực tiếp, có thể giảm đáng kể thời gian chờ mà không thay đổi model chat hay cấu hình kết nối đã lưu.',
   },
   {
     en: 'Persona Draft Reply',
