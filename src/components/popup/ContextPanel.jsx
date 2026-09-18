@@ -1,9 +1,9 @@
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 
 const CONTEXT_MODE_HELP = 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.';
-const CONTEXT_MODE_HELP_VI = 'Tắt Chế độ tự do: phù hợp với POV nhân vật, hội thoại trực tiếp hoặc nội tâm.\nBật Chế độ tự do: phù hợp với cảnh miêu tả, hành động chung hoặc bối cảnh thời gian/không gian.';
+const CONTEXT_MODE_HELP_VI = 'Tắt Tự do: phù hợp khi viết theo POV nhân vật, hội thoại trực tiếp hoặc nội tâm.\nBật Tự do: phù hợp với miêu tả cảnh, hành động chung hoặc bối cảnh thời gian/không gian.';
 const FAST_REWRITE_HELP = 'Fast Rewrite On: for Marinara connections, disable model reasoning only for this rewrite request when supported. The chat model and saved connection settings are unchanged.\nFast Rewrite Off: use the connection\'s normal reasoning settings. SSE streaming stays enabled in both modes.';
-const FAST_REWRITE_HELP_VI = 'Bật Viết lại nhanh: với kết nối Marinara, chỉ tắt reasoning cho request viết lại này khi provider hỗ trợ. Model của chat và thiết lập kết nối đã lưu không thay đổi.\nTắt Viết lại nhanh: dùng reasoning bình thường của kết nối. SSE streaming vẫn bật ở cả hai chế độ.';
+const FAST_REWRITE_HELP_VI = 'Bật Viết lại nhanh: với kết nối Marinara, chỉ tắt reasoning cho lần viết lại này khi nhà cung cấp AI hỗ trợ. Model của chat và cấu hình kết nối đã lưu không thay đổi.\nTắt Viết lại nhanh: dùng reasoning bình thường của kết nối. SSE streaming vẫn bật ở cả hai chế độ.';
 
 export function ContextPanel({
   language = 'en',
@@ -43,7 +43,7 @@ export function ContextPanel({
     : '';
   const tokenTitle = tokenInfo.error
     || [
-      text('Estimated prompt size; not a provider billing/tokenizer count.', 'Ước lượng kích thước prompt; không phải số token tính phí hoặc tokenizer chính xác của provider.'),
+      text('Estimated prompt size; not a provider billing/tokenizer count.', 'Ước lượng kích thước yêu cầu; không phải số token tính phí hay kết quả tokenizer chính xác của nhà cung cấp AI.'),
       tokenBreakdown,
     ].filter(Boolean).join(' ');
   const tokenLabel = tokenInfo.loading && !tokenInfo.parts
@@ -122,11 +122,11 @@ export function ContextPanel({
           </div>
         </div>
 
-        <div className="rwa2-source-grid" role="group" aria-label={text('Persistent context sources', 'Nguồn ngữ cảnh cố định')}>
+        <div className="rwa2-source-grid" role="group" aria-label={text('Persistent context sources', 'Nguồn ngữ cảnh')}>
           <ToggleSwitch label={characterLabel} checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
           <ToggleSwitch label={personaLabel} checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
           <ToggleSwitch label="Lore" checked={config.injectLorebook} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectLorebook: value }); keepFocus(); }} />
-          <ToggleSwitch label={text('Around', 'Xung quanh')} checked={config.localContextEnabled} onChange={(value) => { updateConfig({ localContextEnabled: value }); keepFocus(); }} />
+          <ToggleSwitch label={text('Around', 'Ngữ cảnh gần')} checked={config.localContextEnabled} onChange={(value) => { updateConfig({ localContextEnabled: value }); keepFocus(); }} />
         </div>
 
       </div>
@@ -175,8 +175,8 @@ export function ContextPanel({
 
       {contextSources.length > 0 && (
         <div className="rwa2-context-region rwa2-context-applied">
-          <span className="rwa2-one-shot-label">{text('This rewrite:', 'Lần viết lại này:')}</span>
-          <div className="rwa2-one-shot-chips" role="group" aria-label={text('Sources for this rewrite only', 'Nguồn chỉ dùng cho lần viết lại này')}>
+          <span className="rwa2-one-shot-label">{text('This rewrite:', 'Lần này:')}</span>
+          <div className="rwa2-one-shot-chips" role="group" aria-label={text('Sources for this rewrite only', 'Nguồn dùng riêng cho lần này')}>
             {contextSources.map((source) => {
               const excluded = !!contextExclusions[source.key];
               return (
