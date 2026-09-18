@@ -12,6 +12,11 @@ import {
   resolveMarinaraChatComposer,
   resolveMarinaraChatComposerAnchor,
 } from '../../src/utils/chatComposerAnchor.js';
+import {
+  clampFloatingPanelPosition,
+  defaultFloatingPanelPosition,
+  getVisualViewportBounds,
+} from '../../src/utils/floatingPanelGeometry.js';
 import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from '../../src/services/autoProfilePolicy.js';
 import { createExecutionCoordinator } from '../../src/controllers/rewriteExecution.js';
 import { sanitizeAutoProfiles } from '../../src/store/persistence/schema.js';
@@ -383,12 +388,36 @@ ok('Marinara v2.4.4 composer is never mistaken for a sent-message editor', () =>
   assert.match(dom, /closest\?\.\('\[data-message-id\]'\)/);
 });
 
+ok('modeless Draft Reply geometry stays inside the visual viewport', () => {
+  const bounds = getVisualViewportBounds({
+    innerWidth: 1200,
+    innerHeight: 800,
+    visualViewport: { offsetLeft: 40, offsetTop: 20, width: 900, height: 640 },
+  });
+  assert.deepEqual(bounds, { left: 40, top: 20, right: 940, bottom: 660, width: 900, height: 640 });
+
+  const clamped = clampFloatingPanelPosition(
+    { left: 900, top: 640 },
+    { width: 620, height: 420 },
+    bounds,
+  );
+  assert.deepEqual(clamped, { left: 312, top: 232 });
+
+  const initial = defaultFloatingPanelPosition(
+    { width: 620, height: 420 },
+    bounds,
+  );
+  assert.equal(initial.left, 180);
+  assert.ok(initial.top >= 28 && initial.top <= 68);
+});
+
 ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-sends', () => {
   const app = readFileSync('./src/App.jsx', 'utf8');
   const service = readFileSync('./src/services/draftReplyService.js', 'utf8');
   const session = readFileSync('./src/hooks/useDraftReplySession.js', 'utf8');
   const launcher = readFileSync('./src/components/draft/DraftReplyLauncher.jsx', 'utf8');
   const modal = readFileSync('./src/components/draft/DraftReplyModal.jsx', 'utf8');
+  const draftStyles = readFileSync('./src/styles-draft-reply.js', 'utf8');
   const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
   const main = readFileSync('./src/main.jsx', 'utf8');
 
@@ -422,8 +451,17 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(session, /resolved\.sourceFingerprint !== current\.personaSourceFingerprint/);
   assert.match(modal, /Resolving Persona/);
   assert.match(modal, /disabled=\{isPersonaResolving \|\| !state\.persona\?\.key\}/);
+  assert.match(modal, /useFloatingPanelDrag/);
+  assert.match(modal, /aria-modal="false"/);
+  assert.match(modal, /data-rwa-feature="draft-reply-window"/);
+  assert.match(modal, /rwa-draft-header/);
+  assert.match(modal, /rwa-draft-footer/);
+  assert.doesNotMatch(modal, /<Modal\b/);
+  assert.ok(modal.indexOf('rwa-draft-persona-chip') > modal.indexOf('rwa-draft-header'));
+  assert.match(draftStyles, /\.rwa-draft-header,\s*\n\.rwa-draft-footer\s*\{[\s\S]*height:\s*36px/s);
+  assert.match(draftStyles, /var\(--rwa2-bg/);
   assert.match(modal, /Insert into composer/);
-  assert.match(modal, /Another version/);
+  assert.match(modal, /Another/);
   assert.match(modal, /Shorter/);
   assert.match(modal, /Longer/);
   assert.doesNotMatch(modal, /mari-chat-send-btn/);
