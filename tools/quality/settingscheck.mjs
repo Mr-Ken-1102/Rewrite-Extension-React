@@ -66,7 +66,16 @@ assert.match(credits, /Claude Code/);
 assert.match(credits, /12 múi giờ/);
 assert.match(credits, /Beoopo — Marinara Rewrite/);
 assert.doesNotMatch(about, /TCLowe1982|Beoopo — Marinara Rewrite/);
-assert.match(worldclass, /\.rwa-credit-list/);
+assert.match(credits, /rwa-credits-mark/);
+assert.match(credits, /rwa-credit-grid/);
+assert.match(credits, /Special thanks|Tri ân đặc biệt/);
+assert.match(credits, /Original inspiration|Nguồn cảm hứng ban đầu/);
+assert.match(worldclass, /\.rwa-credits-hero/);
+assert.match(worldclass, /\.rwa-credit-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0,1fr\)\)/s);
+assert.match(worldclass, /\.rwa-credit-grid\s*\{[\s\S]*grid-auto-rows:\s*1fr/s);
+assert.match(css, /--rwas-workspace-gutter:\s*24px/);
+assert.match(css, /\.rwas-page-head\s*\{[\s\S]*var\(--rwas-workspace-gutter\)/s);
+assert.match(css, /\.rwas-statusbar\s*\{[\s\S]*var\(--rwas-workspace-gutter\)/s);
 
 assert.match(modal, /id: 'language'/);
 assert.match(modal, /label: 'Language'/);
