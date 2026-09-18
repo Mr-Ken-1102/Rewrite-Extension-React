@@ -54,7 +54,7 @@ function parseSsePayload(block) {
   try { return JSON.parse(data); } catch { return null; }
 }
 
-async function readRawStream(response, signal, onProgress) {
+async function readRawStream(response, signal, onProgress, onStreamStatus) {
   if (!response?.body?.getReader) {
     return { error: 'Marinara streaming response is not readable in this browser.' };
   }
@@ -70,6 +70,11 @@ async function readRawStream(response, signal, onProgress) {
   let lastReportedLength = 0;
   let lastReportedAt = 0;
 
+  const emitStatus = (status, extra = {}) => {
+    if (typeof onStreamStatus !== 'function') return;
+    try { onStreamStatus({ status, ...extra }); } catch { /* UI status hooks never block inference */ }
+  };
+
   const reportProgress = (force = false) => {
     if (typeof onProgress !== 'function' || !streamed) return;
     const now = Date.now();
@@ -77,11 +82,16 @@ async function readRawStream(response, signal, onProgress) {
     lastReportedLength = streamed.length;
     lastReportedAt = now;
     try { onProgress(streamed); } catch { /* UI progress must never break inference */ }
+    emitStatus('streaming', { chars: streamed.length });
   };
 
   const consume = (block) => {
     const payload = parseSsePayload(block);
     if (!payload || typeof payload.type !== 'string') return;
+    if (payload.type === 'raw_started') {
+      emitStatus('streaming', { runId: payload.data?.runId || null, chars: streamed.length });
+      return;
+    }
     if (payload.type === 'token' && typeof payload.data === 'string') {
       streamed += payload.data;
       reportProgress(false);
@@ -93,6 +103,7 @@ async function readRawStream(response, signal, onProgress) {
         finalContent = content;
         streamed = content;
         reportProgress(true);
+        emitStatus('finalizing', { chars: streamed.length });
       }
       return;
     }
@@ -106,7 +117,10 @@ async function readRawStream(response, signal, onProgress) {
       aborted = true;
       return;
     }
-    if (payload.type === 'done') done = true;
+    if (payload.type === 'done') {
+      done = true;
+      emitStatus('done', { chars: streamed.length });
+    }
   };
 
   try {
@@ -283,6 +297,9 @@ export class ProviderService {
 
       const requestRaw = async (parameters = null) => {
         const runId = createRawRunId();
+        if (typeof override.onStreamStatus === 'function') {
+          try { override.onStreamStatus({ status: 'connecting', runId, chars: 0 }); } catch { /* noop */ }
+        }
         const body = {
           connectionId,
           messages: [
@@ -332,7 +349,7 @@ export class ProviderService {
             return normalizeProviderFailure(detail || `HTTP ${response.status} from Marinara.`);
           }
 
-          const streamed = await readRawStream(response, signal, override.onProgress);
+          const streamed = await readRawStream(response, signal, override.onProgress, override.onStreamStatus);
           if (streamed.aborted) return { aborted: true };
           if (streamed.error) {
             debugLogService.add('inference.stream_error', {
