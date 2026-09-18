@@ -172,7 +172,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
           <div className="rwas-brand">
             <div className="rwas-brand-line">
               <span className="rwas-product">Rewrite Assistant</span>
-              <span className="rwas-version">V3</span>
+              <span className="rwas-version">V3.0.2</span>
             </div>
             <div className="rwas-window-title">{vi ? 'Cài đặt' : 'Settings'}</div>
           </div>
