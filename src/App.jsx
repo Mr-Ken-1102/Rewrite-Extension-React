@@ -96,6 +96,9 @@ export default function App() {
           progress={processState.progress}
           partialResult={processState.partialResult}
           streamed={processState.streamed === true}
+          streamStatus={processState.streamStatus}
+          streamChars={processState.streamChars || 0}
+          nativeEditorPrepared={processState.nativeEditorPrepared === true}
           pieces={processState.pieces}
           applyReport={processState.applyReport}
           onAccept={handleAcceptPreview}
