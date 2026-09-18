@@ -31,7 +31,7 @@ export const TabUI = () => {
   const vi = config.uiLanguage === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const profileColumnMax = config.compact ? 6 : 4;
-  const visibleProfileColumns = Math.min(Math.max(1, config.cols || 3), profileColumnMax);
+  const visibleProfileColumns = Math.min(Math.max(1, config.cols || 4), profileColumnMax);
 
   return (
     <>
@@ -51,7 +51,7 @@ export const TabUI = () => {
           checked={config.compact}
           onChange={(value) => updateConfig({
             compact: value,
-            cols: Math.min(config.cols || 3, value ? 6 : 4),
+            cols: Math.min(config.cols || 4, value ? 6 : 4),
           })}
         />
       </ConfigRow>
