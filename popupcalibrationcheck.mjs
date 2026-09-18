@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 const read = (path) => readFileSync(path, 'utf8');
 
 const aggregator = read('./src/styles-popup.js');
+const base = read('./src/styles-popup-base.js');
 const a11y = read('./src/styles-popup-a11y.js');
 const context = read('./src/styles-popup-context.js');
 
@@ -23,5 +24,8 @@ assert.match(a11y, /prefers-contrast:\s*more/);
 assert.doesNotMatch(a11y, /font-size:\s*(?:[0-9](?:\.[0-9]+)?)px/);
 assert.match(a11y, /\.rwa2-section-title\s*\{\s*font-size:\s*12\.5px/);
 assert.match(a11y, /\.rwa2-popup \.rwa2-action\s*\{\s*font-size:\s*11\.5px !important/);
+assert.match(base, /\.rwa2-brand-title\s*\{[\s\S]*font-weight:\s*760;[\s\S]*letter-spacing:\s*\.055em/);
+assert.match(base, /\.rwa2-profile-name\s*\{[\s\S]*font-weight:\s*650;[\s\S]*letter-spacing:\s*\.005em/);
+assert.match(base, /\.rwa2-popup \.rwa2-action\s*\{[\s\S]*font-weight:\s*600 !important/);
 
 console.log('popupcalibrationcheck: readability/target/focus contract passed');
