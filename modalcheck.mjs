@@ -34,6 +34,12 @@ assert.match(edit, /disabled=\{!name\.trim\(\) \|\| !prompt\.trim\(\)\}/);
 const ledger = read('./src/components/modals/LedgerModal.jsx');
 assert.match(ledger, /role="status" aria-live="polite"/);
 
+const preview = read('./src/components/modals/PreviewModal.jsx');
+assert.match(preview, /partialResult/);
+assert.match(preview, /Live result/);
+assert.match(preview, /Receiving result/);
+assert.match(preview, /config\.typewriter && !streamed/);
+
 const confirm = read('./src/components/modals/ConfirmModal.jsx');
 assert.match(confirm, /role="alertdialog"/);
 assert.match(confirm, /aria-hidden="true"/);
