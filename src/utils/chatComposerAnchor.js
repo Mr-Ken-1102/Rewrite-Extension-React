@@ -43,8 +43,9 @@ function componentModeFallback(documentLike, composer) {
     ['game', '[data-chat-mode="game"]'],
   ];
   for (const [mode, selector] of pairs) {
-    let root = null;
-    try { root = documentLike?.querySelector?.(selector) || null; } catch { root = null; }
+    const root = (() => {
+      try { return documentLike?.querySelector?.(selector) || null; } catch { return null; }
+    })();
     if (!root || !isVisible(root)) continue;
     if (!composer) return { mode, root };
     try {
@@ -76,12 +77,14 @@ export function resolveMarinaraChatComposer(documentLike = globalThis.document) 
   // data-chat-composer. Scope the fallback strictly to the visible game root
   // and its resource-drop-excluded input shell so unrelated textareas are
   // never treated as the chat composer.
-  let gameRoots = [];
-  try { gameRoots = [...(documentLike.querySelectorAll?.('[data-chat-mode="game"]') || [])]; } catch { gameRoots = []; }
+  const gameRoots = (() => {
+    try { return [...(documentLike.querySelectorAll?.('[data-chat-mode="game"]') || [])]; } catch { return []; }
+  })();
   for (const gameRoot of gameRoots) {
     if (!isVisible(gameRoot)) continue;
-    let resourceShells = [];
-    try { resourceShells = [...(gameRoot.querySelectorAll?.('[data-chat-resource-drop-exclude]') || [])]; } catch { resourceShells = []; }
+    const resourceShells = (() => {
+      try { return [...(gameRoot.querySelectorAll?.('[data-chat-resource-drop-exclude]') || [])]; } catch { return []; }
+    })();
     for (const resourceShell of resourceShells) {
       if (!isVisible(resourceShell)) continue;
       const candidate = visibleTextareas(resourceShell)
