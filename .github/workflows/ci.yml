@@ -67,7 +67,9 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
       - name: Full dependency advisory gate
-        run: npm audit --audit-level=critical
+        # Release certification rejects moderate-or-higher advisories anywhere
+        # in the locked runtime or dev/build dependency tree.
+        run: npm audit --audit-level=moderate
 
       - name: ESLint
         run: npm run lint
