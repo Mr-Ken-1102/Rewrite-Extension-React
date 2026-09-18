@@ -13,11 +13,11 @@ const SETTINGS_SECTIONS = [
   {
     id: 'profiles',
     label: 'Style Presets',
-    labelVi: 'Kiểu viết',
+    labelVi: 'Thiết lập sẵn',
     meta: 'Rewrite styles',
-    metaVi: 'Các kiểu viết lại',
+    metaVi: 'Mẫu viết lại',
     description: 'Create, organize, hide, and refine the rewrite actions shown in the popup.',
-    descriptionVi: 'Tạo, sắp xếp, ẩn và tinh chỉnh các thao tác viết lại hiển thị trong popup.',
+    descriptionVi: 'Tạo, sắp xếp, ẩn và tinh chỉnh các thiết lập viết lại hiển thị trong popup.',
   },
   {
     id: 'ui',
