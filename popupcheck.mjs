@@ -62,9 +62,11 @@ ok('context rail uses a summary row above an 8-4 working split', () => {
   assert.match(css, /\.rwa2-context-identity\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
   assert.match(css, /\.rwa2-context-sources\s*\{[\s\S]*grid-column:\s*span 8/);
   assert.match(css, /\.rwa2-context-modifiers\s*\{[\s\S]*grid-column:\s*span 4/);
+  assert.match(css, /\.rwa2-context-applied\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
   assert.match(context, /rwa2-context-region rwa2-context-identity/);
   assert.match(context, /rwa2-context-region rwa2-context-sources/);
   assert.match(context, /rwa2-context-region rwa2-context-modifiers/);
+  assert.match(context, /rwa2-context-region rwa2-context-applied/);
 });
 
 ok('profile grid derives viewport height from shared geometry and exposes deterministic column classes', () => {
