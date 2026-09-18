@@ -6,6 +6,7 @@ import { extractSurroundingContext } from '../../utils/selectionContext.js';
 import { analyzeMergedMessageCompatibility } from '../policies/contextPolicy.js';
 import { validateProviderHttpUrl } from '../policies/providerPolicy.js';
 import { estimateTokens } from '../prompt/promptService.js';
+import { voiceIdentityFromMessage } from '../voiceProfileIdentity.js';
 
 const ENDPOINTS = {
   chats: '/chats',
@@ -362,7 +363,16 @@ export class ContextService {
   static async inspectContext(savedSel, signal) {
     if (!savedSel?.text?.trim()) return { error: 'No text is selected.' };
     try {
-      const context = await this.collectContext(savedSel, signal);
+      let messageInfo = null;
+      if (savedSel?.cid && savedSel?.mid) {
+        messageInfo = await this.getMessageInfo(savedSel.cid, savedSel.mid, signal);
+      }
+      const context = await this.collectContext(
+        savedSel,
+        signal,
+        messageInfo?.message ? { messageInfo } : {},
+      );
+      const voiceIdentity = voiceIdentityFromMessage(messageInfo?.message || context.messageInfo?.message || null);
       const parts = {
         selection: estimateTokens(savedSel.text),
         character: estimateTokens(context.character),
@@ -377,6 +387,7 @@ export class ContextService {
       return {
         parts,
         role: context.role,
+        voiceIdentity,
         identities: {
           characterNames: extractIdentityNames(context.character),
           personaNames: extractIdentityNames(context.persona),
