@@ -74,7 +74,7 @@ ok('LAN diagnosis separates browser permission, CORS, HTTP and transport failure
 ok('result modal uses an isolated balanced layout and no cursor-following glow path', () => {
   const modal = read('./src/components/modals/PreviewModal.jsx');
   const css = read('./src/styles-result.js');
-  assert.match(modal, /className="rwar-window"/);
+  assert.match(modal, /className=\{\`rwar-window \$\{!isLoading \? 'rwar-window-ready' : ''\}\`\.trim\(\)\}/);
   assert.match(modal, /bodyClassName="rwar-body"/);
   assert.match(modal, /rwar-actions-primary/);
   assert.match(modal, /rwar-actions-tools/);
@@ -83,6 +83,8 @@ ok('result modal uses an isolated balanced layout and no cursor-following glow p
   assert.match(css, /\.rwar-actions\s*\{/);
   assert.match(css, /\.rwar-section-head\s*\{/);
   assert.match(css, /\.rwar-raw\s*\{/);
+  assert.match(modal, /rwar-ready-rail/);
+  assert.match(css, /@keyframes rwar-result-arrive/);
 });
 
 ok('result text surfaces use Original Text typography as the 13px baseline', () => {

@@ -5,6 +5,12 @@ import {
 } from './popupGeometry';
 
 export const RWA_POPUP_BASE_CSS = `
+@keyframes rwa2-fast-sweep {
+  0% { transform: translateX(-130%); opacity: .30; }
+  42% { opacity: 1; }
+  70%, 100% { transform: translateX(310%); opacity: .28; }
+}
+
 :host {
   --rwa2-brand: #d19a45;
   --rwa2-brand-hover: #dca756;
@@ -41,7 +47,9 @@ export const RWA_POPUP_BASE_CSS = `
   padding: 7px ${POPUP_OUTER_PADDING_X}px 8px;
   border: 1px solid var(--rwa2-border);
   border-radius: 12px;
-  background: var(--rwa2-bg);
+  background:
+    radial-gradient(circle at 14% -14%, rgba(209,154,69,.075), transparent 34%),
+    var(--rwa2-bg);
   color: var(--rwa2-text-2);
   box-shadow: 0 18px 48px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.03);
   font-family: var(--rwa-host-font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
@@ -112,7 +120,14 @@ export const RWA_POPUP_BASE_CSS = `
 }
 .rwa2-icon-button:disabled { opacity: .28; cursor: not-allowed; }
 
-.rwa2-rewrite { min-width: 0; padding: 0; }
+.rwa2-rewrite {
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.010));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.015);
+}
 .rwa2-section-head {
   min-height: 20px;
   display: flex;
@@ -142,6 +157,77 @@ export const RWA_POPUP_BASE_CSS = `
   font-size: 9.5px;
   line-height: 1;
   white-space: nowrap;
+}
+
+.rwa2-fast-strip {
+  position: relative;
+  min-height: 29px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  padding: 0 8px 4px;
+  overflow: hidden;
+  border: 1px solid rgba(209,154,69,.17);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(209,154,69,.045), rgba(209,154,69,.018));
+}
+.rwa2-fast-copy {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  overflow: hidden;
+}
+.rwa2-fast-title {
+  color: var(--rwa2-brand);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.rwa2-fast-meta {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--rwa2-muted);
+  font-size: 9px;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rwa2-fast-live {
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border: 1px solid rgba(209,154,69,.24);
+  border-radius: 999px;
+  background: rgba(209,154,69,.07);
+  color: var(--rwa2-brand);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 820;
+  letter-spacing: .06em;
+}
+.rwa2-fast-rail {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 2px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.035);
+}
+.rwa2-fast-rail > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 28%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--rwa2-brand), #ff7043, transparent);
+  box-shadow: 0 0 8px rgba(209,154,69,.22);
+  animation: rwa2-fast-sweep 2.35s cubic-bezier(.42,0,.24,1) infinite;
 }
 
 .rwa2-popup .rwa2-auto-profile,

@@ -5,6 +5,8 @@ import { usePersistentStore } from '../../store/usePersistentStore';
 import { useToastStore } from '../../store/useToastStore';
 import { APIService } from '../../services/apiService';
 import { unwrapMatchingOuterQuotes } from '../../utils/textSanitizers';
+import { DOMUtils } from '../../utils/domUtils';
+import { useRuntimeStore } from '../../store/useRuntimeStore';
 
 const REFINE_SYSTEM = 'Turn a rough rewrite request into one clear, specific editing instruction. Preserve the user intent. Start with a verb. Output only one instruction sentence or short paragraph, with no quotes, preamble, markdown fence, or alternatives.';
 
@@ -71,10 +73,12 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
     refineControllerRef.current = controller;
     setIsRefining(true);
     try {
+      const chatId = DOMUtils.getChatId() || useRuntimeStore.getState().selection?.cid || '';
       const response = await APIService.runInference(
         REFINE_SYSTEM,
         `Rough rewrite request:\n<request>\n${rough.replace(/<\/?request>/gi, '[request]')}\n</request>`,
         controller.signal,
+        { chatId },
       );
       if (controller.signal.aborted || response?.aborted) return;
       if (response?.error) throw new Error(response.error);
@@ -119,6 +123,15 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
           {isRefining ? 'Refining…' : '✨ Refine with AI'}
         </Button>
       </div>
+
+      {isRefining && (
+        <div className="rwa-refine-status" role="status" aria-live="polite">
+          <div className="rwa-activity-rail" aria-hidden="true">
+            <span className="rwa-activity-runner"></span>
+          </div>
+          <span>Refining the instruction with the current model…</span>
+        </div>
+      )}
 
       {customs.length > 0 && (
         <>

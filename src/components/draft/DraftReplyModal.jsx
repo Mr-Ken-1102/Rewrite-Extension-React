@@ -179,7 +179,7 @@ export function DraftReplyModal({
 
       <div className="rwa-draft-body">
         {!isSuccess && !isError && (
-          <>
+          <div className="rwa-draft-compose">
             <div className="rwa-draft-guidance-row">
               <span className="rwa-draft-guidance-question">
                 {text('How should this reply be written?', 'Bạn muốn trả lời theo hướng nào?')}
@@ -224,7 +224,7 @@ export function DraftReplyModal({
                 'Chỉ soạn lượt của Persona hiện tại. Bạn vẫn có thể đọc và cuộn cuộc trò chuyện phía sau.',
               )}
             </div>
-          </>
+          </div>
         )}
 
         {isLoading && (

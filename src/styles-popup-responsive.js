@@ -112,5 +112,10 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
     transition: none !important;
     animation: none !important;
   }
+  .rwa2-fast-rail > span {
+    transform: none !important;
+    width: 100% !important;
+    opacity: .55 !important;
+  }
 }
 `;

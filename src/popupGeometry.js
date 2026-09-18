@@ -10,6 +10,7 @@ export const POPUP_COMPACT_ROW_HEIGHT = 27;
 export const POPUP_PROFILE_ROW_GAP = 5;
 export const POPUP_FIXED_HEIGHT = 266;
 export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
+export const POPUP_FAST_REWRITE_HEIGHT = 35;
 export const POPUP_STACKED_CONTEXT_EXTRA = 78;
 export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 36;
 
@@ -44,11 +45,13 @@ export function estimatePopupHeight({
   compact = false,
   hasAutoProfile = false,
   multiMessage = false,
+  fastRewrite = false,
   viewportWidth = POPUP_DESKTOP_WIDTH,
 }) {
   return POPUP_FIXED_HEIGHT
     + getProfileViewportHeight(visibleRows, compact)
     + (hasAutoProfile ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
     + (multiMessage ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
+    + (fastRewrite ? POPUP_FAST_REWRITE_HEIGHT : 0)
     + getResponsivePopupExtra(viewportWidth);
 }

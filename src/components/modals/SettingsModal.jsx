@@ -7,6 +7,7 @@ import { TabContext } from './settings/TabContext';
 import { TabLanguage } from './settings/TabLanguage';
 import { TabData } from './settings/TabData';
 import { AboutPanel } from './settings/AboutPanel';
+import { CreditsPanel } from './settings/CreditsPanel';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePersistentStore } from '../../store/usePersistentStore';
 
@@ -100,6 +101,9 @@ const NavGlyph = ({ type }) => {
   if (type === 'data') {
     return <svg {...common}><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>;
   }
+  if (type === 'credits') {
+    return <svg {...common}><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>;
+  }
   return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>;
 };
 
@@ -107,25 +111,25 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
   const uiLanguage = usePersistentStore((state) => state.config.uiLanguage);
   const vi = uiLanguage === 'vi';
   const [activeTab, setActiveTab] = useState('profiles');
-  const [showAbout, setShowAbout] = useState(false);
+  const [specialPage, setSpecialPage] = useState(null);
   const bodyRef = useRef(null);
   const dialogRef = useRef(null);
   const scrollPositionsRef = useRef({});
   useDialogFocusTrap(dialogRef, onClose, !suspended);
 
   const rememberSectionScroll = () => {
-    if (bodyRef.current && !showAbout) scrollPositionsRef.current[activeTab] = bodyRef.current.scrollTop;
+    if (bodyRef.current && !specialPage) scrollPositionsRef.current[activeTab] = bodyRef.current.scrollTop;
   };
 
   const handleTabChange = (tab) => {
     rememberSectionScroll();
-    setShowAbout(false);
+    setSpecialPage(null);
     setActiveTab(tab);
   };
 
-  const handleAboutOpen = () => {
+  const handleSpecialPageOpen = (page) => {
     rememberSectionScroll();
-    setShowAbout(true);
+    setSpecialPage(page);
   };
 
   const handleNavKeyDown = (event) => {
@@ -150,14 +154,31 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
   };
 
   useEffect(() => {
-    if (bodyRef.current) bodyRef.current.scrollTop = showAbout ? 0 : (scrollPositionsRef.current[activeTab] || 0);
-  }, [activeTab, showAbout]);
+    if (bodyRef.current) bodyRef.current.scrollTop = specialPage ? 0 : (scrollPositionsRef.current[activeTab] || 0);
+  }, [activeTab, specialPage]);
 
   const activeSection = SETTINGS_SECTIONS.find((section) => section.id === activeTab) || SETTINGS_SECTIONS[0];
-  const activeTabId = showAbout ? 'rwas-tab-about' : `rwas-tab-${activeSection.id}`;
+  const activeTabId = specialPage ? `rwas-tab-${specialPage}` : `rwas-tab-${activeSection.id}`;
   const activeLabel = vi ? activeSection.labelVi : activeSection.label;
   const activeMeta = vi ? activeSection.metaVi : activeSection.meta;
   const activeDescription = vi ? activeSection.descriptionVi : activeSection.description;
+  const specialPageMeta = specialPage === 'credits'
+    ? {
+        kicker: vi ? 'Ghi công' : 'Credits',
+        title: vi ? 'Lời cảm ơn' : 'Acknowledgements',
+        description: vi
+          ? 'Những người và dự án đã giúp truyền cảm hứng và đồng hành cùng Rewrite Assistant.'
+          : 'People and projects that inspired and supported the Rewrite Assistant journey.',
+      }
+    : specialPage === 'about'
+      ? {
+          kicker: vi ? 'Giới thiệu' : 'About',
+          title: 'Rewrite Assistant',
+          description: vi
+            ? 'Rewrite Assistant v3.0.3 cho Marinara Engine — bộ công cụ tập trung cho việc viết lại chính xác và có ngữ cảnh.'
+            : 'Rewrite Assistant v3.0.3 for Marinara Engine — a focused toolkit for precise, context-aware rewrites.',
+        }
+      : null;
 
   return (
     <div className={`rwa-ov rwas-overlay ${suspended ? 'rwas-suspended' : ''}`.trim()} aria-hidden={suspended || undefined} inert={suspended ? true : undefined}>
@@ -186,7 +207,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
             <div className="rwas-nav-label">{vi ? 'Cài đặt' : 'Settings'}</div>
             <div className="rwas-nav" role="tablist" aria-label={vi ? 'Các mục cài đặt' : 'Settings sections'} onKeyDown={handleNavKeyDown}>
               {SETTINGS_SECTIONS.map((section) => {
-                const selected = !showAbout && activeTab === section.id;
+                const selected = !specialPage && activeTab === section.id;
                 return (
                   <button
                     key={section.id}
@@ -209,14 +230,31 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
               })}
 
               <button
+                id="rwas-tab-credits"
+                type="button"
+                role="tab"
+                aria-selected={specialPage === 'credits'}
+                aria-controls="rwas-settings-panel"
+                tabIndex={specialPage === 'credits' ? 0 : -1}
+                className={`rwas-nav-btn rwas-nav-credits ${specialPage === 'credits' ? 'rwas-active' : ''}`}
+                onClick={() => handleSpecialPageOpen('credits')}
+              >
+                <span className="rwas-nav-icon"><NavGlyph type="credits" /></span>
+                <span className="rwas-nav-copy">
+                  <strong>{vi ? 'Ghi công' : 'Credits'}</strong>
+                  <small>{vi ? 'Lời cảm ơn' : 'Acknowledgements'}</small>
+                </span>
+              </button>
+
+              <button
                 id="rwas-tab-about"
                 type="button"
                 role="tab"
-                aria-selected={showAbout}
+                aria-selected={specialPage === 'about'}
                 aria-controls="rwas-settings-panel"
-                tabIndex={showAbout ? 0 : -1}
-                className={`rwas-nav-btn rwas-nav-about ${showAbout ? 'rwas-active' : ''}`}
-                onClick={handleAboutOpen}
+                tabIndex={specialPage === 'about' ? 0 : -1}
+                className={`rwas-nav-btn rwas-nav-about ${specialPage === 'about' ? 'rwas-active' : ''}`}
+                onClick={() => handleSpecialPageOpen('about')}
               >
                 <span className="rwas-nav-icon"><NavGlyph type="about" /></span>
                 <span className="rwas-nav-copy">
@@ -236,18 +274,12 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
           >
             <div className="rwas-page-head">
               <div className="rwas-page-copy">
-                <div className="rwas-page-kicker">{showAbout ? (vi ? 'Giới thiệu' : 'About') : activeMeta}</div>
-                <div className="rwas-page-title">{showAbout ? 'Rewrite Assistant' : activeLabel}</div>
-                <div className="rwas-page-description">
-                  {showAbout
-                    ? (vi
-                      ? 'Rewrite Assistant v3.0.3 cho Marinara Engine — bộ công cụ tập trung cho việc viết lại chính xác và có ngữ cảnh.'
-                      : 'Rewrite Assistant v3.0.3 for Marinara Engine — a focused toolkit for precise, context-aware rewrites.')
-                    : activeDescription}
-                </div>
+                <div className="rwas-page-kicker">{specialPageMeta?.kicker || activeMeta}</div>
+                <div className="rwas-page-title">{specialPageMeta?.title || activeLabel}</div>
+                <div className="rwas-page-description">{specialPageMeta?.description || activeDescription}</div>
               </div>
 
-              {!showAbout && activeTab === 'profiles' && (
+              {!specialPage && activeTab === 'profiles' && (
                 <div className="rwas-page-actions" aria-label={vi ? 'Thao tác thiết lập sẵn' : 'Style Preset actions'}>
                   <Button glow={false} className="rwas-secondary-action" onClick={() => openEditProfile(null)}>{vi ? '+ Thêm thiết lập' : '+ Add Style'}</Button>
                   <Button glow={false} className="rwas-primary-action" variant="rwa-accept" onClick={openAIArchitect}>AI Architect</Button>
@@ -256,7 +288,9 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
             </div>
 
             <div ref={bodyRef} className="rwa-body rwas-body">
-              {showAbout ? (
+              {specialPage === 'credits' ? (
+                <CreditsPanel vi={vi} />
+              ) : specialPage === 'about' ? (
                 <AboutPanel vi={vi} />
               ) : (
                 <>

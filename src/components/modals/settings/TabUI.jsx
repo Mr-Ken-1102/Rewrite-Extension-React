@@ -1,6 +1,7 @@
 import { usePersistentStore } from '../../../store/usePersistentStore';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
 import { Button } from '../../ui/Button';
+import { useToastStore } from '../../../store/useToastStore';
 
 const ConfigRow = ({ label, children }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
@@ -29,6 +30,7 @@ const NumericInput = ({ min, max, value, onChangeKey, updateConfig }) => (
 
 export const TabUI = () => {
   const { config, updateConfig } = usePersistentStore();
+  const showToast = useToastStore((state) => state.showToast);
   const vi = config.uiLanguage === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const profileColumnMax = config.compact ? 6 : 4;
@@ -99,14 +101,20 @@ export const TabUI = () => {
         </select>
       </ConfigRow>
 
-      <ConfigRow label={text('Reset saved launcher position:', 'Vị trí đã ghi nhớ:')}>
+      <ConfigRow label={text('Reset remembered launcher positions:', 'Đặt lại vị trí đã ghi nhớ:')}>
         <Button
           glow={false}
-          disabled={!Object.keys(config.draftReplyLauncherPositions || {}).length}
-          onClick={() => updateConfig({ draftReplyLauncherPositions: {} })}
+          disabled={config.draftReplyLauncherPlacement !== 'remember' && !Object.keys(config.draftReplyLauncherPositions || {}).length}
+          onClick={() => {
+            updateConfig({ draftReplyLauncherPositions: {} });
+            showToast(
+              text('✓ Remembered Persona Reply positions reset. The launcher will return to the active composer.', '✓ Đã đặt lại vị trí Trả lời theo Persona. Nút sẽ trở về vị trí theo ô nhập hiện tại.'),
+              'ok',
+            );
+          }}
           style={{ minWidth: '132px' }}
         >
-          {text('Reset position', 'Đặt lại')}
+          {text('Reset positions', 'Đặt lại')}
         </Button>
       </ConfigRow>
 
