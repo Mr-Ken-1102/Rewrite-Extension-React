@@ -87,7 +87,7 @@ export const TabContext = () => {
       if (result?.profile) {
         const kind = result.profile.identityKind === 'persona' ? 'Persona' : 'Char';
         const label = result.profile.identityName || result.profile.name;
-        showToast(text(`Voice profile ready: ${kind}: ${label}`, `Voice profile đã sẵn sàng: ${kind}: ${label}`), 'ok');
+        showToast(text(`Voice profile ready: ${kind}: ${label}`, `Hồ sơ giọng đã sẵn sàng: ${kind}: ${label}`), 'ok');
       }
       else if (result?.error) showToast(result.error, 'err');
     } finally {
@@ -114,28 +114,28 @@ export const TabContext = () => {
         <ToggleSwitch checked={config.useExtenderMemory} onChange={(value) => updateConfig({ useExtenderMemory: value })} />
       </Row>
       <Row
-        title={text('Automatic Character / Persona voice profiles', 'Tự động tạo Voice Profile cho Character / Persona')}
+        title={text('Automatic Character / Persona voice profiles', 'Tự động tạo Hồ sơ giọng cho Character / Persona')}
         note={text(
           'OFF by default. When enabled, Rewrite Assistant identifies the exact Character or Persona that owns the selected message and keeps a separate reusable voice profile for each identity in this chat. Character-card or Persona data may be sent to your selected inference provider.',
-          'Mặc định TẮT. Khi bật, Rewrite Assistant xác định đúng Character hoặc Persona của tin nhắn đang chọn và lưu Voice Profile riêng cho từng danh tính trong chat. Dữ liệu Character Card hoặc Persona có thể được gửi tới provider đang chọn.',
+          'Mặc định TẮT. Khi bật, Rewrite Assistant xác định đúng Character hoặc Persona của tin nhắn đang chọn và lưu Hồ sơ giọng riêng cho từng danh tính trong chat. Dữ liệu Character Card hoặc Persona có thể được gửi tới nhà cung cấp AI bạn đang dùng.',
         )}
       >
         <ToggleSwitch checked={config.autoProfileEnabled} onChange={(value) => updateConfig({ autoProfileEnabled: value })} />
       </Row>
       <Row
-        title={text('Draft Reply for the active Persona', 'Soạn câu trả lời cho Persona hiện tại')}
+        title={text('Draft Reply for the active Persona', 'Soạn trả lời theo Persona hiện tại')}
         note={text(
           'Shows a small ✦ action above Marinara’s composer. It turns a rough idea or partial draft into one unsent Persona reply, streams a preview, and only inserts it into the composer after you approve it. It never presses Send.',
-          'Hiện nút ✦ nhỏ phía trên ô nhập Marinara. Tính năng biến ý tưởng thô hoặc bản nháp dở thành một câu trả lời của Persona, stream bản xem trước và chỉ chèn vào ô nhập sau khi bạn đồng ý. Nó không bao giờ tự bấm Gửi.',
+          'Hiện nút ✦ cạnh ô nhập Marinara. Từ một ý tưởng hoặc bản nháp dở, tính năng tạo một lượt trả lời cho Persona, hiển thị bản xem trước theo thời gian thực và chỉ chèn vào ô nhập khi bạn xác nhận. Không tự gửi tin nhắn.',
         )}
       >
         <ToggleSwitch checked={config.draftReplyEnabled !== false} onChange={(value) => updateConfig({ draftReplyEnabled: value })} />
       </Row>
       <Row
-        title={text('Draft Reply history depth', 'Độ sâu lịch sử cho Soạn câu trả lời')}
+        title={text('Draft Reply history depth', 'Số tin nhắn tham chiếu khi soạn trả lời')}
         note={text(
           'How many recent visible chat messages Draft Reply may use. Character names and historical Persona names are preserved when available.',
-          'Số tin nhắn gần đây mà Soạn câu trả lời được phép dùng. Tên Character và tên Persona lịch sử được giữ khi có dữ liệu.',
+          'Số tin nhắn gần đây có thể được dùng làm ngữ cảnh khi soạn trả lời. Tên Character và Persona trước đó được giữ nguyên khi Marinara có dữ liệu.',
         )}
       >
         <input
@@ -144,7 +144,7 @@ export const TabContext = () => {
           min="1"
           max="30"
           value={config.draftReplyHistoryDepth || 8}
-          aria-label={text('Draft Reply history depth', 'Độ sâu lịch sử cho Soạn câu trả lời')}
+          aria-label={text('Draft Reply history depth', 'Số tin nhắn tham chiếu khi soạn trả lời')}
           onChange={(event) => {
             const parsed = parseInt(event.target.value, 10);
             if (Number.isNaN(parsed)) return;
@@ -154,14 +154,14 @@ export const TabContext = () => {
         />
       </Row>
       <Row
-        title={text('Merge multi-message selections', 'Gộp lựa chọn qua nhiều tin nhắn')}
-        note={text('OFF by default. When enabled, selected message spans are rewritten as one passage with tamper-checked section markers, then split back. Invalid markers fall back to sequential mode instead of guessing.', 'Mặc định TẮT. Khi bật, các đoạn ở nhiều tin nhắn được viết lại như một đoạn chung với marker được kiểm tra, sau đó tách trả lại. Nếu marker không hợp lệ, hệ thống chuyển về chế độ tuần tự thay vì đoán.')}
+        title={text('Merge multi-message selections', 'Gộp vùng chọn qua nhiều tin nhắn')}
+        note={text('OFF by default. When enabled, selected message spans are rewritten as one passage with tamper-checked section markers, then split back. Invalid markers fall back to sequential mode instead of guessing.', 'Mặc định TẮT. Khi bật, các đoạn đã chọn ở nhiều tin nhắn được xử lý như một khối chung rồi tách trả về đúng từng tin. Nếu dấu phân cách không hợp lệ, hệ thống chuyển sang xử lý tuần tự thay vì đoán.')}
       >
         <ToggleSwitch checked={config.mergeMultiMsg} onChange={(value) => updateConfig({ mergeMultiMsg: value })} />
       </Row>
       <Row
-        title={text('Surrounding context words / side', 'Số từ ngữ cảnh xung quanh / mỗi phía')}
-        note={text('Applies when Around context is enabled. Controls how much captured prose before and after the selection participates in the rewrite prompt.', 'Áp dụng khi bật ngữ cảnh Xung quanh. Kiểm soát lượng văn bản trước và sau vùng chọn được đưa vào prompt viết lại.')}
+        title={text('Surrounding context words / side', 'Số từ ngữ cảnh gần / mỗi phía')}
+        note={text('Applies when Around context is enabled. Controls how much captured prose before and after the selection participates in the rewrite prompt.', 'Áp dụng khi bật Ngữ cảnh gần. Quy định lượng văn bản trước và sau vùng chọn được đưa vào yêu cầu viết lại.')}
       >
         <input
           type="number"
@@ -179,11 +179,11 @@ export const TabContext = () => {
         />
       </Row>
 
-      <div className="rwa-lbl" style={{ marginTop: '22px' }}>{text('CHARACTER CONTEXT PICKER', 'CHỌN NGỮ CẢNH NHÂN VẬT')}</div>
+      <div className="rwa-lbl" style={{ marginTop: '22px' }}>{text('CHARACTER CONTEXT PICKER', 'CHỌN CHARACTER THAM CHIẾU')}</div>
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
         {text(
           'Assistant messages always use their authoritative sender Character. Selections here are only a fallback for user/narrator/legacy text that has no authoritative Character sender.',
-          'Tin nhắn assistant luôn dùng đúng Character đã gửi tin nhắn đó. Các lựa chọn tại đây chỉ là fallback cho văn bản user/narrator/legacy không có Character người gửi xác định.',
+          'Tin nhắn assistant luôn dùng đúng Character đã gửi tin. Lựa chọn ở đây chỉ là phương án dự phòng cho văn bản user/narrator/legacy khi không xác định được Character gửi.',
         )}
       </div>
       <input
@@ -214,16 +214,16 @@ export const TabContext = () => {
         </Button>
       ) : null}
 
-      <div className="rwa-lbl" style={{ marginTop: '20px' }}>{text('VOICE PROFILES', 'VOICE PROFILE')}</div>
+      <div className="rwa-lbl" style={{ marginTop: '20px' }}>{text('VOICE PROFILES', 'HỒ SƠ GIỌNG')}</div>
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
         {selectedMessageId
           ? text(
             'Generate now uses the Character or Persona attached to the message you selected before opening Settings.',
-            'Tạo ngay sẽ dùng đúng Character hoặc Persona của tin nhắn bạn đã chọn trước khi mở Cài đặt.',
+            'Tạo ngay sẽ dùng đúng Character hoặc Persona của tin nhắn đã chọn trước khi mở Cài đặt.',
           )
           : text(
             'With no selected message, manual generation is limited to one explicitly selected Character (or the only Character in the chat) so group-chat identities are never guessed.',
-            'Khi không có tin nhắn được chọn, tạo thủ công chỉ dùng một Character được chọn rõ ràng (hoặc Character duy nhất trong chat) để không đoán sai trong group chat.',
+            'Nếu chưa chọn tin nhắn, việc tạo thủ công chỉ dùng một Character đã chọn rõ ràng hoặc Character duy nhất trong chat, tránh đoán sai trong chat nhóm.',
           )}
       </div>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
@@ -231,8 +231,8 @@ export const TabContext = () => {
           {generating
             ? text('Generating…', 'Đang tạo…')
             : selectedMessageId
-              ? text('Generate for selected identity', 'Tạo cho danh tính đang chọn')
-              : text('Generate Character profile', 'Tạo profile Character')}
+              ? text('Generate for selected identity', 'Tạo cho danh tính đã chọn')
+              : text('Generate Character profile', 'Tạo hồ sơ Character')}
         </Button>
         <Button
           glow={false}
@@ -241,7 +241,7 @@ export const TabContext = () => {
           onClick={() => { if (chatId) removeAutoProfile(chatId); }}
           style={{ flex: 1 }}
         >
-          {text('Remove all voice profiles', 'Xóa tất cả Voice Profile')}
+          {text('Remove all voice profiles', 'Xóa tất cả Hồ sơ giọng')}
         </Button>
       </div>
 
@@ -257,7 +257,7 @@ export const TabContext = () => {
                 </strong>
                 <span style={{ display: 'block', fontSize: '9px', opacity: 0.55, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {profile.legacy
-                    ? text('Legacy chat-wide profile — kept for safety but never auto-matched.', 'Profile cũ theo toàn chat — được giữ lại an toàn nhưng không tự ghép vào Character/Persona.')
+                    ? text('Legacy chat-wide profile — kept for safety but never auto-matched.', 'Hồ sơ cũ dùng cho toàn chat — vẫn được giữ để an toàn nhưng không tự ghép với Character/Persona.')
                     : profile.name}
                 </span>
               </div>
@@ -274,7 +274,7 @@ export const TabContext = () => {
         })}
         {!chatVoiceProfiles.length ? (
           <div style={{ fontSize: '10px', opacity: 0.6 }}>
-            {text('No Voice Profiles stored for this chat yet.', 'Chat này chưa có Voice Profile nào được lưu.')}
+            {text('No Voice Profiles stored for this chat yet.', 'Chat này chưa lưu Hồ sơ giọng nào.')}
           </div>
         ) : null}
       </div>
