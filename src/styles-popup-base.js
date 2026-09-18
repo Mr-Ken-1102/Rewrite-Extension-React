@@ -44,7 +44,7 @@ export const RWA_POPUP_BASE_CSS = `
   background: var(--rwa2-bg);
   color: var(--rwa2-text-2);
   box-shadow: 0 18px 48px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.03);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--rwa-host-font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   contain: layout paint style;
   isolation: isolate;
 }
