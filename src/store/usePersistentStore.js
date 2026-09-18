@@ -41,12 +41,29 @@ export const usePersistentStore = create(
       updateProfiles: (profiles) => set({ profiles: sanitizeProfiles(profiles) }),
       updateCustoms: (customs) => set({ customs: sanitizeCustoms(customs) }),
       updateAutoProfiles: (autoProfiles) => set({ autoProfiles: sanitizeAutoProfiles(autoProfiles) }),
-      setAutoProfile: (chatId, profile) => set((state) => ({
-        autoProfiles: sanitizeAutoProfiles({ ...state.autoProfiles, [chatId]: profile }),
-      })),
-      removeAutoProfile: (chatId) => set((state) => {
+      setAutoProfile: (chatId, identityKey, profile) => set((state) => {
+        if (!chatId || !identityKey || !profile) return state;
+        const bucket = state.autoProfiles?.[chatId] && typeof state.autoProfiles[chatId] === 'object'
+          ? state.autoProfiles[chatId]
+          : {};
+        return {
+          autoProfiles: sanitizeAutoProfiles({
+            ...state.autoProfiles,
+            [chatId]: { ...bucket, [identityKey]: profile },
+          }),
+        };
+      }),
+      removeAutoProfile: (chatId, identityKey = null) => set((state) => {
+        if (!chatId || !state.autoProfiles?.[chatId]) return state;
         const next = { ...state.autoProfiles };
-        delete next[chatId];
+        if (!identityKey) {
+          delete next[chatId];
+          return { autoProfiles: next };
+        }
+        const bucket = { ...next[chatId] };
+        delete bucket[identityKey];
+        if (Object.keys(bucket).length) next[chatId] = bucket;
+        else delete next[chatId];
         return { autoProfiles: next };
       }),
       importPortableData: (patch) => set((state) => ({
