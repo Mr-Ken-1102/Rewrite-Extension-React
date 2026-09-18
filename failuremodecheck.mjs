@@ -1063,7 +1063,7 @@ await ok('selected character ids, Extender memory, and speaker note share the re
   }
 });
 
-await ok('auto-profile generation is explicit and writes a bounded chat-specific profile', async () => {
+await ok('manual voice-profile generation remains fail-closed and writes an identity-scoped Character profile', async () => {
   const h = await loadApiHarness();
   try {
     h.store.control.state.config = { connMode: 'sidecar', maxPromptChars: 32000, requestTimeoutMs: 45000 };
@@ -1076,9 +1076,118 @@ await ok('auto-profile generation is explicit and writes a bounded chat-specific
     const result = await h.api.APIService.generateAutoProfile('chat-9', new AbortController().signal);
     assert.equal(result.profile.name, 'Aster Voice');
     assert.equal(result.profile.auto, true);
+    assert.equal(result.profile.identityKind, 'character');
+    assert.equal(result.profile.identityId, 'char-9');
     assert.equal(h.store.control.autoProfileWrites.length, 1);
     assert.equal(h.store.control.autoProfileWrites[0].chatId, 'chat-9');
+    assert.equal(h.store.control.autoProfileWrites[0].identityKey, 'character:char-9');
     assert.match(h.store.control.autoProfileWrites[0].profile.prompt, /precise, dry voice/);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('group-chat Character voice profiles are keyed to the exact selected message sender', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', maxPromptChars: 32000, requestTimeoutMs: 45000 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/group/messages') return [
+        { id: 'm-a', role: 'assistant', characterId: 'char-a', characterName: 'Alice', content: 'A' },
+        { id: 'm-b', role: 'assistant', characterId: 'char-b', characterName: 'Bianca', content: 'B' },
+      ];
+      if (path === '/characters/char-a') return { id: 'char-a', data: { name: 'Alice', personality: 'measured' } };
+      if (path === '/characters/char-b') return { id: 'char-b', data: { name: 'Bianca', personality: 'playful' } };
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.api.APIService.runInference = async (_system, user) => user.includes('Alice')
+      ? { result: '{"name":"Alice Voice","prompt":"Write with Alice cadence."}' }
+      : { result: '{"name":"Bianca Voice","prompt":"Write with Bianca cadence."}' };
+
+    const alice = await h.api.APIService.generateAutoProfile('group', new AbortController().signal, { messageId: 'm-a' });
+    const bianca = await h.api.APIService.generateAutoProfile('group', new AbortController().signal, { messageId: 'm-b' });
+
+    assert.equal(alice.profile.identityKey, 'character:char-a');
+    assert.equal(bianca.profile.identityKey, 'character:char-b');
+    assert.equal(h.store.control.autoProfileWrites.length, 2);
+    assert.deepEqual(
+      h.store.control.autoProfileWrites.map((item) => item.identityKey),
+      ['character:char-a', 'character:char-b'],
+    );
+    assert.match(h.store.control.state.autoProfiles.group['character:char-a'].prompt, /Alice cadence/);
+    assert.match(h.store.control.state.autoProfiles.group['character:char-b'].prompt, /Bianca cadence/);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Persona voice profiles follow the historical Persona snapshot on each user message', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', maxPromptChars: 32000, requestTimeoutMs: 45000 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/personas/messages') return [
+        {
+          id: 'u-1', role: 'user', content: 'one',
+          extra: { personaSnapshot: { personaId: 'p-calm', name: 'Calm Ken', source: 'persona' } },
+        },
+        {
+          id: 'u-2', role: 'user', content: 'two',
+          extra: { personaSnapshot: { personaId: 'p-detective', name: 'Detective Ken', source: 'persona' } },
+        },
+      ];
+      if (path === '/characters/personas/p-calm') return { id: 'p-calm', data: { name: 'Calm Ken', description: 'quiet, reflective diction' } };
+      if (path === '/characters/personas/p-detective') return { id: 'p-detective', data: { name: 'Detective Ken', description: 'terse investigative diction' } };
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.api.APIService.runInference = async (_system, user) => user.includes('Detective Ken')
+      ? { result: '{"name":"Detective Voice","prompt":"Use terse investigative diction."}' }
+      : { result: '{"name":"Calm Voice","prompt":"Use quiet reflective diction."}' };
+
+    const calm = await h.api.APIService.generateAutoProfile('personas', new AbortController().signal, { messageId: 'u-1' });
+    const detective = await h.api.APIService.generateAutoProfile('personas', new AbortController().signal, { messageId: 'u-2' });
+
+    assert.equal(calm.profile.identityKind, 'persona');
+    assert.equal(calm.profile.identityKey, 'persona:persona:p-calm');
+    assert.equal(calm.profile.identityName, 'Calm Ken');
+    assert.equal(detective.profile.identityKey, 'persona:persona:p-detective');
+    assert.equal(detective.profile.identityName, 'Detective Ken');
+    assert.equal(h.store.control.autoProfileWrites.length, 2);
+    assert.ok(h.store.control.state.autoProfiles.personas['persona:persona:p-calm']);
+    assert.ok(h.store.control.state.autoProfiles.personas['persona:persona:p-detective']);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('voice-profile source fingerprint reuses unchanged profiles and regenerates changed cards', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', maxPromptChars: 32000, requestTimeoutMs: 45000 };
+    let personality = 'calm';
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/fp/messages') return [
+        { id: 'm1', role: 'assistant', characterId: 'char-fp', characterName: 'Fingerprint', content: 'x' },
+      ];
+      if (path === '/characters/char-fp') return { id: 'char-fp', data: { name: 'Fingerprint', personality } };
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    let inferenceCalls = 0;
+    h.api.APIService.runInference = async () => {
+      inferenceCalls += 1;
+      return { result: `{"name":"FP Voice","prompt":"Voice revision ${inferenceCalls}."}` };
+    };
+
+    const first = await h.api.APIService.generateAutoProfile('fp', new AbortController().signal, { messageId: 'm1' });
+    const unchanged = await h.api.APIService.generateAutoProfile('fp', new AbortController().signal, { messageId: 'm1' });
+    personality = 'sharper';
+    const changed = await h.api.APIService.generateAutoProfile('fp', new AbortController().signal, { messageId: 'm1' });
+
+    assert.equal(first.reused, false);
+    assert.equal(unchanged.reused, true);
+    assert.equal(changed.reused, false);
+    assert.equal(inferenceCalls, 2);
+    assert.notEqual(first.profile.sourceFingerprint, changed.profile.sourceFingerprint);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
