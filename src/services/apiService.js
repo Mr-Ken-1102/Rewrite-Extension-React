@@ -94,7 +94,11 @@ export class APIService {
 
     let response;
     try {
-      response = await this.runInference(`${rewriteSystemPrompt(config)}${suffix}`, promptInfo.prompt, signal, { chatId: savedSel?.cid || '', onProgress: hooks?.onProgress });
+      response = await this.runInference(`${rewriteSystemPrompt(config)}${suffix}`, promptInfo.prompt, signal, {
+        chatId: savedSel?.cid || '',
+        onProgress: hooks?.onProgress,
+        onStreamStatus: hooks?.onStreamStatus,
+      });
     } catch (err) {
       if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true, droppedContext: promptInfo.dropped };
       response = normalizeProviderFailure(err);
