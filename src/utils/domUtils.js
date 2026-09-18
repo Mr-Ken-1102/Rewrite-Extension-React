@@ -140,6 +140,10 @@ export const DOMUtils = {
       if (!text || text.trim().length < 2) continue;
       const renderedFull = this.renderedTextForMid(mid);
       const occ = this.selectionOccurrence(range, mid, text);
+      const messageEl = this.messageElementForMid(mid);
+      const detectedRole = messageEl?.getAttribute?.('data-message-role') || null;
+      const detectedCharacterId = messageEl?.getAttribute?.('data-card-css') || null;
+      const detectedName = messageEl?.querySelector?.('.mari-message-name')?.textContent?.trim?.() || null;
       segments.push({
         source: 'message',
         mid,
@@ -147,7 +151,9 @@ export const DOMUtils = {
         occ,
         fp: ctxFingerprint(renderedFull, text, occ),
         renderedAtSelection: renderedFull,
-        detectedRole: null,
+        detectedRole,
+        detectedCharacterId,
+        detectedName,
       });
     }
     return segments;
@@ -182,7 +188,9 @@ export const DOMUtils = {
         end,
         el: active,
         originalValue: active.value,
-        detectedRole: null,
+        detectedRole: parentMsg?.getAttribute?.('data-message-role') || null,
+        detectedCharacterId: parentMsg?.getAttribute?.('data-card-css') || null,
+        detectedName: parentMsg?.querySelector?.('.mari-message-name')?.textContent?.trim?.() || null,
         captureId: nextSelectionCaptureId(),
       };
     }
@@ -215,6 +223,8 @@ export const DOMUtils = {
       fp: first.fp,
       renderedAtSelection: first.renderedAtSelection,
       detectedRole: first.detectedRole,
+      detectedCharacterId: first.detectedCharacterId,
+      detectedName: first.detectedName,
       segments: segments.map((segment) => ({ ...segment, cid })),
       multiMessage: segments.length > 1,
       captureId,
