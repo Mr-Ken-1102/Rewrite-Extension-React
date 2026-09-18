@@ -19,7 +19,7 @@ import {
 } from '../../src/utils/floatingPanelGeometry.js';
 import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from '../../src/services/autoProfilePolicy.js';
 import { createExecutionCoordinator } from '../../src/controllers/rewriteExecution.js';
-import { sanitizeAutoProfiles } from '../../src/store/persistence/schema.js';
+import { sanitizeAutoProfiles, sanitizeConfig } from '../../src/store/persistence/schema.js';
 import {
   getVoiceProfile,
   makeVoiceIdentityKey,
@@ -233,6 +233,36 @@ ok('new installs keep identity context opt-in while using the requested layout/h
   assert.match(schema, /autoProfileEnabled:\s*false/);
   assert.match(schema, /draftReplyEnabled:\s*true/);
   assert.match(schema, /draftReplyHistoryDepth:\s*8/);
+  assert.match(schema, /draftReplyLauncherPlacement:\s*'auto'/);
+  assert.match(schema, /draftReplyLauncherPositions:\s*\{\}/);
+});
+
+ok('Persona Reply launcher placement config is sanitized and scoped to supported Marinara modes', () => {
+  const clean = sanitizeConfig({
+    draftReplyLauncherPlacement: 'remember',
+    draftReplyLauncherPositions: {
+      roleplay: { left: 120.4, top: 55.8 },
+      conversation: { left: -50, top: 200000 },
+      game: { left: 42, top: 84 },
+      unknown: { left: 1, top: 2 },
+      __proto__: { left: 3, top: 4 },
+    },
+  });
+  assert.equal(clean.draftReplyLauncherPlacement, 'remember');
+  assert.deepEqual(clean.draftReplyLauncherPositions, {
+    roleplay: { left: 120.4, top: 55.8 },
+    conversation: { left: 0, top: 100000 },
+    game: { left: 42, top: 84 },
+  });
+
+  const invalid = sanitizeConfig({
+    draftReplyLauncherPlacement: 'freeform',
+    draftReplyLauncherPositions: {
+      roleplay: { left: 'not-a-number', top: 20 },
+    },
+  });
+  assert.equal(invalid.draftReplyLauncherPlacement, 'auto');
+  assert.deepEqual(invalid.draftReplyLauncherPositions, {});
 });
 
 ok('Marinara private storage is preferred with legacy migration fallback', () => {
@@ -416,6 +446,7 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   const service = readFileSync('./src/services/draftReplyService.js', 'utf8');
   const session = readFileSync('./src/hooks/useDraftReplySession.js', 'utf8');
   const launcher = readFileSync('./src/components/draft/DraftReplyLauncher.jsx', 'utf8');
+  const dragHook = readFileSync('./src/hooks/useFloatingPanelDrag.js', 'utf8');
   const modal = readFileSync('./src/components/draft/DraftReplyModal.jsx', 'utf8');
   const draftStyles = readFileSync('./src/styles-draft-reply.js', 'utf8');
   const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
@@ -439,6 +470,13 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(launcher, /DOMUtils\.getChatComposerAnchor/);
   assert.match(launcher, /data-rwa-feature="draft-reply"/);
   assert.match(launcher, /data-rwa-chat-mode/);
+  assert.match(launcher, /draftReplyLauncherPlacement/);
+  assert.match(launcher, /draftReplyLauncherPositions/);
+  assert.match(launcher, /SUPPORTED_MODES/);
+  assert.match(launcher, /allowInteractiveRoot:\s*true/);
+  assert.match(launcher, /suppressClickRef/);
+  assert.match(dragHook, /Math\.hypot\(dx, dy\) >= 3/);
+  assert.match(dragHook, /allowInteractiveRoot/);
   assert.match(dom, /resolveMarinaraChatComposer/);
   assert.match(dom, /resolveMarinaraChatComposerAnchor/);
   assert.match(launcher, /Trả lời Persona|Persona Reply/);
