@@ -2,6 +2,8 @@ import { ToggleSwitch } from '../ui/ToggleSwitch';
 
 const CONTEXT_MODE_HELP = 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.';
 const CONTEXT_MODE_HELP_VI = 'Tắt Chế độ tự do: phù hợp với POV nhân vật, hội thoại trực tiếp hoặc nội tâm.\nBật Chế độ tự do: phù hợp với cảnh miêu tả, hành động chung hoặc bối cảnh thời gian/không gian.';
+const FAST_REWRITE_HELP = 'Fast Rewrite On: for Marinara connections, disable model reasoning only for this rewrite request when supported. The chat model and saved connection settings are unchanged.\nFast Rewrite Off: use the connection\'s normal reasoning settings. SSE streaming stays enabled in both modes.';
+const FAST_REWRITE_HELP_VI = 'Bật Viết lại nhanh: với kết nối Marinara, chỉ tắt reasoning cho request viết lại này khi provider hỗ trợ. Model của chat và thiết lập kết nối đã lưu không thay đổi.\nTắt Viết lại nhanh: dùng reasoning bình thường của kết nối. SSE streaming vẫn bật ở cả hai chế độ.';
 
 export function ContextPanel({
   language = 'en',
@@ -20,6 +22,7 @@ export function ContextPanel({
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const contextHelp = vi ? CONTEXT_MODE_HELP_VI : CONTEXT_MODE_HELP;
+  const fastRewriteHelp = vi ? FAST_REWRITE_HELP_VI : FAST_REWRITE_HELP;
   const displayRadarText = String(radarText || '').replace(/^[^A-Za-z0-9]+/, '');
   const tokenBreakdown = tokenInfo.parts
     ? Object.entries(tokenInfo.parts)
@@ -69,14 +72,43 @@ export function ContextPanel({
 
       <div className="rwa2-context-region rwa2-context-sources">
         <div className="rwa2-region-label">{text('Sources', 'Nguồn')}</div>
-        <div className="rwa2-free-mode-row">
-          <ToggleSwitch
-            label={text('Free Mode', 'Chế độ tự do')}
-            labelStyle={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--rwa2-brand)' }}
-            checked={config.freeMode}
-            onChange={(value) => { updateConfig({ freeMode: value }); keepFocus(); }}
-          />
-          <span className="rwa2-free-note">{text('Ignore character, persona and lore injection', 'Bỏ qua chèn character, persona và lore')}</span>
+        <div className="rwa2-source-mode-grid">
+          <div className="rwa2-source-mode-item">
+            <ToggleSwitch
+              label={text('Free Mode', 'Chế độ tự do')}
+              labelStyle={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--rwa2-brand)' }}
+              checked={config.freeMode}
+              onChange={(value) => { updateConfig({ freeMode: value }); keepFocus(); }}
+            />
+            <button
+              type="button"
+              className="rwa2-info rwa2-mode-info"
+              onMouseEnter={(event) => onTooltip(event, contextHelp)}
+              onMouseLeave={onTooltipLeave}
+              onFocus={(event) => onTooltip(event, contextHelp)}
+              onBlur={onTooltipLeave}
+              aria-label={text('Free Mode help', 'Trợ giúp Chế độ tự do')}
+              aria-description={contextHelp}
+            >i</button>
+          </div>
+          <div className="rwa2-source-mode-item">
+            <ToggleSwitch
+              label={text('Fast Rewrite', 'Viết lại nhanh')}
+              labelStyle={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--rwa2-brand)' }}
+              checked={config.fastRewrite !== false}
+              onChange={(value) => { updateConfig({ fastRewrite: value }); keepFocus(); }}
+            />
+            <button
+              type="button"
+              className="rwa2-info rwa2-mode-info"
+              onMouseEnter={(event) => onTooltip(event, fastRewriteHelp)}
+              onMouseLeave={onTooltipLeave}
+              onFocus={(event) => onTooltip(event, fastRewriteHelp)}
+              onBlur={onTooltipLeave}
+              aria-label={text('Fast Rewrite help', 'Trợ giúp Viết lại nhanh')}
+              aria-description={fastRewriteHelp}
+            >i</button>
+          </div>
         </div>
 
         <div className="rwa2-source-grid" role="group" aria-label={text('Persistent context sources', 'Nguồn ngữ cảnh cố định')}>
