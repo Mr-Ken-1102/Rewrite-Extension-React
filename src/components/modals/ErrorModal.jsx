@@ -1,10 +1,13 @@
 import { useRef } from 'react';
 import { Button } from '../ui/Button';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { usePersistentStore } from '../../store/usePersistentStore';
 
 export const ErrorModal = ({ message, onClose }) => {
   const dialogRef = useRef(null);
   useDialogFocusTrap(dialogRef, onClose);
+  const connMode = usePersistentStore((state) => state.config.connMode || 'marinara');
+  const isTimeout = /timed out|timeouterror/i.test(String(message || ''));
   const stepStyle = { fontSize: '12.5px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px', lineHeight: '1.55' };
 
   return (
@@ -35,17 +38,28 @@ export const ErrorModal = ({ message, onClose }) => {
               🛠️ HOW TO TROUBLESHOOT:
             </div>
 
-            <div className="rwa-err-guide-step" style={stepStyle}>
-              <b style={{ color: '#fff' }}>1. Marinara connection:</b> Rewrite Assistant follows the current chat connection automatically. Verify that the active chat has a valid Marinara connection in the chat settings.
-            </div>
-
-            <div className="rwa-err-guide-step" style={stepStyle}>
-              <b style={{ color: '#fff' }}>2. Direct API / LAN Ollama:</b> Verify the base URL and exact model name. For another machine on your LAN, Ollama must listen beyond loopback (for example via <code>OLLAMA_HOST</code>), the firewall must allow TCP 11434, and the Marinara page origin must be allowed by Ollama&apos;s origin/CORS policy (for example via <code>OLLAMA_ORIGINS</code>). A browser-level “Failed to fetch” does not expose which of these layers blocked the request.
-            </div>
-
-            <div className="rwa-err-guide-step" style={{ ...stepStyle, marginBottom: '0' }}>
-              <b style={{ color: '#fff' }}>3. Local Sidecar:</b> A Sidecar 503 is separate from Direct API. If you selected Sidecar mode, verify Marinara&apos;s downloaded local model is installed and responsive.
-            </div>
+            {connMode === 'marinara' ? (
+              <>
+                <div className="rwa-err-guide-step" style={stepStyle}>
+                  <b style={{ color: '#fff' }}>Marinara connection:</b> Rewrite Assistant follows the current chat connection automatically. Verify that the active chat still has a valid connection and model in Marinara.
+                </div>
+                <div className="rwa-err-guide-step" style={{ ...stepStyle, marginBottom: '0' }}>
+                  <b style={{ color: '#fff' }}>{isTimeout ? 'Timeout note:' : 'Generation note:'}</b> Normal rewrites are no longer cut off by an extension-side deadline. If this message came from a connection test, only that test is time-bounded; a normal rewrite is allowed to finish unless you press Cancel.
+                </div>
+              </>
+            ) : connMode === 'direct' ? (
+              <div className="rwa-err-guide-step" style={{ ...stepStyle, marginBottom: '0' }}>
+                <b style={{ color: '#fff' }}>Direct API / LAN Ollama:</b> Verify the base URL and exact model name. For another machine on your LAN, Ollama must listen beyond loopback, the firewall must allow TCP 11434, and the Marinara page origin must be allowed by Ollama&apos;s CORS policy.
+              </div>
+            ) : connMode === 'sidecar' ? (
+              <div className="rwa-err-guide-step" style={{ ...stepStyle, marginBottom: '0' }}>
+                <b style={{ color: '#fff' }}>Local Sidecar:</b> Verify Marinara&apos;s downloaded local model is installed, loaded, and responsive.
+              </div>
+            ) : (
+              <div className="rwa-err-guide-step" style={{ ...stepStyle, marginBottom: '0' }}>
+                <b style={{ color: '#fff' }}>Extender:</b> Verify the Marinara Extender server URL and confirm the sidecar is running and reachable.
+              </div>
+            )}
           </div>
         </div>
 
