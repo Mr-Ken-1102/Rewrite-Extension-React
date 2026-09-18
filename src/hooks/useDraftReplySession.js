@@ -4,10 +4,11 @@ import { DOMUtils } from '../utils/domUtils.js';
 import { useRuntimeStore } from '../store/useRuntimeStore';
 import { useToastStore } from '../store/useToastStore';
 
-function baseState(chatId, direction) {
+function baseState(chatId, chatMode, direction) {
   return {
     status: 'editing',
     chatId,
+    chatMode,
     direction,
     mode: 'idea',
     result: '',
@@ -50,9 +51,11 @@ export function useDraftReplySession() {
 
   const openDraftReply = useCallback(() => {
     const chatId = DOMUtils.getChatId();
-    const composer = DOMUtils.getChatComposer();
-    if (!chatId || !composer) {
-      showToast('Draft Reply needs an active Marinara chat composer.', 'warn');
+    const anchor = DOMUtils.getChatComposerAnchor();
+    const composer = anchor?.composer || null;
+    const chatMode = anchor?.mode || null;
+    if (!chatId || !composer || !chatMode) {
+      showToast('Draft Reply needs an active Marinara chat composer and chat mode.', 'warn');
       return;
     }
 
@@ -60,14 +63,15 @@ export function useDraftReplySession() {
     abortPersonaResolution();
     const sessionId = sessionSeqRef.current + 1;
     sessionSeqRef.current = sessionId;
-    setDraftState(baseState(chatId, composer.value || ''));
+    setDraftState(baseState(chatId, chatMode, composer.value || ''));
 
     const controller = new AbortController();
     personaControllerRef.current = controller;
     void DraftReplyService.resolveActivePersona(chatId, controller.signal)
       .then((resolved) => {
         if (controller.signal.aborted || sessionSeqRef.current !== sessionId) return;
-        if (DOMUtils.getChatId() !== chatId) {
+        const liveAnchor = DOMUtils.getChatComposerAnchor();
+        if (DOMUtils.getChatId() !== chatId || liveAnchor?.mode !== chatMode) {
           setDraftState(null);
           return;
         }
@@ -129,12 +133,13 @@ export function useDraftReplySession() {
     }
 
     const activeChatId = DOMUtils.getChatId();
-    if (!activeChatId || activeChatId !== current.chatId) {
-      showToast('The active chat changed. Reopen Draft Reply in the current chat before generating.', 'warn');
+    const activeAnchor = DOMUtils.getChatComposerAnchor();
+    if (!activeChatId || activeChatId !== current.chatId || activeAnchor?.mode !== current.chatMode) {
+      showToast('The active chat or chat mode changed. Reopen Draft Reply in the current context before generating.', 'warn');
       setDraftState(null);
       return;
     }
-    if (!DOMUtils.getChatComposer()) {
+    if (!activeAnchor?.composer) {
       showToast('Draft Reply cannot find the active Marinara composer. Reopen the chat and try again.', 'warn');
       return;
     }
@@ -255,8 +260,9 @@ export function useDraftReplySession() {
   const insertDraftReply = useCallback(async () => {
     const current = draftState;
     if (!current?.result || current.status !== 'success') return false;
-    if (DOMUtils.getChatId() !== current.chatId) {
-      showToast('The active chat changed. Draft Reply was not inserted into a different chat.', 'warn');
+    const insertionAnchor = DOMUtils.getChatComposerAnchor();
+    if (DOMUtils.getChatId() !== current.chatId || insertionAnchor?.mode !== current.chatMode) {
+      showToast('The active chat or chat mode changed. Draft Reply was not inserted into a different context.', 'warn');
       return false;
     }
     if (!current.persona?.key || !current.personaSourceFingerprint) {
@@ -276,8 +282,9 @@ export function useDraftReplySession() {
         || live.personaSourceFingerprint !== current.personaSourceFingerprint
       ) return false;
 
-      if (DOMUtils.getChatId() !== current.chatId) {
-        showToast('The active chat changed during Persona verification. Nothing was inserted.', 'warn');
+      const verifiedAnchor = DOMUtils.getChatComposerAnchor();
+      if (DOMUtils.getChatId() !== current.chatId || verifiedAnchor?.mode !== current.chatMode) {
+        showToast('The active chat or chat mode changed during Persona verification. Nothing was inserted.', 'warn');
         return false;
       }
       if (!resolved.identity || resolved.identity.key !== current.persona.key) {
@@ -322,6 +329,66 @@ export function useDraftReplySession() {
       previousDraft: current.result,
     });
   }, [draftState, generateDraftReply]);
+
+  useEffect(() => {
+    if (!draftState?.chatId || !draftState?.chatMode) return undefined;
+
+    let timer = 0;
+    let missingCount = 0;
+    const closeForContextChange = () => {
+      sessionSeqRef.current += 1;
+      abortCurrent();
+      abortPersonaResolution();
+      setDraftState(null);
+    };
+    const validate = () => {
+      timer = 0;
+      const activeChatId = DOMUtils.getChatId();
+      const activeAnchor = DOMUtils.getChatComposerAnchor();
+      const definiteMismatch = (
+        (activeChatId && activeChatId !== draftState.chatId)
+        || (activeAnchor?.mode && activeAnchor.mode !== draftState.chatMode)
+      );
+      if (definiteMismatch) {
+        closeForContextChange();
+        return;
+      }
+
+      if (!activeAnchor?.composer || !activeAnchor.composer.isConnected) {
+        missingCount += 1;
+        if (missingCount >= 2) closeForContextChange();
+        return;
+      }
+      missingCount = 0;
+    };
+    const schedule = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(validate, 70);
+    };
+
+    const observer = new MutationObserver(schedule);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-chat-mode', 'data-chat-composer'],
+    });
+    window.addEventListener('popstate', schedule);
+    window.addEventListener('hashchange', schedule);
+    schedule();
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      observer.disconnect();
+      window.removeEventListener('popstate', schedule);
+      window.removeEventListener('hashchange', schedule);
+    };
+  }, [
+    abortCurrent,
+    abortPersonaResolution,
+    draftState?.chatId,
+    draftState?.chatMode,
+  ]);
 
   useEffect(() => () => {
     sessionSeqRef.current += 1;
