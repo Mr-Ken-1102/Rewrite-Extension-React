@@ -17,6 +17,9 @@ export function RewriteSection({
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
+  const autoIdentityLabel = autoProfile
+    ? `${autoProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${autoProfile.identityName || autoProfile.name}`
+    : '';
 
   return (
     <section className="rwa2-rewrite" aria-label={text('Rewrite commands', 'Lệnh viết lại')}>
@@ -36,11 +39,11 @@ export function RewriteSection({
         <Button
           glow={false}
           className="rwa2-auto-profile"
-          aria-label={autoProfile.name}
-          aria-description={autoProfile.prompt}
-          onMouseEnter={(event) => onTooltip(event, `${autoProfile.name}: ${autoProfile.prompt}`)}
+          aria-label={autoIdentityLabel}
+          aria-description={`${autoProfile.name}: ${autoProfile.prompt}`}
+          onMouseEnter={(event) => onTooltip(event, `${autoIdentityLabel} · ${autoProfile.name}: ${autoProfile.prompt}`)}
           onMouseLeave={onTooltipLeave}
-          onFocus={(event) => onTooltip(event, `${autoProfile.name}: ${autoProfile.prompt}`)}
+          onFocus={(event) => onTooltip(event, `${autoIdentityLabel} · ${autoProfile.name}: ${autoProfile.prompt}`)}
           onBlur={onTooltipLeave}
           onClick={(event) => {
             event.stopPropagation();
@@ -48,7 +51,7 @@ export function RewriteSection({
           }}
         >
           <span aria-hidden="true">✦</span>
-          <span>{autoProfile.name}</span>
+          <span>{autoIdentityLabel}</span>
         </Button>
       )}
 
