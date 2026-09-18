@@ -120,12 +120,16 @@ ok('popup placement reacts to viewport resizing and responsive height changes', 
 
 ok('popup positioning consumes shared geometry and accounts for transient rows', () => {
   const source = read('./src/hooks/usePopupPosition.js');
+  const geometry = read('./src/popupGeometry.js');
   assert.match(source, /POPUP_DESKTOP_WIDTH/);
   assert.match(source, /POPUP_VIEWPORT_GUTTER/);
   assert.match(source, /estimatePopupHeight/);
   assert.match(source, /hasAutoProfile/);
   assert.match(source, /multiMessage/);
+  assert.match(source, /fastRewrite/);
   assert.match(source, /compact/);
+  assert.match(geometry, /POPUP_FAST_REWRITE_HEIGHT\s*=\s*35/);
+  assert.match(geometry, /fastRewrite \? POPUP_FAST_REWRITE_HEIGHT : 0/);
 });
 
 ok('popup main passes geometry-relevant state without changing rewrite semantics', () => {
@@ -143,6 +147,20 @@ ok('responsive context geometry stacks deliberately on narrow viewports', () => 
   assert.match(css, /\.rwa2-source-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(max-width: 459px\)/);
   assert.match(css, /\.rwa2-context-sources,[\s\S]*\.rwa2-context-modifiers\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
+});
+
+ok('Fast Rewrite is visible without changing rewrite semantics', () => {
+  const main = read('./src/components/PopupMain.jsx');
+  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const base = read('./src/styles-popup-base.js');
+  const responsive = read('./src/styles-popup-responsive.js');
+  assert.match(main, /fastRewrite=\{config\.fastRewrite !== false\}/);
+  assert.match(rewrite, /rwa2-fast-strip/);
+  assert.match(rewrite, /Reasoning bypass · SSE live/);
+  assert.match(rewrite, /Bỏ qua reasoning · SSE trực tiếp/);
+  assert.match(base, /@keyframes rwa2-fast-sweep/);
+  assert.match(base, /\.rwa2-fast-rail/);
+  assert.match(responsive, /\.rwa2-fast-rail > span/);
 });
 
 ok('popup visual layer is low-paint and uses subdued amber', () => {
