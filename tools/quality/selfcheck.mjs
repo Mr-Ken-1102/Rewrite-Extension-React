@@ -7,6 +7,11 @@ import { unwrapMatchingOuterQuotes } from '../../src/utils/textSanitizers.js';
 import { normalizeRewriteResult } from '../../src/services/prompt/promptService.js';
 import { DOMUtils } from '../../src/utils/domUtils.js';
 import { readMessageDomIdentity } from '../../src/utils/messageDomIdentity.js';
+import {
+  detectMarinaraChatMode,
+  resolveMarinaraChatComposer,
+  resolveMarinaraChatComposerAnchor,
+} from '../../src/utils/chatComposerAnchor.js';
 import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from '../../src/services/autoProfilePolicy.js';
 import { createExecutionCoordinator } from '../../src/controllers/rewriteExecution.js';
 import { sanitizeAutoProfiles } from '../../src/store/persistence/schema.js';
@@ -281,6 +286,97 @@ ok('installable bundle requests the v2.4.4 full-page client runtime', () => {
 });
 
 
+ok('Draft Reply composer resolution is mode-aware across roleplay, conversation, and game', () => {
+  const rect = { left: 10, top: 20, right: 410, bottom: 80, width: 400, height: 60 };
+  const makeRoot = (mode) => ({
+    mode,
+    tagName: 'DIV',
+    getAttribute: (name) => name === 'data-chat-mode' ? mode : null,
+    getBoundingClientRect: () => ({ left: 0, top: 0, right: 900, bottom: 700, width: 900, height: 700 }),
+    contains(element) { return element?.root === this || element === this; },
+    querySelectorAll() { return []; },
+  });
+  const makeComposer = ({ root, marked = true, resourceShell, parent }) => ({
+    tagName: 'TEXTAREA',
+    root,
+    parentElement: parent,
+    getBoundingClientRect: () => rect,
+    closest(selector) {
+      if (selector === '[data-chat-mode]') return root;
+      if (selector === '[data-chat-resource-drop-exclude]') return resourceShell || null;
+      if (selector === '[data-message-id]') return null;
+      return null;
+    },
+    matches(selector) {
+      return marked && (selector === '[data-chat-composer="true"]' || selector === '[data-chat-composer]');
+    },
+  });
+  const makeDoc = ({ marked = [], gameRoots = [], roleplayRoot = null, conversationRoot = null }) => ({
+    querySelectorAll(selector) {
+      if (selector.includes('data-chat-composer')) return marked;
+      if (selector === '[data-chat-mode="game"]') return gameRoots;
+      return [];
+    },
+    querySelector(selector) {
+      if (selector === '[data-component="ChatArea.Roleplay"]') return roleplayRoot;
+      if (selector === '[data-component="ChatArea.Conversation"]') return conversationRoot;
+      if (selector === '[data-chat-mode="game"]') return gameRoots[0] || null;
+      return null;
+    },
+  });
+
+  for (const mode of ['roleplay', 'conversation']) {
+    const root = makeRoot(mode);
+    const shell = {
+      getBoundingClientRect: () => rect,
+      contains: (element) => element === shell,
+    };
+    const composer = makeComposer({ root, resourceShell: shell, parent: shell });
+    const doc = makeDoc({
+      marked: [composer],
+      roleplayRoot: mode === 'roleplay' ? root : null,
+      conversationRoot: mode === 'conversation' ? root : null,
+    });
+    assert.equal(resolveMarinaraChatComposer(doc), composer);
+    assert.equal(detectMarinaraChatMode(doc, composer).mode, mode);
+    const anchor = resolveMarinaraChatComposerAnchor(doc);
+    assert.equal(anchor.mode, mode);
+    assert.equal(anchor.shell, shell);
+    assert.equal(anchor.resourceShell, shell);
+  }
+
+  const gameRoot = makeRoot('game');
+  const gameResourceShell = {
+    getBoundingClientRect: () => ({ left: 0, top: 500, right: 900, bottom: 700, width: 900, height: 200 }),
+    contains: (element) => element === gameInputBar,
+    querySelectorAll: (selector) => selector === 'textarea' ? [gameComposer] : [],
+  };
+  const gameInputBar = {
+    getBoundingClientRect: () => rect,
+  };
+  const gameComposer = makeComposer({
+    root: gameRoot,
+    marked: false,
+    resourceShell: gameResourceShell,
+    parent: gameInputBar,
+  });
+  gameRoot.querySelectorAll = (selector) => selector === '[data-chat-resource-drop-exclude]' ? [gameResourceShell] : [];
+  const gameDoc = makeDoc({ gameRoots: [gameRoot] });
+
+  assert.equal(resolveMarinaraChatComposer(gameDoc), gameComposer);
+  const gameAnchor = resolveMarinaraChatComposerAnchor(gameDoc);
+  assert.equal(gameAnchor.mode, 'game');
+  assert.equal(gameAnchor.shell, gameInputBar);
+  assert.equal(gameAnchor.resourceShell, gameResourceShell);
+
+  const hiddenGameComposer = {
+    ...gameComposer,
+    getBoundingClientRect: () => ({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 }),
+  };
+  gameResourceShell.querySelectorAll = (selector) => selector === 'textarea' ? [hiddenGameComposer] : [];
+  assert.equal(resolveMarinaraChatComposer(gameDoc), null);
+});
+
 ok('Marinara v2.4.4 composer is never mistaken for a sent-message editor', () => {
   const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
   assert.match(dom, /data-chat-composer/);
@@ -311,8 +407,11 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(session, /controller\.abort/);
   assert.match(session, /setChatComposerValue\(current\.result\)/);
   assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
-  assert.match(launcher, /data-chat-composer|DOMUtils\.getChatComposerAnchor/);
+  assert.match(launcher, /DOMUtils\.getChatComposerAnchor/);
   assert.match(launcher, /data-rwa-feature="draft-reply"/);
+  assert.match(launcher, /data-rwa-chat-mode/);
+  assert.match(dom, /resolveMarinaraChatComposer/);
+  assert.match(dom, /resolveMarinaraChatComposerAnchor/);
   assert.match(launcher, /Trả lời Persona|Persona Reply/);
   assert.match(session, /activeChatId !== current\.chatId/);
   assert.match(session, /DraftReplyService\.resolveActivePersona\(chatId/);
