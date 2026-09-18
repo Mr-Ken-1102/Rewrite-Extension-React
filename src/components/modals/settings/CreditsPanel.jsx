@@ -3,8 +3,23 @@ export function CreditsPanel({ vi }) {
 
   return (
     <div className="rwa-credits-container">
-      <div className="rwa-credit-list">
+      <section className="rwa-credits-hero" aria-labelledby="rwa-credits-title">
+        <div className="rwa-credits-mark" aria-hidden="true">RA</div>
+        <div className="rwa-credits-eyebrow">Rewrite Assistant</div>
+        <h3 id="rwa-credits-title" className="rwa-credits-title">
+          {text('With gratitude', 'Lời tri ân')}
+        </h3>
+        <p className="rwa-credits-note">
+          {text(
+            'With appreciation to the people and projects that inspired, guided, and supported this journey.',
+            'Trân trọng ghi nhận những con người và dự án đã truyền cảm hứng, đồng hành và hỗ trợ cho hành trình phát triển này.',
+          )}
+        </p>
+      </section>
+
+      <div className="rwa-credit-grid">
         <article className="rwa-credit-card rwa-credit-card-special">
+          <div className="rwa-credit-label">{text('Special thanks', 'Tri ân đặc biệt')}</div>
           <div className="rwa-credit-name">TCLowe1982 / HolyKnight3</div>
           <p>
             {text(
@@ -15,6 +30,7 @@ export function CreditsPanel({ vi }) {
         </article>
 
         <article className="rwa-credit-card">
+          <div className="rwa-credit-label">{text('Original inspiration', 'Nguồn cảm hứng ban đầu')}</div>
           <div className="rwa-credit-name">Beoopo — Marinara Rewrite</div>
           <p>
             {text(
