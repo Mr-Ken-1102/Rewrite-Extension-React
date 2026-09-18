@@ -14,6 +14,9 @@ export const PreviewModal = ({
   progress = null,
   partialResult = '',
   streamed = false,
+  streamStatus = null,
+  streamChars = 0,
+  nativeEditorPrepared = false,
   pieces = null,
   applyReport = '',
   onAccept,
@@ -33,6 +36,15 @@ export const PreviewModal = ({
   const isLoading = status === 'loading';
   const isApplying = status === 'applying';
   const isMerged = Array.isArray(pieces) && pieces.length > 1;
+  const streamStatusText = streamStatus === 'connecting'
+    ? text('SSE · connecting…', 'SSE · đang kết nối…')
+    : streamStatus === 'finalizing'
+      ? text(`SSE · finalizing ${streamChars.toLocaleString()} chars`, `SSE · đang hoàn tất ${streamChars.toLocaleString()} ký tự`)
+      : streamStatus === 'done'
+        ? text(`SSE · received ${streamChars.toLocaleString()} chars`, `SSE · đã nhận ${streamChars.toLocaleString()} ký tự`)
+        : streamStatus
+          ? text(`SSE · streaming ${streamChars.toLocaleString()} chars`, `SSE · đang nhận ${streamChars.toLocaleString()} ký tự`)
+          : '';
 
   useEffect(() => {
     let isMounted = true;
@@ -140,6 +152,12 @@ export const PreviewModal = ({
             <div className="rwa-plbl rwar-label">{text('Selected Passage', 'Đoạn đã chọn')}</div>
             <div className="rwa-prev rwa-shimmer rwar-selected">{selection?.text}</div>
           </section>
+          {streamStatusText ? (
+            <div className="rwar-stream-status" role="status" aria-live="polite">
+              <span className="rwar-stream-dot" aria-hidden="true"></span>
+              <span>{streamStatusText}</span>
+            </div>
+          ) : null}
           <div className="rwar-writing" aria-live="polite">
             <div className="rwa-pulse" />
             <div className="rwar-writing-copy">{partialResult
@@ -217,15 +235,28 @@ export const PreviewModal = ({
 
           <div className="rwar-actions">
             <div className="rwar-actions-primary">
-              <Button glow={false} variant="rwa-accept" onClick={() => onAccept?.(result, selection)} disabled={isApplying} className="rwar-accept">
+              <Button
+                glow={false}
+                variant="rwa-accept"
+                onClick={() => onAccept?.(result, selection)}
+                disabled={isApplying || nativeEditorPrepared}
+                className="rwar-accept"
+                title={nativeEditorPrepared
+                  ? text('The rewrite is already staged in Marinara’s native editor. Review it there and press Marinara Save.', 'Bản viết lại đã được đặt vào trình chỉnh sửa gốc của Marinara. Hãy kiểm tra tại đó và bấm Lưu của Marinara.')
+                  : undefined}
+              >
                 {isApplying
                   ? text('Applying…', 'Đang áp dụng…')
-                  : isMerged
-                    ? text('✓ Accept All', '✓ Chấp nhận tất cả')
-                    : text('✓ Accept', '✓ Chấp nhận')}
+                  : nativeEditorPrepared
+                    ? text('Editor prepared', 'Đã mở trình sửa')
+                    : isMerged
+                      ? text('✓ Accept All', '✓ Chấp nhận tất cả')
+                      : text('✓ Accept', '✓ Chấp nhận')}
               </Button>
               {!isMerged && onManualSave ? (
-                <Button glow={false} onClick={() => onManualSave(result, selection)} disabled={isApplying}>{text('Open native editor', 'Mở trình chỉnh sửa gốc')}</Button>
+                <Button glow={false} onClick={() => onManualSave(result, selection)} disabled={isApplying || nativeEditorPrepared}>
+                  {nativeEditorPrepared ? text('Native editor ready', 'Trình sửa đã sẵn sàng') : text('Open native editor', 'Mở trình chỉnh sửa gốc')}
+                </Button>
               ) : null}
               {selection?.source === 'textarea' && !isMerged ? (
                 <Button glow={false} variant="rwa-replace" onClick={handleReplaceAllClick} disabled={isApplying}>{text('Replace All', 'Thay thế toàn bộ')}</Button>
@@ -234,7 +265,7 @@ export const PreviewModal = ({
             <div className="rwar-actions-tools">
               <Button glow={false} onClick={handleCopy} disabled={isApplying || !result}>{text('Copy', 'Sao chép')}</Button>
               <Button glow={false} onClick={handleSaveFile} disabled={isApplying || !result}>{text('Save .txt', 'Lưu .txt')}</Button>
-              <Button glow={false} onClick={onRetry} disabled={isApplying}>{text('Retry', 'Thử lại')}</Button>
+              <Button glow={false} onClick={onRetry} disabled={isApplying || nativeEditorPrepared}>{text('Retry', 'Thử lại')}</Button>
               <Button glow={false} onClick={onClose} disabled={isApplying}>{text('Close', 'Đóng')}</Button>
             </div>
           </div>
