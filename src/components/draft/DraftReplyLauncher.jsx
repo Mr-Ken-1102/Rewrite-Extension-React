@@ -2,25 +2,38 @@ import { useEffect, useRef, useState } from 'react';
 import { DOMUtils } from '../../utils/domUtils.js';
 import { usePersistentStore } from '../../store/usePersistentStore';
 
-function getLauncherPosition() {
-  const anchor = DOMUtils.getChatComposerAnchor();
-  if (!anchor) return null;
-  const composerRect = anchor.composer.getBoundingClientRect();
-  const shellRect = anchor.shell?.getBoundingClientRect?.() || composerRect;
-  if (composerRect.width <= 0 || composerRect.height <= 0) return null;
+function getLauncherPosition(anchor) {
+  if (!anchor?.composer || !anchor?.shell) return null;
+  const composerRect = anchor.composer.getBoundingClientRect?.();
+  const shellRect = anchor.shell.getBoundingClientRect?.();
+  if (!composerRect || !shellRect) return null;
+  if (composerRect.width <= 0 || composerRect.height <= 0 || shellRect.width <= 0 || shellRect.height <= 0) return null;
 
   const viewport = window.visualViewport;
   const viewportLeft = Number(viewport?.offsetLeft) || 0;
   const viewportTop = Number(viewport?.offsetTop) || 0;
   const viewportWidth = Number(viewport?.width) || window.innerWidth;
+  const viewportHeight = Number(viewport?.height) || window.innerHeight;
+  const viewportRight = viewportLeft + viewportWidth;
+  const viewportBottom = viewportTop + viewportHeight;
   const launcherWidth = 118;
+  const launcherHeight = 30;
+  const gutter = 8;
+  const gap = 8;
+
   const preferredLeft = shellRect.right - launcherWidth;
-  const aboveTop = shellRect.top - 38;
-  const preferredTop = aboveTop >= viewportTop + 8 ? aboveTop : shellRect.top + 6;
+  const aboveTop = shellRect.top - launcherHeight - gap;
+  const belowTop = shellRect.bottom + gap;
+  const preferredTop = aboveTop >= viewportTop + gutter
+    ? aboveTop
+    : belowTop + launcherHeight <= viewportBottom - gutter
+      ? belowTop
+      : Math.max(viewportTop + gutter, Math.min(shellRect.top, viewportBottom - launcherHeight - gutter));
 
   return {
-    left: Math.max(viewportLeft + 8, Math.min(preferredLeft, viewportLeft + viewportWidth - launcherWidth - 8)),
-    top: Math.max(viewportTop + 8, preferredTop),
+    left: Math.max(viewportLeft + gutter, Math.min(preferredLeft, viewportRight - launcherWidth - gutter)),
+    top: preferredTop,
+    mode: anchor.mode || 'unknown',
   };
 }
 
@@ -43,7 +56,7 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
     const update = () => {
       frameRef.current = 0;
       const anchor = DOMUtils.getChatComposerAnchor();
-      const next = getLauncherPosition();
+      const next = getLauncherPosition(anchor);
       setPosition(next);
 
       if (anchor?.composer !== observedComposer || anchor?.shell !== observedShell) {
@@ -91,6 +104,7 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
       type="button"
       className="rwa-draft-launcher"
       data-rwa-feature="draft-reply"
+      data-rwa-chat-mode={position.mode}
       style={{ left: position.left, top: position.top }}
       onClick={onOpen}
       title={title}
