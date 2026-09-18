@@ -100,11 +100,12 @@ export const TabAPI = () => {
     () => connections.find((connection) => connection.id === chatConnectionId) || null,
     [connections, chatConnectionId],
   );
-  const fallbackConnection = useMemo(
+  const marinaraRouting = config.marinaraRouting === 'fixed' ? 'fixed' : 'chat';
+  const fixedConnection = useMemo(
     () => connections.find((connection) => connection.id === config.connectionId) || null,
     [connections, config.connectionId],
   );
-  const effectiveConnection = chatConnectionId ? currentChatConnection : fallbackConnection;
+  const effectiveConnection = marinaraRouting === 'fixed' ? fixedConnection : currentChatConnection;
   const directIsLan = useMemo(
     () => config.connMode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl),
     [config.connMode, config.ollamaUrl],
@@ -242,16 +243,52 @@ export const TabAPI = () => {
 
       {config.connMode === 'marinara' && (
         <div className="rwa-api-connection-block">
-          <div className={`rwa-connection-card ${chatConnectionId && !currentChatConnection ? 'rwa-connection-card-error' : ''}`}>
+          <div className="rwa-form-row rwa-form-row-compact">
+            <span>{t(language, 'Marinara connection source', 'Nguồn kết nối Marinara')}</span>
+            <select
+              className="rwa-inp"
+              value={marinaraRouting}
+              onChange={(event) => updateConfig({ marinaraRouting: event.target.value })}
+            >
+              <option value="chat">{t(language, 'Follow current chat (default)', 'Theo kết nối của chat (mặc định)')}</option>
+              <option value="fixed">{t(language, 'Use a specific Marinara connection', 'Dùng một kết nối Marinara cố định')}</option>
+            </select>
+          </div>
+
+          {marinaraRouting === 'fixed' && (
+            <div className="rwa-form-row rwa-form-row-compact">
+              <span>{t(language, 'Selected connection', 'Kết nối được chọn')}</span>
+              <select className="rwa-inp" value={config.connectionId || ''} onChange={(event) => updateConfig({ connectionId: event.target.value })}>
+                <option value="">{connections.length
+                  ? t(language, '— Choose a Marinara connection —', '— Chọn một kết nối Marinara —')
+                  : t(language, 'No connections found', 'Không tìm thấy kết nối')}</option>
+                {connections.map((connection) => (
+                  <option key={connection.id} value={connection.id}>{connectionLabel(connection)}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className={`rwa-connection-card ${
+            marinaraRouting === 'fixed'
+              ? (config.connectionId && !fixedConnection ? 'rwa-connection-card-error' : '')
+              : (chatConnectionId && !currentChatConnection ? 'rwa-connection-card-error' : '')
+          }`}>
             <div className="rwa-connection-card-head">
               <div>
-                <div className="rwa-connection-eyebrow">{t(language, 'CURRENT CHAT CONNECTION', 'KẾT NỐI CỦA CHAT HIỆN TẠI')}</div>
+                <div className="rwa-connection-eyebrow">
+                  {marinaraRouting === 'fixed'
+                    ? t(language, 'SELECTED MARINARA CONNECTION', 'KẾT NỐI MARINARA ĐÃ CHỌN')
+                    : t(language, 'CURRENT CHAT CONNECTION', 'KẾT NỐI CỦA CHAT HIỆN TẠI')}
+                </div>
                 <div className="rwa-connection-name">
-                  {currentChatConnection
-                    ? connectionLabel(currentChatConnection)
-                    : (chatConnectionId
-                      ? t(language, 'Connection unavailable', 'Kết nối không khả dụng')
-                      : t(language, 'No connection selected on this chat', 'Chat này chưa chọn kết nối'))}
+                  {effectiveConnection
+                    ? connectionLabel(effectiveConnection)
+                    : marinaraRouting === 'fixed'
+                      ? t(language, 'No specific connection selected', 'Chưa chọn kết nối cố định')
+                      : (chatConnectionId
+                        ? t(language, 'Connection unavailable', 'Kết nối không khả dụng')
+                        : t(language, 'No connection selected on this chat', 'Chat này chưa chọn kết nối'))}
                 </div>
               </div>
               <Button glow={false} onClick={() => setRefreshSeq((value) => value + 1)} disabled={busy} className="rwa-connection-refresh">
@@ -261,31 +298,37 @@ export const TabAPI = () => {
             <div className="rwa-connection-note">
               {connectionLoadError
                 ? t(language, `Could not read Marinara connection state: ${connectionLoadError}`, `Không thể đọc trạng thái kết nối Marinara: ${connectionLoadError}`)
-                : currentChatConnection
-                  ? t(
-                    language,
-                    `Rewrite Assistant follows this chat automatically. No separate model selection is required.${chatInfo?.name ? ` Chat: ${chatInfo.name}.` : ''}`,
-                    `Rewrite Assistant tự động dùng kết nối của chat này. Không cần chọn model riêng.${chatInfo?.name ? ` Chat: ${chatInfo.name}.` : ''}`,
-                  )
-                  : chatConnectionId
-                    ? t(language, 'This chat points to a connection that is no longer present. Fix the chat connection in Marinara before rewriting.', 'Chat này đang trỏ tới một kết nối không còn tồn tại. Hãy sửa kết nối của chat trong Marinara trước khi viết lại.')
-                    : t(language, 'Choose a connection in Marinara chat settings. The fallback below is used only when the chat itself has no connection.', 'Hãy chọn kết nối trong cài đặt chat của Marinara. Kết nối dự phòng bên dưới chỉ được dùng khi chính chat không có kết nối.')}
+                : marinaraRouting === 'fixed'
+                  ? (fixedConnection
+                    ? t(
+                      language,
+                      'Every Marinara rewrite uses this connection, regardless of the connection selected on the current chat. The chat itself is not modified.',
+                      'Mọi lần viết lại qua Marinara sẽ dùng kết nối này, bất kể chat hiện tại đang chọn kết nối nào. Kết nối của chat không bị thay đổi.',
+                    )
+                    : t(language, 'Choose one of the existing Marinara connections above.', 'Hãy chọn một kết nối Marinara hiện có ở phía trên.'))
+                  : currentChatConnection
+                    ? t(
+                      language,
+                      `Rewrite Assistant follows this chat automatically. No separate model selection is required.${chatInfo?.name ? ` Chat: ${chatInfo.name}.` : ''}`,
+                      `Rewrite Assistant tự động dùng kết nối của chat này. Không cần chọn model riêng.${chatInfo?.name ? ` Chat: ${chatInfo.name}.` : ''}`,
+                    )
+                    : chatConnectionId
+                      ? t(language, 'This chat points to a connection that is no longer present. Fix the chat connection in Marinara before rewriting.', 'Chat này đang trỏ tới một kết nối không còn tồn tại. Hãy sửa kết nối của chat trong Marinara trước khi viết lại.')
+                      : t(language, 'This mode follows the chat only. Choose a connection in Marinara chat settings, or switch to a specific connection above.', 'Chế độ này chỉ đi theo chat. Hãy chọn kết nối trong cài đặt chat Marinara, hoặc chuyển sang kết nối cố định ở phía trên.')}
             </div>
           </div>
 
-          {!chatConnectionId && (
-            <div className="rwa-form-row rwa-form-row-compact">
-              <span>{t(language, 'Fallback connection', 'Kết nối dự phòng')}</span>
-              <select className="rwa-inp" value={config.connectionId || ''} onChange={(event) => updateConfig({ connectionId: event.target.value })}>
-                <option value="">{connections.length
-                  ? t(language, '— Optional fallback —', '— Dự phòng tùy chọn —')
-                  : t(language, 'No connections found', 'Không tìm thấy kết nối')}</option>
-                {connections.map((connection) => (
-                  <option key={connection.id} value={connection.id}>{connectionLabel(connection)}</option>
-                ))}
-              </select>
+          <div className="rwa-setting-toggle-row rwa-fast-rewrite-setting">
+            <div>
+              <div>{t(language, 'Fast rewrite', 'Viết lại nhanh')}</div>
+              <small>{t(
+                language,
+                'Disables model reasoning only for rewrite requests when the provider supports it. The chat model and its saved settings are unchanged. Marinara rewrites are delivered through live SSE streaming.',
+                'Chỉ tắt reasoning cho request viết lại khi provider hỗ trợ. Model của chat và thiết lập đã lưu không thay đổi. Kết quả viết lại qua Marinara được nhận trực tiếp bằng SSE streaming.',
+              )}</small>
             </div>
-          )}
+            <ToggleSwitch checked={config.fastRewrite !== false} onChange={(value) => updateConfig({ fastRewrite: value })} />
+          </div>
         </div>
       )}
 
@@ -392,13 +435,6 @@ export const TabAPI = () => {
           <small>{t(language, 'Useful for smaller local models; output and context safety rules remain intact.', 'Hữu ích với model cục bộ nhỏ; các quy tắc an toàn cho output và ngữ cảnh vẫn được giữ nguyên.')}</small>
         </div>
         <ToggleSwitch checked={config.conciseSysPrompt} onChange={(value) => updateConfig({ conciseSysPrompt: value })} />
-      </div>
-      <div className="rwa-setting-toggle-row">
-        <div>
-          <div>{t(language, 'Fast rewrite', 'Viết lại nhanh')}</div>
-          <small>{t(language, 'For Marinara connections, disable model reasoning for rewrite calls when the provider supports it. This keeps the chat model unchanged and usually reduces latency for line-editing tasks.', 'Với kết nối Marinara, tắt reasoning riêng cho request viết lại khi provider hỗ trợ. Model của chat không thay đổi và thường giảm đáng kể độ trễ cho tác vụ biên tập câu chữ.')}</small>
-        </div>
-        <ToggleSwitch checked={config.fastRewrite !== false} onChange={(value) => updateConfig({ fastRewrite: value })} />
       </div>
 
       <div className="rwa-lbl rwa-settings-section-title">{t(language, 'REQUEST SAFETY', 'AN TOÀN REQUEST')}</div>
