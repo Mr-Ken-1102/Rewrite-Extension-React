@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNativeEvents } from './hooks/useNativeEvents';
 import { useRewriteSession } from './hooks/useRewriteSession';
+import { useAutoVoiceProfileCoordinator } from './hooks/useAutoVoiceProfileCoordinator';
 import { useRuntimeStore } from './store/useRuntimeStore';
 import { ToastContainer } from './components/ui/ToastContainer';
 import { PopupMain } from './components/PopupMain';
@@ -14,6 +15,7 @@ import { ErrorModal } from './components/modals/ErrorModal';
 
 export default function App() {
   useNativeEvents();
+  useAutoVoiceProfileCoordinator();
   const popupPosition = useRuntimeStore((state) => state.popupPosition);
   const [activeModal, setActiveModal] = useState(null);
   const [modalPayload, setModalPayload] = useState(null);
