@@ -30,7 +30,8 @@ function stringifyErrorLike(value) {
   if (value == null) return '';
   if (typeof value === 'string') return value;
   if (value instanceof Error) {
-    const pieces = [value.message, value.code, value.name];
+    const symbolicCode = typeof value.code === 'string' ? value.code : '';
+    const pieces = [value.message, symbolicCode, value.name];
     if (value.data) pieces.push(stringifyErrorLike(value.data));
     return pieces.filter(Boolean).join(' | ');
   }
@@ -96,7 +97,12 @@ export function normalizeProviderFailure(value, fallback = 'Provider request fai
   const isNetwork = matchesAny(raw, NETWORK_PATTERNS);
   let error = redactSecretText(raw).slice(0, 2000);
 
-  if (isNetwork && /failed\s+to\s+fetch|networkerror|network\s+request\s+failed|load\s+failed/i.test(raw)) {
+  if (isTimeout) {
+    const duration = raw.match(/timed\s+out\s+after\s+(\d+)ms/i)?.[1];
+    error = duration
+      ? `Rewrite Assistant stopped waiting after ${duration}ms and aborted the active request.`
+      : 'Rewrite Assistant reached its configured request deadline and aborted the active request.';
+  } else if (isNetwork && /failed\s+to\s+fetch|networkerror|network\s+request\s+failed|load\s+failed/i.test(raw)) {
     error = 'Network request failed before the provider returned an HTTP response. For a LAN Ollama server, verify the Ollama listen address, firewall, allowed browser origin (CORS), and browser Local Network Access permission, then retry.';
   }
 
