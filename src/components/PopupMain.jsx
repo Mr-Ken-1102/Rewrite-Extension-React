@@ -107,7 +107,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     }
   }, [tip.show, tip.text, tip.x, tip.y]);
 
-  const colCount = useMemo(() => Math.max(1, config.cols || 3), [config.cols]);
+  const colCount = useMemo(() => Math.max(1, config.cols || 4), [config.cols]);
   const layoutColCount = useMemo(
     () => config.compact ? Math.min(colCount, 6) : Math.min(colCount, 4),
     [colCount, config.compact],
