@@ -161,6 +161,7 @@ ok('popup keeps explicit one-shot and token-estimate copy contracts', () => {
   assert.match(source, /This rewrite:/);
   assert.match(source, /Selection \+ context ≈/);
   assert.match(source, /rwa2-source-grid/);
+  assert.match(source, /rwa2-context-applied/);
 });
 
 ok('profile columns are configurable beyond two on the wide popup', () => {
