@@ -39,7 +39,7 @@ export function ContextPanel({
       text('Estimated prompt size; not a provider billing/tokenizer count.', 'Ước lượng kích thước prompt; không phải số token tính phí hoặc tokenizer chính xác của provider.'),
       tokenBreakdown,
     ].filter(Boolean).join(' ');
-  const tokenLabel = tokenInfo.loading
+  const tokenLabel = tokenInfo.loading && !tokenInfo.parts
     ? text('Selection + context ≈ calculating…', 'Vùng chọn + ngữ cảnh ≈ đang tính…')
     : tokenInfo.parts
       ? text(`Selection + context ≈ ${tokenInfo.parts.total.toLocaleString()} tok`, `Vùng chọn + ngữ cảnh ≈ ${tokenInfo.parts.total.toLocaleString()} tok`)
