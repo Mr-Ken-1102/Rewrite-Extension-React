@@ -4,6 +4,7 @@ import { mapRenderedSpanToRaw, spanIsBalanced, ctxFingerprint, fingerprintOk } f
 import { computeWordDiffSync, DIFF_TOKEN_CAP } from './src/services/diffWorkerService.js';
 import { makeHistoryKey } from './src/utils/historyKey.js';
 import { unwrapMatchingOuterQuotes } from './src/utils/textSanitizers.js';
+import { normalizeRewriteResult } from './src/services/prompt/promptService.js';
 import { DOMUtils } from './src/utils/domUtils.js';
 import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from './src/services/autoProfilePolicy.js';
 import { createExecutionCoordinator } from './src/controllers/rewriteExecution.js';
@@ -43,6 +44,13 @@ function spliceMapped(rendered, raw, start, end, replacement) {
 ok('history is scoped by chat + message', () => {
   assert.equal(makeHistoryKey('chat-a', '7'), 'chat-a::7');
   assert.notEqual(makeHistoryKey('chat-a', '7'), makeHistoryKey('chat-b', '7'));
+});
+
+ok('rewrite result normalization removes leaked protocol delimiters only at output boundaries', () => {
+  assert.equal(normalizeRewriteResult('<rewrite_this>\nHello world\n</rewrite_this>'), 'Hello world');
+  assert.equal(normalizeRewriteResult('<rewrite_this>\nHello world'), 'Hello world');
+  assert.equal(normalizeRewriteResult('Hello world\n</rewrite_this>'), 'Hello world');
+  assert.equal(normalizeRewriteResult('Keep <rewrite_this> inside the prose'), 'Keep <rewrite_this> inside the prose');
 });
 
 ok('identity rendered→stored mapping is exact', () => {
@@ -545,6 +553,11 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(popup, /deriveTrimmedSelection/);
   assert.match(popup, /pinnedPos/);
   assert.match(contextPanel, /This rewrite:/);
+  assert.match(contextPanel, /rwa2-context-applied/);
+  assert.match(popup, /Char: \$\{characterNames\.join/);
+  assert.match(popup, /Persona: \$\{personaNames\.join/);
+  assert.match(preview, /Rewrite again/);
+  assert.match(preview, /Viết lại lần nữa/);
   assert.match(preview, /Copied result to clipboard/);
   assert.match(profiles, /Search profiles/);
   assert.match(profiles, /profile\.hidden/);
@@ -664,6 +677,9 @@ ok('token preview is explicitly labeled Selection + context and snapshots select
   assert.match(panel, /not a provider billing\/tokenizer count/);
   assert.match(hook, /const oneShot = rewriteSelection\(\)/);
   assert.match(hook, /APIService\.inspectContext\(oneShot/);
+  const context = readFileSync('./src/services/context/contextService.js', 'utf8');
+  assert.match(context, /characterNames:\s*extractIdentityNames\(context\.character\)/);
+  assert.match(context, /personaNames:\s*extractIdentityNames\(context\.persona\)/);
 });
 
 ok('stale v2.3 shell branding is removed', () => {
