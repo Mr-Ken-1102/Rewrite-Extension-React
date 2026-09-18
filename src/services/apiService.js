@@ -198,7 +198,7 @@ export class APIService {
       );
       if (response?.aborted || response?.error) return response;
 
-      const raw = String(response.result || '').trim().replace(/^\`\`\`(?:json)?\s*/i, '').replace(/\s*\`\`\`$/i, '');
+      const raw = String(response.result || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
       let data;
       try { data = JSON.parse(raw); } catch { return { error: 'Voice-profile model response was not valid JSON.' }; }
       if (typeof data?.name !== 'string' || typeof data?.prompt !== 'string' || !data.prompt.trim()) {
