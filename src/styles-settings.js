@@ -34,7 +34,7 @@ export const RWA_SETTINGS_CSS = `
   border-radius: 16px !important;
   background: var(--rwas-bg) !important;
   color: var(--rwas-text-2);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--rwa-host-font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   box-shadow: 0 24px 72px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.035) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
