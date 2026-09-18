@@ -14,6 +14,8 @@ const language = read('./src/components/modals/settings/TabLanguage.jsx');
 const api = read('./src/components/modals/settings/TabAPI.jsx');
 const schema = read('./src/store/persistence/schema.js');
 const popupContext = read('./src/components/popup/ContextPanel.jsx');
+const about = read('./src/components/modals/settings/AboutPanel.jsx');
+const worldclass = read('./src/styles-worldclass.js');
 
 assert.match(modal, /className="rwa-win rwas-settings"/);
 assert.match(modal, /rwas-shell/);
@@ -46,6 +48,15 @@ assert.match(modal, /aria-controls="rwas-settings-panel"/);
 assert.match(modal, /id="rwas-settings-panel"/);
 assert.match(modal, /role="tabpanel"/);
 assert.match(modal, /aria-labelledby=\{activeTabId\}/);
+assert.match(modal, /<AboutPanel vi=\{vi\} \/>/);
+assert.match(about, /Có gì mới từ bản React đầu tiên/);
+assert.match(about, /21\/06\/2026/);
+assert.match(about, /GHI CÔNG/);
+assert.match(about, /Một người bạn đặc biệt/);
+assert.match(about, /Beoopo — Marinara Rewrite/);
+assert.ok(about.indexOf('Có gì mới từ bản React đầu tiên') < about.indexOf('GHI CÔNG'));
+assert.match(worldclass, /\.rwa-about-feature-grid/);
+assert.match(worldclass, /\.rwa-about-credit-list/);
 
 assert.match(modal, /id: 'language'/);
 assert.match(modal, /label: 'Language'/);
