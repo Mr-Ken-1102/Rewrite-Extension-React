@@ -221,6 +221,27 @@ export const RWA_RESULT_CSS = `
 .rwar-progress-active { color: #d19a45 !important; }
 .rwar-apply-report { border-color: rgba(209,154,69,.30) !important; }
 
+.rwar-live-section {
+  margin-bottom: 10px;
+}
+
+.rwar-live-output {
+  min-height: 84px;
+  max-height: 210px !important;
+  margin: 6px 0 0 !important;
+  padding: 11px 13px !important;
+  border-radius: 9px !important;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  color: rgba(255,255,255,.88) !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+.rwar-writing-copy-live {
+  margin-top: 7px;
+}
+
 .rwar-writing {
   padding: 4px 0 12px;
 }
