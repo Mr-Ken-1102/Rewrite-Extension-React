@@ -100,11 +100,11 @@ export function AboutPanel({ vi }) {
 
           <div className="rwa-about-credit-list">
             <article className="rwa-about-credit-card rwa-about-credit-special">
-              <strong>{text('A special friend', 'Một người bạn đặc biệt')}</strong>
+              <strong>TCLowe1982 / HolyKnight3</strong>
               <p>
                 {text(
-                  'My deepest thanks to a person who helped me, encouraged me, shared openly with me, and became an important source of inspiration while I was learning, building, and bringing Rewrite Assistant to completion. Your support helped me keep going and turn this project into something I am proud to finish.',
-                  'Tôi muốn dành lời cảm ơn đặc biệt nhất cho một người đã giúp đỡ, động viên, chia sẻ cùng tôi và trở thành nguồn cảm hứng rất lớn trong suốt quá trình tôi vừa học, vừa xây dựng và hoàn thiện Rewrite Assistant. Sự đồng hành của bạn đã giúp tôi tiếp tục cố gắng và biến dự án này thành một sản phẩm mà tôi thực sự muốn hoàn thành đến nơi đến chốn.',
+                  'I started this project with almost no programming experience and, at the time, could not afford access to AI tools powerful enough to reliably help me write and debug code. Whenever I got stuck on a bug I did not know how to fix, TCLowe was always generous with his time and guidance, even though we live in Vietnam and the United States, twelve time zones apart. At times he was even willing to use his own Claude Code just to help me track down a bug. His help and encouragement were an important part of what kept me going and helped me bring Rewrite Assistant to completion.',
+                  'Tôi bắt đầu dự án này gần như từ con số 0 về lập trình và khi ấy cũng không có điều kiện sử dụng những công cụ AI đủ mạnh để hỗ trợ. Mỗi khi tôi mắc kẹt với một lỗi mà không biết phải sửa thế nào, TCLowe luôn nhiệt tình giúp đỡ và hướng dẫn tôi, dù chúng tôi ở Việt Nam và Mỹ, cách nhau tới 12 múi giờ. Có những lúc anh ấy còn sẵn lòng dùng chính Claude Code của mình chỉ để giúp tôi tìm bug. Sự giúp đỡ và động viên của anh ấy là một phần quan trọng giúp tôi tiếp tục và hoàn thiện Rewrite Assistant.',
                 )}
               </p>
             </article>
