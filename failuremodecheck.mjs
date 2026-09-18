@@ -1323,7 +1323,71 @@ await ok('auto Voice Profile generation reuses the already-resolved message snap
       expectedIdentityKey: 'character:char-fast',
     });
     assert.equal(result.profile.identityKey, 'character:char-fast');
-    assert.deepEqual(h.host.control.calls.map((call) => call.path), ['/characters/char-fast']);
+    assert.deepEqual(h.host.control.calls.map((call) => call.path), ['/characters/char-fast', '/characters/char-fast']);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Voice Profile generation discards a source that changes while inference is running', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', maxPromptChars: 32000, requestTimeoutMs: 45000 };
+    let reads = 0;
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/characters/char-race') {
+        reads += 1;
+        return {
+          id: 'char-race',
+          data: {
+            name: 'Race',
+            personality: reads === 1 ? 'calm version' : 'changed version',
+            mes_example: reads === 1 ? 'old example' : 'new example',
+          },
+        };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.api.APIService.runInference = async () => ({ result: '{"name":"Race Voice","prompt":"Use the old source."}' });
+
+    const result = await h.api.APIService.generateAutoProfile('race-chat', new AbortController().signal, {
+      messageId: 'm-race',
+      targetMessage: { id: 'm-race', role: 'assistant', characterId: 'char-race', characterName: 'Race', content: 'x' },
+      expectedIdentityKey: 'character:char-race',
+    });
+
+    assert.match(result.error, /source changed while/i);
+    assert.equal(h.store.control.autoProfileWrites.length, 0);
+    assert.equal(reads, 2);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Voice Profile generation never saves after cancellation even if inference returns anyway', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', maxPromptChars: 32000, requestTimeoutMs: 45000 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/characters/char-abort') {
+        return { id: 'char-abort', data: { name: 'Abort', personality: 'steady', mes_example: 'example' } };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    const controller = new AbortController();
+    h.api.APIService.runInference = async () => {
+      controller.abort();
+      return { result: '{"name":"Abort Voice","prompt":"Should never persist."}' };
+    };
+
+    const result = await h.api.APIService.generateAutoProfile('abort-chat', controller.signal, {
+      messageId: 'm-abort',
+      targetMessage: { id: 'm-abort', role: 'assistant', characterId: 'char-abort', characterName: 'Abort', content: 'x' },
+      expectedIdentityKey: 'character:char-abort',
+    });
+
+    assert.equal(result.aborted, true);
+    assert.equal(h.store.control.autoProfileWrites.length, 0);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
