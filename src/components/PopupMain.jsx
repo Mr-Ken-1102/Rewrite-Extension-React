@@ -39,7 +39,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const selection = useRuntimeStore((state) => state.selection);
   const historyKey = makeHistoryKey(selection?.cid, selection?.mid);
   const msgHistory = usePersistentStore((state) => state.history[historyKey]) || EMPTY_HISTORY;
-  const autoProfile = usePersistentStore((state) => selection?.cid ? state.autoProfiles?.[selection.cid] || null : null);
+  const autoProfileBucket = usePersistentStore((state) => selection?.cid ? state.autoProfiles?.[selection.cid] || null : null);
   const popupPosition = useRuntimeStore((state) => state.popupPosition);
   const isProcessing = useRuntimeStore((state) => state.isProcessing);
   const popupRef = useRef(null);
@@ -126,6 +126,10 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   }), [contextExclusions, selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
+  const voiceIdentity = tokenInfo.voiceIdentity || null;
+  const autoProfile = voiceIdentity?.key && autoProfileBucket
+    ? autoProfileBucket[voiceIdentity.key] || null
+    : null;
   const { radarText, radarColor, contextSources } = useContextPresentation({
     activeRole,
     config,
@@ -133,7 +137,14 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     text,
   });
 
-  useAutoProfileGeneration({ selection, config, hasProfile: !!autoProfile, isProcessing, showToast });
+  useAutoProfileGeneration({
+    selection,
+    config,
+    identity: voiceIdentity,
+    profile: autoProfile,
+    isProcessing,
+    showToast,
+  });
   const handleDragStart = usePopupDrag({ popupRef, pinnedPos: config.pinnedPos, updateConfig });
   const { finalLeft, finalTop, finalVisibility } = usePopupPosition({
     popupPosition,
