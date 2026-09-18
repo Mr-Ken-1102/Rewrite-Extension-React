@@ -142,7 +142,7 @@ export const PreviewModal = ({
       title={modalTitle}
       onClose={isApplying ? () => {} : onClose}
       width="600px"
-      className="rwar-window"
+      className={`rwar-window ${!isLoading ? 'rwar-window-ready' : ''}`.trim()}
       bodyClassName="rwar-body"
     >
       {isLoading ? (
@@ -176,6 +176,7 @@ export const PreviewModal = ({
         </div>
       ) : (
         <>
+          <div className="rwar-ready-rail" aria-hidden="true"><span></span></div>
           {progress ? <div className="rwa-prev rwar-progress rwar-progress-active">{progress}</div> : null}
           {applyReport ? <div role="status" className="rwa-prev rwar-apply-report">{applyReport}</div> : null}
 
@@ -253,6 +254,18 @@ export const PreviewModal = ({
                       ? text('✓ Accept All', '✓ Chấp nhận tất cả')
                       : text('✓ Accept', '✓ Chấp nhận')}
               </Button>
+              <Button
+                glow={false}
+                className="rwar-rewrite-again"
+                onClick={onRetry}
+                disabled={isApplying || nativeEditorPrepared}
+                title={text(
+                  'Generate another version from the same original selection with the same rewrite style.',
+                  'Tạo thêm một phiên bản mới từ đúng đoạn gốc với cùng kiểu viết lại.',
+                )}
+              >
+                {text('↻ Rewrite again', '↻ Viết lại lần nữa')}
+              </Button>
               {!isMerged && onManualSave ? (
                 <Button
                   glow={false}
@@ -270,18 +283,6 @@ export const PreviewModal = ({
             <div className="rwar-actions-tools">
               <Button glow={false} onClick={handleCopy} disabled={isApplying || !result}>{text('Copy', 'Sao chép')}</Button>
               <Button glow={false} onClick={handleSaveFile} disabled={isApplying || !result}>{text('Save .txt', 'Lưu .txt')}</Button>
-              <Button
-                glow={false}
-                className="rwar-rewrite-again"
-                onClick={onRetry}
-                disabled={isApplying || nativeEditorPrepared}
-                title={text(
-                  'Generate another version from the same original selection with the same rewrite style.',
-                  'Tạo thêm một phiên bản mới từ đúng đoạn gốc với cùng kiểu viết lại.',
-                )}
-              >
-                {text('↻ Rewrite again', '↻ Viết lại lần nữa')}
-              </Button>
               <Button glow={false} onClick={onClose} disabled={isApplying}>{text('Close', 'Đóng')}</Button>
             </div>
           </div>
