@@ -465,6 +465,36 @@ await ok('explicit external cancellation remains AbortError and is not mislabele
   }
 });
 
+
+await ok('deadline-free streaming keeps the caller AbortSignal attached after response headers', async () => {
+  const h = await loadHostHarness();
+  try {
+    let seenSignal = null;
+    h.runtime.control.host = {
+      fetch: async (_input, init) => {
+        seenSignal = init.signal;
+        return new Response(new ReadableStream({
+          start(streamController) {
+            const fail = () => streamController.error(init.signal.reason || new DOMException('aborted', 'AbortError'));
+            if (init.signal.aborted) fail();
+            else init.signal.addEventListener('abort', fail, { once: true });
+          },
+        }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+      },
+    };
+    const controller = new AbortController();
+    const response = await h.hostModule.MarinaraHost.fetch('/stream', { signal: controller.signal }, 0);
+    assert.equal(seenSignal, controller.signal);
+    const reader = response.body.getReader();
+    const pendingRead = reader.read();
+    controller.abort(new DOMException('user cancelled', 'AbortError'));
+    await assert.rejects(() => pendingRead, (err) => err?.name === 'AbortError');
+  } finally {
+    h.restore();
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 async function loadEditorHarness() {
   const dir = await tempModuleDir('rwa-editor-');
   await copyFile('./src/services/spanMapper.js', join(dir, 'spanMapper.mjs'));
