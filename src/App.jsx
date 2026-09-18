@@ -53,7 +53,7 @@ export default function App() {
       <ToastContainer />
       <DraftReplyLauncher
         onOpen={openDraftReply}
-        hidden={!!activeModal || !!processState || draftUiOpen}
+        hidden={!!activeModal || !!processState || draftUiOpen || !!popupPosition}
       />
       {popupPosition && !activeModal && !processState && !draftUiOpen && (
         <PopupMain
