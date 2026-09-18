@@ -13,6 +13,7 @@ import { createExecutionCoordinator } from './rewriteExecution';
 import { createLedgerSessionController } from './ledgerSessionController';
 import { createApplySessionController } from './applySessionController';
 import { executionMeta, segmentSelection } from './rewriteSelection';
+import { createRewriteStreamingHooks } from './rewriteStreaming';
 
 export const RESIZABLE_OVERFLOW_CODES = new Set(['RWA_TARGET_TOO_LARGE', 'RWA_PROVIDER_CONTEXT_LIMIT']);
 
@@ -91,22 +92,7 @@ export function createRewriteSessionController({
     try {
       const resp = await APIService.fetchAIResponse(profile, selection, execution.controller.signal, {
         onContextTrim: contextTrimHook,
-        onProgress: (partialResult) => {
-          if (!executions.isCurrent(execution)) return;
-          setState((current) => current && current.status === 'loading'
-            ? { ...current, partialResult, streamed: true, streamChars: partialResult.length }
-            : current);
-        },
-        onStreamStatus: (info) => {
-          if (!executions.isCurrent(execution)) return;
-          setState((current) => current && current.status === 'loading'
-            ? {
-              ...current,
-              streamStatus: info?.status || current.streamStatus,
-              streamChars: Number.isFinite(Number(info?.chars)) ? Number(info.chars) : current.streamChars,
-            }
-            : current);
-        },
+        ...createRewriteStreamingHooks({ executions, execution, setState }),
       });
       if (!executions.isCurrent(execution)) return;
       if (resp?.aborted) {
@@ -203,22 +189,7 @@ export function createRewriteSessionController({
         context: mergedContext.context,
         systemPromptSuffix: markerRule,
         onContextTrim: contextTrimHook,
-        onProgress: (partialResult) => {
-          if (!executions.isCurrent(execution)) return;
-          setState((current) => current && current.status === 'loading'
-            ? { ...current, partialResult, streamed: true, streamChars: partialResult.length }
-            : current);
-        },
-        onStreamStatus: (info) => {
-          if (!executions.isCurrent(execution)) return;
-          setState((current) => current && current.status === 'loading'
-            ? {
-              ...current,
-              streamStatus: info?.status || current.streamStatus,
-              streamChars: Number.isFinite(Number(info?.chars)) ? Number(info.chars) : current.streamChars,
-            }
-            : current);
-        },
+        ...createRewriteStreamingHooks({ executions, execution, setState }),
       });
       if (!executions.isCurrent(execution)) return;
       if (response?.aborted) {
