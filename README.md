@@ -8,7 +8,7 @@ Rewrite Assistant is a client-side Personal Extension cross-checked against **Ma
 - Personal Extension runtime: `client`
 - Required capability: `full_page_access`
 - Node for development/build: `^20.19.0 || >=22.12.0`
-- Package version: `3.0.2`
+- Package version: `3.0.3`
 
 `full_page_access` is intentionally required because the extension maps rendered selections back to stored message content and integrates with Marinara's page APIs. Only install code you trust and review the permission warning shown by Marinara.
 
@@ -28,7 +28,7 @@ No telemetry, remote scripts, cookies, `eval`, or `new Function` are used by thi
 
 ## Reference parity status
 
-The React product remains the authority for its UX and safety model; `Marinara-Rewrite` is a behavior reference, not a codebase transplanted wholesale. v3.0.2 contains the verified Part 1 foundation, Part 2 context/management parity, and the identity/Draft Reply hardening certified against Marinara Engine v2.4.4 and v2.4.6.
+The React product remains the authority for its UX and safety model; `Marinara-Rewrite` is a behavior reference, not a codebase transplanted wholesale. v3.0.3 retains the v3.0.2 identity/Draft Reply safety model and adds mode-aware Persona Reply anchoring plus modeless draggable reply UX certified against Marinara Engine v2.4.4 and v2.4.6.
 
 Part 1 adds explicit context priority and pre-inference drop notices, one-shot source exclusions, captured-snapshot surrounding prose, safe trim-before-send, Preview Copy, Custom Prompt → Profile, profile search/hide, concise instructions, and popup pinning.
 
@@ -42,6 +42,14 @@ Part 2 adds:
 - chat-specific auto-profiles, **OFF by default**, with explicit/manual generation;
 - selective portable export/import that deliberately excludes provider-routing fields; and
 - bounded session-only debug logs that store metadata rather than prompt/reply bodies.
+
+v3.0.3 Persona Reply UX adds:
+
+- mode-aware quick-launcher anchoring across Marinara Roleplay, Conversation, and Game layouts, including the v2.4.6 Game composer that does not expose `data-chat-composer`;
+- a modeless draggable Draft Reply popup so the conversation behind it remains readable and scrollable;
+- a slimmer main-popup-aligned shell with equal-height header/footer and the active Persona in the header;
+- simple launcher positioning controls: Auto, Remember dragged position, and Reset; and
+- safe per-mode remembered launcher positions with viewport clamping and drag-vs-click protection.
 
 v3.0.2 identity and Draft Reply hardening adds:
 
