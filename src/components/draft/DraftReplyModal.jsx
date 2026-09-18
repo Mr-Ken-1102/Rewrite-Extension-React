@@ -35,6 +35,7 @@ export function DraftReplyModal({
   const [mode, setMode] = useState(state?.mode === 'continue' ? 'continue' : 'idea');
   const [position, setPosition] = useState(null);
   const panelRef = useRef(null);
+  const chatMode = state?.chatMode || null;
 
   useEffect(() => {
     setDirection(state?.direction || '');
@@ -43,9 +44,9 @@ export function DraftReplyModal({
 
   const commitPosition = useCallback((next) => {
     const normalized = { left: Math.round(next.left), top: Math.round(next.top) };
-    if (state?.chatMode) sessionPanelPositions.set(state.chatMode, normalized);
+    if (chatMode) sessionPanelPositions.set(chatMode, normalized);
     setPosition(normalized);
-  }, [state?.chatMode]);
+  }, [chatMode]);
   const handleDragStart = useFloatingPanelDrag({ panelRef, onPositionChange: commitPosition });
 
   useLayoutEffect(() => {
