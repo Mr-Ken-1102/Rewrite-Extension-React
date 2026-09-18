@@ -980,68 +980,68 @@ export const RWA_WORLDCLASS_CSS = `
   font-size: 9.5px !important;
 }
 
-/* About */
-.rwa-about-container { max-width: 680px; }
-.rwa-about-box {
-  padding: 18px;
-  border: 1px solid var(--rwa-wc-border);
-  border-radius: 12px;
-  background: rgba(255,255,255,.018);
+/* About + Credits */
+.rwa-about-container,
+.rwa-credits-container {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
 }
-.rwa-about-header-zone {
-  display: flex;
+
+.rwa-about-identity {
+  display: grid;
+  grid-template-columns: 44px minmax(0,1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--rwa-wc-border);
+  border-radius: 11px;
+  background: rgba(255,255,255,.018);
 }
 .rwa-about-mark {
   width: 44px;
   height: 44px;
   display: grid;
   place-items: center;
-  border-radius: 11px;
+  border-radius: 10px;
   color: #17120a;
   background: var(--rwa-brand);
   font-size: 13px;
   font-weight: 900;
   letter-spacing: .04em;
 }
+.rwa-about-identity-copy { min-width: 0; }
 .rwa-about-title {
-  margin: 0 0 5px;
+  margin: 0 0 4px;
   color: var(--rwa-wc-text);
-  font-size: 15px;
+  font-size: 14px;
+  line-height: 1.2;
   font-weight: 760;
 }
-.rwa-about-subtitle,
-.rwa-about-thanks-to,
-.rwa-about-desc {
+.rwa-about-subtitle {
+  margin: 0;
   color: var(--rwa-wc-muted);
   font-size: 10.5px;
-  line-height: 1.55;
+  line-height: 1.4;
 }
-.rwa-about-subtitle { margin: 0; }
-.rwa-about-thanks-to { margin: 4px 0 0; }
-.rwa-about-sep {
-  height: 1px;
-  margin: 16px 0;
-  background: rgba(255,255,255,.06);
-}
-.rwa-about-desc { margin: 0; }
-.rwa-about-desc strong { color: var(--rwa-wc-text-2); }
-.rwa-about-footer { margin-top: 16px; }
 .rwa-about-status {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 9px;
+  min-height: 24px;
+  padding: 0 8px;
   border: 1px solid rgba(5,196,107,.18);
   border-radius: 999px;
   color: rgba(150,235,190,.82);
   background: rgba(5,196,107,.035);
-  font-size: 9.5px;
+  font-size: 9.3px;
   font-weight: 650;
+  white-space: nowrap;
 }
 
-.rwa-about-section { min-width: 0; }
+.rwa-about-section {
+  min-width: 0;
+  margin-top: 18px;
+}
 .rwa-about-section-kicker {
   margin-bottom: 6px;
   color: var(--rwa-brand);
@@ -1050,65 +1050,129 @@ export const RWA_WORLDCLASS_CSS = `
   font-weight: 820;
   letter-spacing: .11em;
 }
+.rwa-about-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
 .rwa-about-section-title {
   margin: 0;
   color: var(--rwa-wc-text);
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.3;
   font-weight: 740;
 }
 .rwa-about-section-note {
-  margin: 6px 0 12px;
+  margin: 4px 0 0;
+  color: var(--rwa-wc-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+.rwa-about-baseline {
+  flex: 0 0 auto;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 999px;
+  background: rgba(255,255,255,.02);
+  color: var(--rwa-wc-subtle);
+  font-size: 9px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.rwa-about-evolution-list {
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  background: rgba(255,255,255,.012);
+}
+.rwa-about-evolution-row {
+  display: grid;
+  grid-template-columns: 32px 166px minmax(0,1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 11px 12px;
+}
+.rwa-about-evolution-row + .rwa-about-evolution-row {
+  border-top: 1px solid rgba(255,255,255,.055);
+}
+.rwa-about-evolution-index {
+  color: var(--rwa-brand);
+  font-size: 9px;
+  line-height: 1.45;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+.rwa-about-evolution-title {
+  color: var(--rwa-wc-text-2);
+  font-size: 10.5px;
+  line-height: 1.45;
+  font-weight: 720;
+}
+.rwa-about-evolution-detail {
   color: var(--rwa-wc-muted);
   font-size: 10px;
   line-height: 1.5;
 }
-.rwa-about-feature-grid {
+
+.rwa-credit-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
-  gap: 8px;
+  gap: 10px;
 }
-.rwa-about-feature-card,
-.rwa-about-credit-card {
+.rwa-credit-card {
   min-width: 0;
-  padding: 10px 11px;
-  border: 1px solid rgba(255,255,255,.065);
-  border-radius: 9px;
+  padding: 14px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
   background: rgba(255,255,255,.016);
 }
-.rwa-about-feature-card strong,
-.rwa-about-credit-card strong {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--rwa-wc-text-2);
-  font-size: 10.5px;
-  line-height: 1.25;
-  font-weight: 720;
-}
-.rwa-about-feature-card span,
-.rwa-about-credit-card p {
-  margin: 0;
-  color: var(--rwa-wc-muted);
-  font-size: 9.7px;
-  line-height: 1.5;
-}
-.rwa-about-credit-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
-}
-.rwa-about-credit-special {
-  border-color: rgba(255,176,32,.19);
+.rwa-credit-card-special {
+  border-color: rgba(255,176,32,.24);
   background: rgba(255,176,32,.035);
 }
-.rwa-about-credit-special strong { color: var(--rwa-brand); }
-
+.rwa-credit-name {
+  margin-bottom: 6px;
+  color: var(--rwa-wc-text-2);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 740;
+}
+.rwa-credit-card-special .rwa-credit-name { color: var(--rwa-brand); }
+.rwa-credit-card p {
+  margin: 0;
+  color: var(--rwa-wc-muted);
+  font-size: 10.2px;
+  line-height: 1.55;
+}
 
 /* --------------------------------------------------------------------------
    Responsive behavior
    -------------------------------------------------------------------------- */
 @media (max-width: 760px) {
-  .rwa-about-feature-grid { grid-template-columns: 1fr; }
+  .rwa-about-identity {
+    grid-template-columns: 44px minmax(0,1fr);
+  }
+  .rwa-about-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .rwa-about-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .rwa-about-evolution-row {
+    grid-template-columns: 28px minmax(0,1fr);
+    gap: 4px 10px;
+  }
+  .rwa-about-evolution-detail {
+    grid-column: 2;
+  }
 
   .rwa-settings-win {
     width: calc(100vw - 16px) !important;
