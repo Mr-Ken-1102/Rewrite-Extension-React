@@ -38,6 +38,12 @@ function personaIdentity(snapshot, name = '') {
   return { ...identity, key: makeVoiceIdentityKey(identity), weak: false };
 }
 
+function personaSourceFingerprint(identity, reference) {
+  if (!identity) return '';
+  const evidence = String(reference || '').trim() || `Name: ${identity.name || identity.id}`;
+  return fingerprintVoiceReference(evidence);
+}
+
 function characterSpeaker(message, characterNames) {
   const mapped = characterNames.get(String(message?.characterId || '')) || '';
   const direct = clean(
@@ -165,8 +171,9 @@ export class DraftReplyService {
     const profile = stored && stored.sourceFingerprint && currentFingerprint && stored.sourceFingerprint === currentFingerprint
       ? stored
       : null;
+    const sourceFingerprint = personaSourceFingerprint(identity, reference);
 
-    return { chat, snapshot: { ...snapshot, name }, identity, reference, profile };
+    return { chat, snapshot: { ...snapshot, name }, identity, reference, profile, sourceFingerprint };
   }
 
   static async generate({
@@ -185,7 +192,7 @@ export class DraftReplyService {
 
     try {
       const config = usePersistentStore.getState().config;
-      const [{ identity, reference, profile }, messages, characters] = await Promise.all([
+      const [{ identity, reference, profile, sourceFingerprint: personaFingerprint }, messages, characters] = await Promise.all([
         this.resolveActivePersona(chatId, signal),
         ContextService.fetchMessages(chatId, signal),
         ContextService.fetchChatCharacters(chatId, signal),
@@ -268,6 +275,16 @@ Hard rules:
       if (!finalPersona.identity || finalPersona.identity.key !== identity.key) {
         return {
           error: 'The active Persona changed while Draft Reply was generating. The generated text was discarded instead of showing or inserting a reply for the wrong Persona.',
+        };
+      }
+
+      const finalDetails = await ContextService.fetchPersonaIdentityDetails(finalPersona.snapshot, signal);
+      if (signal?.aborted) return { aborted: true };
+      const finalIdentity = personaIdentity(finalPersona.snapshot, finalDetails?.name || identity.name);
+      const finalFingerprint = personaSourceFingerprint(finalIdentity, finalDetails?.reference || '');
+      if (finalFingerprint !== personaFingerprint) {
+        return {
+          error: 'The active Persona card changed while Draft Reply was generating. The stale draft was discarded; generate again with the current Persona data.',
         };
       }
 
