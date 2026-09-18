@@ -186,6 +186,8 @@ ok('new installs keep identity context opt-in while using the requested layout/h
   assert.match(schema, /injectLorebook:\s*false/);
   assert.match(schema, /useExtenderMemory:\s*false/);
   assert.match(schema, /autoProfileEnabled:\s*false/);
+  assert.match(schema, /draftReplyEnabled:\s*true/);
+  assert.match(schema, /draftReplyHistoryDepth:\s*8/);
 });
 
 ok('Marinara private storage is preferred with legacy migration fallback', () => {
@@ -249,6 +251,35 @@ ok('Marinara v2.4.4 composer is never mistaken for a sent-message editor', () =>
   assert.match(dom, /data-chat-composer/);
   assert.match(dom, /closest\?\.\('\[data-message-id\]'\)/);
 });
+
+ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-sends', () => {
+  const app = readFileSync('./src/App.jsx', 'utf8');
+  const service = readFileSync('./src/services/draftReplyService.js', 'utf8');
+  const session = readFileSync('./src/hooks/useDraftReplySession.js', 'utf8');
+  const launcher = readFileSync('./src/components/draft/DraftReplyLauncher.jsx', 'utf8');
+  const modal = readFileSync('./src/components/draft/DraftReplyModal.jsx', 'utf8');
+  const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
+  const main = readFileSync('./src/main.jsx', 'utf8');
+
+  assert.match(app, /<DraftReplyLauncher/);
+  assert.match(app, /<DraftReplyModal/);
+  assert.match(service, /CURRENT USER PERSONA/);
+  assert.match(service, /Never write, invent, or continue dialogue/);
+  assert.match(service, /ProviderService\.runInference/);
+  assert.match(service, /draftReplyHistoryDepth/);
+  assert.match(session, /controller\.abort/);
+  assert.match(session, /setChatComposerValue\(current\.result\)/);
+  assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
+  assert.match(launcher, /data-chat-composer|DOMUtils\.getChatComposerAnchor/);
+  assert.match(modal, /Insert into composer/);
+  assert.match(modal, /Another version/);
+  assert.match(modal, /Shorter/);
+  assert.match(modal, /Longer/);
+  assert.doesNotMatch(modal, /mari-chat-send-btn/);
+  assert.match(dom, /dispatchEvent\(new Event\('input', \{ bubbles: true \}\)\)/);
+  assert.match(main, /RWA_DRAFT_REPLY_CSS/);
+});
+
 
 ok('edit-textarea detection is behaviorally fail-closed', () => {
   const rect = { width: 300, height: 80 };
@@ -471,10 +502,11 @@ ok('history context never crosses Marinara conversation-start boundaries', () =>
   assert.match(buildHistoryContext(characterStart, 3, 10, 'char-b'), /before char start/);
 });
 
-ok('unknown or non-character roles never trigger character-card injection', () => {
+ok('Character context uses authoritative assistant identity with explicit fallback only when needed', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /wantsCharacter && \(explicitCharacterIds\.length > 0 \|\| role === 'assistant'\)/);
-  assert.doesNotMatch(context, /role !== 'user' && (?:config\.injectChar|wantsCharacter)/);
+  assert.match(context, /const authoritativeSender = role === 'assistant'[\s\S]*savedSel\?\.detectedCharacterId/s);
+  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
+  assert.match(context, /wantsCharacter && characterIds\.length > 0/);
 });
 
 ok('server message role outranks DOM role heuristics', () => {
@@ -514,11 +546,16 @@ ok('historical user messages preserve their persona identity', () => {
   assert.match(context, /if \(snapshot\?\.personaId\) return snapshot\?\.name/);
 });
 
-ok('assistant rewrites prefer the message sender character card', () => {
+ok('assistant rewrites never let a stale manual Character override the selected sender', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /const authoritativeSender = role === 'assistant' \? normalizeIdList\(info\.message\?\.characterId\) : \[\]/);
-  assert.match(context, /const characterIds = explicitCharacterIds\.length \? explicitCharacterIds : authoritativeSender/);
+  const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
+  const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
+  assert.match(context, /info\.message\?\.characterId \|\| savedSel\?\.detectedCharacterId/);
+  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
   assert.match(context, /fetchCharCard\(savedSel\.cid, signal, characterIds\)/);
+  assert.match(dom, /data-card-css/);
+  assert.match(dom, /mari-message-name/);
+  assert.match(identity, /voiceIdentityFromSelection/);
 });
 
 ok('message-info aborts are not downgraded into missing metadata', () => {
@@ -527,10 +564,11 @@ ok('message-info aborts are not downgraded into missing metadata', () => {
   assert.doesNotMatch(context, /getMessageInfo\([^\n]+\)\.catch\(\(\) => \(\{ messages:/);
 });
 
-ok('enabled message context fails closed instead of silently degrading', () => {
+ok('message-aware context fails closed while DOM Character metadata can avoid unnecessary message refetches', () => {
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /const needsMessageInfo = wantsHistory \|\| wantsPersona \|\| wantsSpeaker \|\| \(wantsCharacter && !explicitCharacterIds\.length\)/);
+  assert.match(context, /savedSel\?\.detectedCharacterId/);
   assert.match(api, /Could not assemble the enabled context/);
   assert.match(context, /The selected message is no longer available from Marinara/);
 });

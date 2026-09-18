@@ -21,6 +21,16 @@ export function makeVoiceIdentityKey(identity) {
   return kind === 'persona' ? `persona:${source}:${id}` : `character:${id}`;
 }
 
+export function voiceIdentityFromSelection(selection) {
+  const role = clean(selection?.detectedRole, 30);
+  if (role !== 'assistant') return null;
+  const id = clean(selection?.detectedCharacterId, 220);
+  if (!id) return null;
+  const name = clean(selection?.detectedName, 160);
+  const identity = { kind: 'character', source: 'character', id, name };
+  return { ...identity, key: makeVoiceIdentityKey(identity), weak: false, sourceOfTruth: 'dom' };
+}
+
 export function voiceIdentityFromMessage(message) {
   const role = clean(message?.role, 30);
   if (role === 'assistant') {

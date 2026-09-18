@@ -123,6 +123,37 @@ export const TabContext = () => {
         <ToggleSwitch checked={config.autoProfileEnabled} onChange={(value) => updateConfig({ autoProfileEnabled: value })} />
       </Row>
       <Row
+        title={text('Draft Reply for the active Persona', 'Soạn câu trả lời cho Persona hiện tại')}
+        note={text(
+          'Shows a small ✦ action above Marinara’s composer. It turns a rough idea or partial draft into one unsent Persona reply, streams a preview, and only inserts it into the composer after you approve it. It never presses Send.',
+          'Hiện nút ✦ nhỏ phía trên ô nhập Marinara. Tính năng biến ý tưởng thô hoặc bản nháp dở thành một câu trả lời của Persona, stream bản xem trước và chỉ chèn vào ô nhập sau khi bạn đồng ý. Nó không bao giờ tự bấm Gửi.',
+        )}
+      >
+        <ToggleSwitch checked={config.draftReplyEnabled !== false} onChange={(value) => updateConfig({ draftReplyEnabled: value })} />
+      </Row>
+      <Row
+        title={text('Draft Reply history depth', 'Độ sâu lịch sử cho Soạn câu trả lời')}
+        note={text(
+          'How many recent visible chat messages Draft Reply may use. Character names and historical Persona names are preserved when available.',
+          'Số tin nhắn gần đây mà Soạn câu trả lời được phép dùng. Tên Character và tên Persona lịch sử được giữ khi có dữ liệu.',
+        )}
+      >
+        <input
+          type="number"
+          className="rwa-inp"
+          min="1"
+          max="30"
+          value={config.draftReplyHistoryDepth || 8}
+          aria-label={text('Draft Reply history depth', 'Độ sâu lịch sử cho Soạn câu trả lời')}
+          onChange={(event) => {
+            const parsed = parseInt(event.target.value, 10);
+            if (Number.isNaN(parsed)) return;
+            updateConfig({ draftReplyHistoryDepth: Math.max(1, Math.min(30, parsed)) });
+          }}
+          style={{ width: '72px', margin: 0, padding: '6px 8px', fontSize: '12px', textAlign: 'center' }}
+        />
+      </Row>
+      <Row
         title={text('Merge multi-message selections', 'Gộp lựa chọn qua nhiều tin nhắn')}
         note={text('OFF by default. When enabled, selected message spans are rewritten as one passage with tamper-checked section markers, then split back. Invalid markers fall back to sequential mode instead of guessing.', 'Mặc định TẮT. Khi bật, các đoạn ở nhiều tin nhắn được viết lại như một đoạn chung với marker được kiểm tra, sau đó tách trả lại. Nếu marker không hợp lệ, hệ thống chuyển về chế độ tuần tự thay vì đoán.')}
       >
@@ -150,7 +181,10 @@ export const TabContext = () => {
 
       <div className="rwa-lbl" style={{ marginTop: '22px' }}>{text('CHARACTER CONTEXT PICKER', 'CHỌN NGỮ CẢNH NHÂN VẬT')}</div>
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
-        {text('Leave all unchecked to use the authoritative sender character for assistant messages. Selecting characters here explicitly overrides that fallback for Character context and Extender memory.', 'Để trống tất cả để dùng nhân vật người gửi chính xác của tin nhắn assistant. Việc chọn nhân vật tại đây sẽ ghi đè fallback đó cho ngữ cảnh Character và bộ nhớ Extender.')}
+        {text(
+          'Assistant messages always use their authoritative sender Character. Selections here are only a fallback for user/narrator/legacy text that has no authoritative Character sender.',
+          'Tin nhắn assistant luôn dùng đúng Character đã gửi tin nhắn đó. Các lựa chọn tại đây chỉ là fallback cho văn bản user/narrator/legacy không có Character người gửi xác định.',
+        )}
       </div>
       <input
         className="rwa-inp"

@@ -140,6 +140,10 @@ export const DOMUtils = {
       if (!text || text.trim().length < 2) continue;
       const renderedFull = this.renderedTextForMid(mid);
       const occ = this.selectionOccurrence(range, mid, text);
+      const messageEl = this.messageElementForMid(mid);
+      const detectedRole = messageEl?.getAttribute?.('data-message-role') || null;
+      const detectedCharacterId = messageEl?.getAttribute?.('data-card-css') || messageEl?.querySelector?.('[data-card-css]')?.getAttribute?.('data-card-css') || null;
+      const detectedName = messageEl?.querySelector?.('.mari-message-name')?.textContent?.trim?.() || null;
       segments.push({
         source: 'message',
         mid,
@@ -147,7 +151,9 @@ export const DOMUtils = {
         occ,
         fp: ctxFingerprint(renderedFull, text, occ),
         renderedAtSelection: renderedFull,
-        detectedRole: null,
+        detectedRole,
+        detectedCharacterId,
+        detectedName,
       });
     }
     return segments;
@@ -182,7 +188,9 @@ export const DOMUtils = {
         end,
         el: active,
         originalValue: active.value,
-        detectedRole: null,
+        detectedRole: parentMsg?.getAttribute?.('data-message-role') || null,
+        detectedCharacterId: parentMsg?.getAttribute?.('data-card-css') || null,
+        detectedName: parentMsg?.querySelector?.('.mari-message-name')?.textContent?.trim?.() || null,
         captureId: nextSelectionCaptureId(),
       };
     }
@@ -215,10 +223,47 @@ export const DOMUtils = {
       fp: first.fp,
       renderedAtSelection: first.renderedAtSelection,
       detectedRole: first.detectedRole,
+      detectedCharacterId: first.detectedCharacterId,
+      detectedName: first.detectedName,
       segments: segments.map((segment) => ({ ...segment, cid })),
       multiMessage: segments.length > 1,
       captureId,
     };
+  },
+
+  getChatComposer() {
+    const candidates = [...document.querySelectorAll('textarea[data-chat-composer="true"], textarea[data-chat-composer]')];
+    return candidates.find((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) return false;
+      const rect = element.getBoundingClientRect?.();
+      return rect && rect.width > 0 && rect.height > 0;
+    }) || null;
+  },
+
+  getChatComposerAnchor() {
+    const composer = this.getChatComposer();
+    if (!composer) return null;
+    const shell = composer.closest('.mari-chat-input, .chat-input-container') || composer.parentElement || composer;
+    const send = shell.querySelector?.('.mari-chat-send-btn') || null;
+    return { composer, shell, send };
+  },
+
+  setChatComposerValue(value) {
+    const composer = this.getChatComposer();
+    if (!composer) return false;
+    const next = String(value ?? '');
+    try {
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+      if (setter) setter.call(composer, next);
+      else composer.value = next;
+      composer.dispatchEvent(new Event('input', { bubbles: true }));
+      composer.focus({ preventScroll: true });
+      const caret = next.length;
+      composer.setSelectionRange(caret, caret);
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   async safeCopy(txt) {

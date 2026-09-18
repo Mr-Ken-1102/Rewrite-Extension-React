@@ -15,6 +15,7 @@ import { PopupHeader } from './popup/PopupHeader';
 import { RewriteSection } from './popup/RewriteSection';
 import { ContextPanel } from './popup/ContextPanel';
 import { PopupFooter } from './popup/PopupFooter';
+import { voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
 
 const EMPTY_HISTORY = Object.freeze({ undo: [], redo: [] });
 const TOOLTIP_GAP = 10;
@@ -124,7 +125,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   }), [contextExclusions, selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
-  const voiceIdentity = tokenInfo.voiceIdentity || null;
+  const voiceIdentity = tokenInfo.voiceIdentity || voiceIdentityFromSelection(selection) || null;
   const autoProfile = voiceIdentity?.key && autoProfileBucket
     ? autoProfileBucket[voiceIdentity.key] || null
     : null;
@@ -132,6 +133,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     activeRole,
     config,
     tokenInfo,
+    voiceIdentity,
     text,
   });
 
@@ -243,6 +245,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             radarText={radarText}
             radarColor={radarColor}
             tokenInfo={tokenInfo}
+            voiceIdentity={voiceIdentity}
             contextSources={contextSources}
             contextExclusions={contextExclusions}
             onToggleContext={toggleContextExclusion}
