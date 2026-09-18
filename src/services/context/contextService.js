@@ -87,12 +87,11 @@ function buildVoiceReference(entity, kind, snapshotName = '') {
 
   let evidence = 0;
   evidence += boundedVoiceField(parts, 'Personality', data.personality || entity?.personality, 900) ? 1 : 0;
-  evidence += boundedVoiceField(parts, 'Description', data.description || entity?.description, 1200) ? 1 : 0;
-  evidence += boundedVoiceField(parts, 'Backstory', extensions.backstory || data.backstory, 800) ? 1 : 0;
-  evidence += boundedVoiceField(parts, 'About me', extensions.aboutMe || data.aboutMe, 900) ? 1 : 0;
-  evidence += boundedVoiceField(parts, 'Scenario', data.scenario || entity?.scenario, 500) ? 1 : 0;
 
   if (kind === 'character') {
+    // Direct authored speech is the strongest evidence of cadence and register,
+    // so keep it ahead of long descriptive/background fields when the final
+    // provider prompt applies its hard reference cap.
     evidence += boundedVoiceField(parts, 'First message', data.first_mes || data.firstMessage, 1400) ? 1 : 0;
     evidence += boundedVoiceField(parts, 'Example dialogue', data.mes_example || data.exampleDialogue, 2200) ? 1 : 0;
   } else {
@@ -101,6 +100,11 @@ function buildVoiceReference(entity, kind, snapshotName = '') {
     evidence += boundedVoiceField(parts, 'First message', data.first_mes || data.firstMessage, 900) ? 1 : 0;
     evidence += boundedVoiceField(parts, 'Example dialogue', data.mes_example || data.exampleDialogue, 1400) ? 1 : 0;
   }
+
+  evidence += boundedVoiceField(parts, 'Description', data.description || entity?.description, 1200) ? 1 : 0;
+  evidence += boundedVoiceField(parts, 'About me', extensions.aboutMe || data.aboutMe, 900) ? 1 : 0;
+  evidence += boundedVoiceField(parts, 'Backstory', extensions.backstory || data.backstory, 800) ? 1 : 0;
+  evidence += boundedVoiceField(parts, 'Scenario', data.scenario || entity?.scenario, 500) ? 1 : 0;
 
   // A name alone is not enough evidence to synthesize a trustworthy voice.
   return evidence > 0 ? parts.join('\n') : '';
