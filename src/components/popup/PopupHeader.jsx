@@ -18,7 +18,7 @@ export function PopupHeader({ language = 'en', selection, pinned, onDragStart, o
     <header className="rwa2-toolbar" onPointerDown={onDragStart}>
       <div className="rwa2-brand">
         <span className="rwa2-brand-title">Rewrite Assistant</span>
-        <span className="rwa2-version">V3</span>
+        <span className="rwa2-version">V3.0.2</span>
       </div>
 
       <div className="rwa2-toolbar-actions" onPointerDown={(event) => event.stopPropagation()}>
