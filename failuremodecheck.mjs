@@ -133,6 +133,18 @@ export const MarinaraHost = {
   providerSource = replaceImport(providerSource, '../policies/providerPolicy.js', '../policies/providerPolicy.mjs');
   await writeFile(join(dir, 'providers', 'providerService.mjs'), providerSource);
 
+  let voiceProfileSource = await readFile('./src/services/voiceProfileService.js', 'utf8');
+  voiceProfileSource = replaceImport(voiceProfileSource, '../store/usePersistentStore', './mockStore.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './marinaraHost', './mockHost.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './debugLogService', './mockDebug.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './context/contextService.js', './context/contextService.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './providers/providerService.js', './providers/providerService.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './policies/contextPolicy.js', './policies/contextPolicy.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './policies/providerPolicy.js', './policies/providerPolicy.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, '../utils/messageContext.js', './messageContext.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './voiceProfileIdentity.js', './voiceProfileIdentity.mjs');
+  await writeFile(join(dir, 'voiceProfileService.mjs'), voiceProfileSource);
+
   let source = await readFile('./src/services/apiService.js', 'utf8');
   source = replaceImport(source, '../store/usePersistentStore', './mockStore.mjs');
   source = replaceImport(source, './marinaraHost', './mockHost.mjs');
@@ -144,12 +156,14 @@ export const MarinaraHost = {
   source = replaceImport(source, '../utils/messageContext.js', './messageContext.mjs');
   source = replaceImport(source, './voiceProfileIdentity.js', './voiceProfileIdentity.mjs');
   source = replaceImport(source, './policies/providerPolicy.js', './policies/providerPolicy.mjs');
+  source = replaceImport(source, './voiceProfileService.js', './voiceProfileService.mjs');
   await writeFile(join(dir, 'apiService.mjs'), source);
 
   let draftSource = await readFile('./src/services/draftReplyService.js', 'utf8');
   draftSource = replaceImport(draftSource, '../store/usePersistentStore', './mockStore.mjs');
   draftSource = replaceImport(draftSource, './context/contextService.js', './context/contextService.mjs');
   draftSource = replaceImport(draftSource, './providers/providerService.js', './providers/providerService.mjs');
+  draftSource = replaceImport(draftSource, './marinaraHost', './mockHost.mjs');
   draftSource = replaceImport(draftSource, './voiceProfileIdentity.js', './voiceProfileIdentity.mjs');
   draftSource = replaceImport(draftSource, '../utils/messageContext.js', './messageContext.mjs');
   await writeFile(join(dir, 'draftReplyService.mjs'), draftSource);
