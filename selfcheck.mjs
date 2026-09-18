@@ -486,7 +486,7 @@ ok('bundle manifest version is sourced from package.json', () => {
   const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
   const manifest = createExtensionManifest('void 0;');
   assert.equal(manifest.version, packageJson.version);
-  assert.equal(manifest.version, '3.0.1');
+  assert.equal(manifest.version, '3.0.2');
 });
 
 ok('cancelled Settings connection tests do not emit false abort/failure toasts', () => {
