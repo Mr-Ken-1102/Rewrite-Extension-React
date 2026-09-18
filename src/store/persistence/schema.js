@@ -1,4 +1,4 @@
-export const STORE_VERSION = 5;
+export const STORE_VERSION = 6;
 
 export const DEFAULT_PROFILES = [
   { id: 'expand',      name: 'Expand',             order: 0,  prompt: 'Expand the passage with more descriptive detail, sensory imagery, and action. Add no new plot events.' },
@@ -191,27 +191,67 @@ export function sanitizeAutoProfiles(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const out = {};
   let byteBudget = 250_000;
-  for (const [chatId, profile] of Object.entries(value).slice(0, 100)) {
-    if (typeof chatId !== 'string' || ['__proto__', 'prototype', 'constructor'].includes(chatId) || !validProfile(profile)) continue;
-    const safeChatId = chatId.slice(0, 200);
+
+  const sanitizeItem = (chatId, identityKey, profile, legacy = false) => {
+    if (!validProfile(profile)) return null;
+    const safeChatId = String(chatId || '').slice(0, 200);
+    const safeIdentityKey = String(identityKey || '').slice(0, 320);
     const rawPrompt = profile.prompt.trim().slice(0, 5000);
-    if (!rawPrompt) continue;
+    if (!safeChatId || !safeIdentityKey || !rawPrompt) return null;
+
+    const identityKind = profile.identityKind === 'persona'
+      ? 'persona'
+      : (profile.identityKind === 'character' ? 'character' : (legacy ? 'legacy' : 'character'));
+    const identitySource = profile.identitySource === 'character'
+      ? 'character'
+      : (profile.identitySource === 'persona' ? 'persona' : (identityKind === 'character' ? 'character' : null));
     const base = {
-      id: String(profile.id || `auto-${safeChatId}`).slice(0, 160),
+      id: String(profile.id || `auto-${safeChatId}`).slice(0, 180),
       name: String(profile.name || 'Auto Voice').trim().slice(0, 80) || 'Auto Voice',
       prompt: '',
       order: -1,
       auto: true,
+      identityKind,
+      identityId: String(profile.identityId || '').trim().slice(0, 220),
+      identityName: String(profile.identityName || '').trim().slice(0, 160),
+      identityKey: safeIdentityKey,
+      sourceFingerprint: String(profile.sourceFingerprint || '').trim().slice(0, 120),
+      ...(identitySource ? { identitySource } : {}),
+      ...(legacy ? { legacy: true } : {}),
     };
-    const baseBytes = utf8Bytes(JSON.stringify([safeChatId, base])) + 2;
-    if (baseBytes >= byteBudget) break;
+    const baseBytes = utf8Bytes(JSON.stringify([safeChatId, safeIdentityKey, base])) + 2;
+    if (baseBytes >= byteBudget) return null;
     const prompt = truncateUtf8(rawPrompt, byteBudget - baseBytes);
-    if (!prompt) break;
+    if (!prompt) return null;
     const item = { ...base, prompt };
-    const itemBytes = utf8Bytes(JSON.stringify([safeChatId, item])) + 2;
-    if (itemBytes > byteBudget) break;
-    out[safeChatId] = item;
+    const itemBytes = utf8Bytes(JSON.stringify([safeChatId, safeIdentityKey, item])) + 2;
+    if (itemBytes > byteBudget) return null;
     byteBudget -= itemBytes;
+    return item;
+  };
+
+  for (const [chatId, rawBucket] of Object.entries(value).slice(0, 100)) {
+    if (typeof chatId !== 'string' || ['__proto__', 'prototype', 'constructor'].includes(chatId)) continue;
+    const safeChatId = chatId.slice(0, 200);
+    const bucket = {};
+
+    // v5 and earlier stored exactly one auto-profile per chat. Preserve it as
+    // legacy data, but never auto-match it to a Character or Persona because
+    // its original identity is unknowable.
+    if (validProfile(rawBucket)) {
+      const item = sanitizeItem(safeChatId, 'legacy', rawBucket, true);
+      if (item) bucket.legacy = item;
+    } else if (rawBucket && typeof rawBucket === 'object' && !Array.isArray(rawBucket)) {
+      for (const [identityKey, profile] of Object.entries(rawBucket).slice(0, 24)) {
+        if (['__proto__', 'prototype', 'constructor'].includes(identityKey)) continue;
+        const item = sanitizeItem(safeChatId, identityKey, profile, identityKey === 'legacy');
+        if (item) bucket[identityKey.slice(0, 320)] = item;
+        if (byteBudget <= 0) break;
+      }
+    }
+
+    if (Object.keys(bucket).length) out[safeChatId] = bucket;
+    if (byteBudget <= 0) break;
   }
   return out;
 }
