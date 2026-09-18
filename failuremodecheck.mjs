@@ -46,6 +46,9 @@ async function loadApiHarness() {
   const dir = await tempModuleDir('rwa-api-');
   await copyFile('./src/utils/messageContext.js', join(dir, 'messageContext.mjs'));
   await copyFile('./src/services/spanMapper.js', join(dir, 'spanMapper.mjs'));
+  let voiceIdentitySource = await readFile('./src/services/voiceProfileIdentity.js', 'utf8');
+  voiceIdentitySource = replaceImport(voiceIdentitySource, '../utils/messageContext.js', './messageContext.mjs');
+  await writeFile(join(dir, 'voiceProfileIdentity.mjs'), voiceIdentitySource);
   await mkdir(join(dir, 'policies'), { recursive: true });
   await mkdir(join(dir, 'context'), { recursive: true });
   await mkdir(join(dir, 'providers'), { recursive: true });
@@ -73,9 +76,13 @@ export const usePersistentStore = {
         control.updates.push(value);
         control.state.config = { ...(control.state.config || {}), ...(value || {}) };
       },
-      setAutoProfile(chatId, profile) {
-        control.autoProfileWrites.push({ chatId, profile });
-        control.state.autoProfiles = { ...(control.state.autoProfiles || {}), [chatId]: profile };
+      setAutoProfile(chatId, identityKey, profile) {
+        control.autoProfileWrites.push({ chatId, identityKey, profile });
+        const bucket = control.state.autoProfiles?.[chatId] || {};
+        control.state.autoProfiles = {
+          ...(control.state.autoProfiles || {}),
+          [chatId]: { ...bucket, [identityKey]: profile },
+        };
       },
     };
   },
@@ -116,6 +123,7 @@ export const MarinaraHost = {
   contextSource = replaceImport(contextSource, '../policies/contextPolicy.js', '../policies/contextPolicy.mjs');
   contextSource = replaceImport(contextSource, '../policies/providerPolicy.js', '../policies/providerPolicy.mjs');
   contextSource = replaceImport(contextSource, '../prompt/promptService.js', '../prompt/promptService.mjs');
+  contextSource = replaceImport(contextSource, '../voiceProfileIdentity.js', '../voiceProfileIdentity.mjs');
   await writeFile(join(dir, 'context', 'contextService.mjs'), contextSource);
 
   let providerSource = await readFile('./src/services/providers/providerService.js', 'utf8');
@@ -133,6 +141,8 @@ export const MarinaraHost = {
   source = replaceImport(source, './providers/providerService.js', './providers/providerService.mjs');
   source = replaceImport(source, './prompt/promptService.js', './prompt/promptService.mjs');
   source = replaceImport(source, './policies/contextPolicy.js', './policies/contextPolicy.mjs');
+  source = replaceImport(source, '../utils/messageContext.js', './messageContext.mjs');
+  source = replaceImport(source, './voiceProfileIdentity.js', './voiceProfileIdentity.mjs');
   source = replaceImport(source, './policies/providerPolicy.js', './policies/providerPolicy.mjs');
   await writeFile(join(dir, 'apiService.mjs'), source);
 
