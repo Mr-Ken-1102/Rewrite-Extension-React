@@ -1,5 +1,6 @@
 import { ctxFingerprint } from '../services/spanMapper.js';
 import { readMessageDomIdentity } from './messageDomIdentity.js';
+import { resolveMarinaraChatComposer, resolveMarinaraChatComposerAnchor } from './chatComposerAnchor.js';
 
 function escapeSelectorValue(value) {
   const str = String(value ?? '');
@@ -254,20 +255,11 @@ export const DOMUtils = {
   },
 
   getChatComposer() {
-    const candidates = [...document.querySelectorAll('textarea[data-chat-composer="true"], textarea[data-chat-composer]')];
-    return candidates.find((element) => {
-      if (!(element instanceof HTMLTextAreaElement)) return false;
-      const rect = element.getBoundingClientRect?.();
-      return rect && rect.width > 0 && rect.height > 0;
-    }) || null;
+    return resolveMarinaraChatComposer(document);
   },
 
   getChatComposerAnchor() {
-    const composer = this.getChatComposer();
-    if (!composer) return null;
-    const shell = composer.closest('.mari-chat-input, .chat-input-container') || composer.parentElement || composer;
-    const send = shell.querySelector?.('.mari-chat-send-btn') || null;
-    return { composer, shell, send };
+    return resolveMarinaraChatComposerAnchor(document);
   },
 
   setChatComposerValue(value) {
