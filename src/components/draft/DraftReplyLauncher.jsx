@@ -154,8 +154,8 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
   const draggable = placement === 'remember' && SUPPORTED_MODES.has(position.mode);
   const title = language === 'vi'
     ? draggable
-      ? 'Soạn câu trả lời bằng Persona hiện tại · kéo để đổi vị trí'
-      : 'Soạn câu trả lời bằng Persona hiện tại'
+      ? 'Soạn trả lời theo Persona hiện tại · kéo để đổi vị trí'
+      : 'Soạn trả lời theo Persona hiện tại'
     : draggable
       ? 'Draft a reply as the active Persona · drag to reposition'
       : 'Draft a reply as the active Persona';
@@ -189,7 +189,7 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
       aria-label={title}
     >
       <span className="rwa-draft-launcher-icon" aria-hidden="true">✦</span>
-      <span>{language === 'vi' ? 'Trả lời Persona' : 'Persona Reply'}</span>
+      <span>{language === 'vi' ? 'Trả lời theo Persona' : 'Persona Reply'}</span>
     </button>
   );
 }
