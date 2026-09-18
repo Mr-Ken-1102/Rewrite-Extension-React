@@ -1,4 +1,14 @@
 export const RWA_RESULT_CSS = `
+@keyframes rwar-result-arrive {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes rwar-ready-sweep {
+  0% { transform: translateX(-130%); opacity: .25; }
+  45% { opacity: 1; }
+  72%, 100% { transform: translateX(320%); opacity: .2; }
+}
+
 .rwar-window {
   width: min(600px, calc(100vw - 24px)) !important;
   max-width: min(600px, calc(100vw - 24px)) !important;
@@ -37,6 +47,29 @@ export const RWA_RESULT_CSS = `
   overflow-y: auto !important;
   contain: layout paint;
 }
+
+.rwar-ready-rail {
+  position: relative;
+  height: 3px;
+  margin: -3px 0 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+}
+.rwar-ready-rail > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, #d19a45, #ff7043, transparent);
+  box-shadow: 0 0 10px rgba(209,154,69,.20);
+  animation: rwar-ready-sweep 1.85s cubic-bezier(.42,0,.24,1) 1;
+}
+.rwar-window-ready .rwar-section,
+.rwar-window-ready .rwar-actions {
+  animation: rwar-result-arrive .22s cubic-bezier(.16,1,.3,1) both;
+}
+.rwar-window-ready .rwar-actions { animation-delay: .04s; }
 
 .rwar-section {
   min-width: 0;
@@ -205,7 +238,18 @@ export const RWA_RESULT_CSS = `
 
 .rwar-actions .rwar-accept { flex-grow: 1.08; }
 .rwar-actions .rwar-native-editor { flex-grow: 1.72; }
-.rwar-actions .rwar-rewrite-again { flex-grow: 1.34; }
+.rwar-actions .rwar-rewrite-again {
+  flex-grow: 1.34;
+  border-color: rgba(209,154,69,.28) !important;
+  background: rgba(209,154,69,.055) !important;
+  color: #d19a45 !important;
+  font-weight: 720 !important;
+}
+.rwar-actions .rwar-rewrite-again:hover:not(:disabled) {
+  border-color: rgba(209,154,69,.46) !important;
+  background: rgba(209,154,69,.10) !important;
+  color: #e3ad58 !important;
+}
 
 /* Replace All has broader scope than Accept, so it stays deliberately secondary.
    The legacy green treatment competed with the primary confirmation action. */
@@ -305,5 +349,6 @@ export const RWA_RESULT_CSS = `
 
 @media (prefers-reduced-motion: reduce) {
   .rwar-window *, .rwar-window { transition: none !important; animation-duration: .001ms !important; }
+  .rwar-ready-rail > span { animation: none !important; transform: none !important; width: 100%; opacity: .55; }
 }
 `;
