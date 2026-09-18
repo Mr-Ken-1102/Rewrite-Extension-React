@@ -69,6 +69,15 @@ export const RWA_WORLDCLASS_CSS = `
   display: block;
 }
 
+.rwa-refine-status {
+  display: grid;
+  gap: 7px;
+  margin: -4px 0 10px;
+  color: var(--rwa-wc-muted);
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
 .rwa-win,
 .rwa-err-window {
   border: 1px solid var(--rwa-wc-border) !important;
