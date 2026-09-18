@@ -167,6 +167,7 @@ export const RWA_PREMIUM_CSS = `
 
 .rwa-ov { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5, 4, 10, 0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 10001; display: flex; align-items: center; justify-content: center; animation: rwa-premium-fade .2s ease-out; }
 .rwa-win { background: var(--rwa-panel-bg); border: 1px solid var(--rwa-glass-border); border-radius: 16px; width: 650px; max-width: 95vw; max-height: 90vh; box-shadow: var(--rwa-panel-shadow); display: flex; flex-direction: column; overflow: hidden; animation: rwa-premium-up .25s cubic-bezier(0.16, 1, 0.3, 1); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+.rwa-no-enter, .rwa-no-enter .rwa-win { animation: none !important; }
 
 .rwa-pulse { height: 4px; background: var(--rwa-primary-gradient); border-radius: 99px; animation: rwa-pulse-glow 1.5s ease-in-out infinite; box-shadow: 0 0 10px var(--rwa-primary-glow); }
 .rwa-foot, .rwa-err-foot { display: flex; border-top: 1px solid rgba(255, 255, 255, 0.05); }
