@@ -87,7 +87,13 @@ export function createRewriteSessionController({
     runtimeAPI.registerController(execution.controller);
 
     try {
-      const resp = await APIService.fetchAIResponse(profile, selection, execution.controller.signal, { onContextTrim: contextTrimHook });
+      const resp = await APIService.fetchAIResponse(profile, selection, execution.controller.signal, {
+        onContextTrim: contextTrimHook,
+        onProgress: (partialResult) => {
+          if (!executions.isCurrent(execution)) return;
+          setState({ ...loadingState, status: 'loading', partialResult, streamed: true });
+        },
+      });
       if (!executions.isCurrent(execution)) return;
       if (resp?.aborted) {
         setState(null);
@@ -110,7 +116,7 @@ export function createRewriteSessionController({
         setState({ ...loadingState, status: 'error', errorMsg: 'The LLM returned an empty response. Verify configuration.' });
         return;
       }
-      const successState = { ...loadingState, status: 'success', result };
+      const successState = { ...loadingState, status: 'success', result, streamed: resp?.streamed === true };
       setState(successState);
       if (usePersistentStore.getState().config.autoApply) await applyController.accept(successState, result, selection);
     } catch (error) {
@@ -181,6 +187,10 @@ export function createRewriteSessionController({
         context: mergedContext.context,
         systemPromptSuffix: markerRule,
         onContextTrim: contextTrimHook,
+        onProgress: (partialResult) => {
+          if (!executions.isCurrent(execution)) return;
+          setState({ ...loadingState, status: 'loading', partialResult, streamed: true });
+        },
       });
       if (!executions.isCurrent(execution)) return;
       if (response?.aborted) {
@@ -205,7 +215,7 @@ export function createRewriteSessionController({
         return;
       }
       const rawRecovery = parsed.pieces.map((piece, index) => `--- Message ${index + 1} ---\n${piece}`).join('\n\n');
-      const successState = { ...loadingState, status: 'success', pieces: parsed.pieces, result: rawRecovery };
+      const successState = { ...loadingState, status: 'success', pieces: parsed.pieces, result: rawRecovery, streamed: response?.streamed === true };
       setState(successState);
       if (usePersistentStore.getState().config.autoApply) await applyController.applyMergedSequence(successState);
     } catch (error) {
