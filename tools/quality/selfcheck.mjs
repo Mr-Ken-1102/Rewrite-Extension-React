@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { mapRenderedSpanToRaw, spanIsBalanced, ctxFingerprint, fingerprintOk } from '../../src/services/spanMapper.js';
 import { computeWordDiffSync, DIFF_TOKEN_CAP } from '../../src/services/diffWorkerService.js';
 import { makeHistoryKey } from '../../src/utils/historyKey.js';
@@ -54,6 +54,20 @@ function ok(name, fn) {
   passed += 1;
   console.log(`✓ ${name}`);
 }
+
+ok('repository structure keeps architecture docs out of the root', () => {
+  assert.equal(existsSync('./PARITY-DESIGN-GUARDRAILS.md'), false);
+  assert.equal(existsSync('./docs/architecture/PARITY-DESIGN-GUARDRAILS.md'), true);
+  const structure = readFileSync('./docs/REPOSITORY-STRUCTURE.md', 'utf8');
+  const readme = readFileSync('./README.md', 'utf8');
+  assert.match(structure, /docs\/\n  architecture\//);
+  assert.match(structure, /eslint\.config\.js/);
+  assert.match(structure, /extension-manifest\.mjs/);
+  assert.match(readme, /What changed since the first React build/);
+  assert.match(readme, /## Credits/);
+  assert.match(readme, /Beoopo’s Marinara Rewrite/);
+});
+
 
 function spliceMapped(rendered, raw, start, end, replacement) {
   const span = mapRenderedSpanToRaw(rendered, raw, start, end);

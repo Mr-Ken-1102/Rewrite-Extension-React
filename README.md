@@ -72,6 +72,34 @@ Advanced editing is now implemented behind the same fail-closed safety model:
 
 Merge Part 3 hardens these paths further: automatic message writes now stop if the active chat changes during generation; Ledger resume identity includes the source fingerprint plus inference-affecting profile/provider/context settings and freezes one prompt-context snapshot for a consistent run; merged partial applies resume only the uncommitted messages; message-edge whitespace is normalized at the Ledger/guarded-commit boundary; and manual-save prefers Marinara's `marinara:start-edit-message` event with a localized Pencil-icon fallback. Optimization hardening additionally makes Ledger cuts Unicode-scalar safe and, when `Intl.Segmenter` is available, grapheme-boundary aware; bounds hung Diff Worker requests with synchronous fallback; scans every duplicate message wrapper for the exact native editor; and adds deterministic property/fuzz coverage for span mapping, fingerprints, Ledger split/assemble/subdivide, and merged markers.
 
+
+## What changed since the first React build
+
+Baseline: **`cf21c62` — `Rewrite-Extension-React`, June 21, 2026**. The first React upload already contained the basic React/Zustand shell, rewrite popup, Preview flow, Settings, Custom Prompt, profile editing, AI Architect, Undo/Redo, and a basic AI request path. The major product layers added after that baseline include:
+
+- certified Marinara Engine v2.4.4–v2.4.6 integration, private extension storage, safer host APIs, and mode-aware Roleplay / Conversation / Game composer handling;
+- stable Marinara Connections, Sidecar, Extender, direct OpenAI-compatible endpoints, and local Ollama workflows;
+- context-aware rewriting with Character, Persona, Lore, Memory, nearby context, token estimates, one-shot exclusions, and hidden-from-AI handling;
+- exact selection mapping, fail-closed writes, multi-message rewriting, merged passes, Ledger handling for large selections, resumable flows, and stronger result recovery;
+- searchable/reorderable presets, Custom Prompt → Profile, AI Architect improvements, compact layouts, and bilingual UI controls;
+- SSE streaming, real cancellation, Fast Rewrite, bounded diagnostics, and LAN/local-endpoint guidance;
+- exact Character targeting in group chats plus identity-scoped Character/Persona Voice Profiles with source-fingerprint revalidation;
+- active-Persona Draft Reply with suggestions, Continue Draft, alternatives, shorter/longer variants, streaming preview, safe composer insertion, modeless dragging, and per-mode launcher positioning; and
+- expanded security/release engineering: privacy-safe defaults, stale-result rejection, deterministic regression/failure/property gates, dependency audits, Engine compatibility checks, and verified installable artifacts.
+
+## Credits
+
+### TCLowe1982 / HolyKnight3
+
+I started this project with almost no programming experience and, at the time, could not afford access to AI tools powerful enough to reliably help me write and debug code. Whenever I got stuck on a bug I did not know how to fix, TCLowe1982 / HolyKnight3 was always generous with his time and guidance, even though we live in Vietnam and the United States, twelve time zones apart. At times he was even willing to use his own Claude Code just to help me track down a bug. His help and encouragement were an important part of what kept me going and helped me bring Rewrite Assistant to completion.
+
+### Beoopo — Marinara Rewrite
+
+Rewrite Assistant began from the inspiration and practical experience I found in **Beoopo’s Marinara Rewrite** extension. I especially appreciate the idea and the work that demonstrated how useful an AI-assisted rewriting workflow could be inside Marinara.
+
+Rewrite Assistant was later rebuilt independently in React and has grown in a different technical direction with its own architecture, safety model, context system, provider routing, Voice Profiles, and Persona Draft Reply workflow. **Marinara Rewrite remains an important origin of the idea and deserves explicit credit for that inspiration.**
+
+
 ## Development
 
 ```bash

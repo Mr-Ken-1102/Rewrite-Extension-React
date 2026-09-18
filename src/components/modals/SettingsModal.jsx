@@ -6,6 +6,7 @@ import { TabAPI } from './settings/TabAPI';
 import { TabContext } from './settings/TabContext';
 import { TabLanguage } from './settings/TabLanguage';
 import { TabData } from './settings/TabData';
+import { AboutPanel } from './settings/AboutPanel';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePersistentStore } from '../../store/usePersistentStore';
 
@@ -256,47 +257,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
 
             <div ref={bodyRef} className="rwa-body rwas-body">
               {showAbout ? (
-                <div className="rwa-about-container">
-                  <div className="rwa-about-box">
-                    <div className="rwa-about-header-zone">
-                      <div className="rwa-about-mark">RA</div>
-                      <div>
-                        <h3 className="rwa-about-title">Rewrite Assistant V3</h3>
-                        <p className="rwa-about-subtitle">
-                          Version 3.0.3<br/>
-                          {vi ? 'Phát triển bởi' : 'Developed by'} <strong>Mr.Kiều.1102</strong>
-                        </p>
-                        <p className="rwa-about-thanks-to">
-                          {vi ? 'Đặc biệt cảm ơn Beeopo @ Marinara Engine Discord' : 'Special thanks to Beeopo @ Marinara Engine Discord'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rwa-about-sep"></div>
-
-                    <p className="rwa-about-desc">
-                      {vi ? (
-                        <>
-                          <strong>Câu chuyện phía sau mã nguồn</strong><br/>
-                          Ban đầu tôi rất thích một extension tuyệt vời do Beeopo tạo ra. Tuy nhiên, extension đó chỉ hỗ trợ kết nối Sidecar qua Marinara Engine, trong khi RTX 3080 10GB của tôi không thể chạy hai model nặng cùng lúc.<br/><br/>
-                          Tôi đã liên hệ Beeopo trên Discord để hỏi về hỗ trợ Ollama, nhưng có lẽ anh ấy đang bận. Vì vậy tôi quyết định tự xây dựng một phiên bản có thể kết nối ổn định với các model Ollama cục bộ.<br/><br/>
-                          Dù bắt đầu với gần như không có nền tảng lập trình, tôi đã vừa học vừa làm để hoàn thành nó. Cảm ơn bạn đã sử dụng Rewrite Assistant.
-                        </>
-                      ) : (
-                        <>
-                          <strong>The Story Behind the Code</strong><br/>
-                          I initially fell in love with an awesome extension made by Beeopo. However, it only supported the Sidecar connection via Marinara Engine, and my RTX 3080 (10GB VRAM) simply couldn&apos;t handle running two heavy models simultaneously.<br/><br/>
-                          I reached out to Beeopo on Discord to ask for Ollama support, but he was likely busy. So, I decided to take matters into my own hands and build a version that connects seamlessly with local Ollama models.<br/><br/>
-                          Despite having absolutely zero background in coding, I pushed through, learned as I went, and finally made it happen. Thank you for using it.
-                        </>
-                      )}
-                    </p>
-
-                    <div className="rwa-about-footer">
-                      <span className="rwa-about-status">{vi ? 'Tương thích Marinara Engine' : 'Marinara Engine compatible'}</span>
-                    </div>
-                  </div>
-                </div>
+                <AboutPanel vi={vi} />
               ) : (
                 <>
                   {activeTab === 'profiles' && <TabProfiles openEditProfile={openEditProfile} scrollContainerRef={bodyRef} />}

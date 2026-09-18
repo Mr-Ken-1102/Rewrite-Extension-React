@@ -1041,10 +1041,75 @@ export const RWA_WORLDCLASS_CSS = `
   font-weight: 650;
 }
 
+.rwa-about-section { min-width: 0; }
+.rwa-about-section-kicker {
+  margin-bottom: 6px;
+  color: var(--rwa-brand);
+  font-size: 8.5px;
+  line-height: 1;
+  font-weight: 820;
+  letter-spacing: .11em;
+}
+.rwa-about-section-title {
+  margin: 0;
+  color: var(--rwa-wc-text);
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 740;
+}
+.rwa-about-section-note {
+  margin: 6px 0 12px;
+  color: var(--rwa-wc-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+.rwa-about-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 8px;
+}
+.rwa-about-feature-card,
+.rwa-about-credit-card {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(255,255,255,.065);
+  border-radius: 9px;
+  background: rgba(255,255,255,.016);
+}
+.rwa-about-feature-card strong,
+.rwa-about-credit-card strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--rwa-wc-text-2);
+  font-size: 10.5px;
+  line-height: 1.25;
+  font-weight: 720;
+}
+.rwa-about-feature-card span,
+.rwa-about-credit-card p {
+  margin: 0;
+  color: var(--rwa-wc-muted);
+  font-size: 9.7px;
+  line-height: 1.5;
+}
+.rwa-about-credit-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.rwa-about-credit-special {
+  border-color: rgba(255,176,32,.19);
+  background: rgba(255,176,32,.035);
+}
+.rwa-about-credit-special strong { color: var(--rwa-brand); }
+
+
 /* --------------------------------------------------------------------------
    Responsive behavior
    -------------------------------------------------------------------------- */
 @media (max-width: 760px) {
+  .rwa-about-feature-grid { grid-template-columns: 1fr; }
+
   .rwa-settings-win {
     width: calc(100vw - 16px) !important;
     max-width: calc(100vw - 16px) !important;
