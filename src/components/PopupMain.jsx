@@ -40,7 +40,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const msgHistory = usePersistentStore((state) => state.history[historyKey]) || EMPTY_HISTORY;
   const autoProfileBucket = usePersistentStore((state) => selection?.cid ? state.autoProfiles?.[selection.cid] || null : null);
   const popupPosition = useRuntimeStore((state) => state.popupPosition);
-  const isProcessing = useRuntimeStore((state) => state.isProcessing);
   const popupRef = useRef(null);
   const tooltipRef = useRef(null);
   const language = config.uiLanguage === 'vi' ? 'vi' : 'en';
