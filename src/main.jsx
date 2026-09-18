@@ -76,6 +76,10 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
     hostElement.id = 'rwa-shadow-host';
     hostElement.style.cssText = 'position:fixed!important;top:0;left:0;width:0;height:0;overflow:visible;z-index:2147483647;display:block;';
     hostElement.className = `${document.documentElement.className || ''} ${document.body.className || ''}`.trim();
+    const marinaraFont = globalThis.getComputedStyle?.(document.body)?.fontFamily
+      || globalThis.getComputedStyle?.(document.documentElement)?.fontFamily
+      || 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    hostElement.style.setProperty('--rwa-host-font', marinaraFont);
     document.body.appendChild(hostElement);
 
     shadowRoot = hostElement.attachShadow({ mode: 'closed' });
