@@ -22,15 +22,15 @@ export function RewriteSection({
     : '';
 
   return (
-    <section className="rwa2-rewrite" aria-label={text('Rewrite commands', 'Lệnh viết lại')}>
+    <section className="rwa2-rewrite" aria-label={text('Rewrite commands', 'Thiết lập viết lại')}>
       <div className="rwa2-section-head">
         <div>
           <div className="rwa2-kicker">Rewrite</div>
-          <div className="rwa2-section-title">{text('Choose a style', 'Chọn kiểu viết')}</div>
+          <div className="rwa2-section-title">{text('Choose a style', 'Thiết lập sẵn')}</div>
         </div>
         <div className="rwa2-section-meta">
           {vi
-            ? `${profiles.length} kiểu · cuộn hoặc gõ để tìm`
+            ? `${profiles.length} thiết lập · cuộn hoặc gõ để tìm`
             : `${profiles.length} ${profiles.length === 1 ? 'style' : 'styles'} · scroll or type`}
         </div>
       </div>
