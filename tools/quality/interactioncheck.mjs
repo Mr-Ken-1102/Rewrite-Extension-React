@@ -88,7 +88,7 @@ ok('popup switches have switch semantics and every icon-only switch is named', (
   assert.match(toggle, /role="switch"/);
   assert.match(toggle, /aria-label=\{ariaLabel\}/);
   assert.match(context, /ariaLabel=\{text\('Enable rewrite length adjustment', 'Bật điều chỉnh độ dài viết lại'\)\}/);
-  assert.match(context, /role="group" aria-label=\{text\('Persistent context sources', 'Nguồn ngữ cảnh cố định'\)\}/);
+  assert.match(context, /role="group" aria-label=\{text\('Persistent context sources', 'Nguồn ngữ cảnh'\)\}/);
   assert.match(context, /role="group" aria-label=\{text\('Sources for this rewrite only', 'Nguồn chỉ dùng cho lần viết lại này'\)\}/);
 });
 
