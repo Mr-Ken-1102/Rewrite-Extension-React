@@ -27,7 +27,7 @@ assert.doesNotMatch(modal, />Cancel<\/Button>/);
 assert.doesNotMatch(modal, />OK<\/Button>/);
 assert.match(modal, /rwas-page-actions/);
 assert.match(modal, /\+ Add Style/);
-assert.match(modal, /\+ Thêm style/);
+assert.match(modal, /\+ Thêm thiết lập/);
 assert.match(modal, /AI Architect/);
 assert.doesNotMatch(modal, /useGlowPointer/);
 
@@ -89,7 +89,7 @@ assert.doesNotMatch(ui, /Clean Data|Reset Rewrite Assistant data/);
 assert.match(ui, /Behavior & Viewports/);
 assert.match(ui, /Hành vi & khung nhìn/);
 assert.match(ui, /Persona Reply launcher/);
-assert.match(ui, /Nút Trả lời Persona/);
+assert.match(ui, /Nút Trả lời theo Persona/);
 assert.match(ui, /draftReplyLauncherPlacement/);
 assert.match(ui, /Auto — follow composer/);
 assert.match(ui, /Tự động — bám ô nhập/);
@@ -110,7 +110,7 @@ assert.match(data, /usePersistentStore\.persist\.clearStorage/);
 assert.match(data, /STORAGE_KEY/);
 assert.match(data, /LEGACY_BACKUP_KEY/);
 assert.match(profiles, /Search profiles/);
-assert.match(profiles, /Tìm style/);
+assert.match(profiles, /Tìm thiết lập/);
 assert.doesNotMatch(`${context}\n${data}`, /rwa-glow-button/);
 
 assert.match(api, /Diagnose LAN access/);
@@ -142,3 +142,6 @@ assert.match(schema, /\['auto', 'remember'\]\.includes\(input\.draftReplyLaunche
 assert.match(schema, /DRAFT_REPLY_CHAT_MODES\s*=\s*\['roleplay', 'conversation', 'game'\]/);
 
 console.log('settingscheck: isolated bilingual settings shell/semantics/information-architecture contract passed');
+
+assert.doesNotMatch(modal, /labelVi: 'Kiểu viết'/);
+assert.doesNotMatch(profiles, /Tìm style/);
