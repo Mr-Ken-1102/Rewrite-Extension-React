@@ -766,6 +766,37 @@ await ok('prompt budget drops previous-message history before higher-priority co
   }
 });
 
+await ok('rewrite output removes echoed rewrite_this delimiters before preview or apply', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      contextDepth: 0,
+      injectChar: false,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      useExtenderMemory: false,
+      speakerAware: false,
+      freeMode: false,
+      maxPromptChars: 32000,
+      connMode: 'sidecar',
+    };
+    h.api.APIService.runInference = async () => ({
+      result: '<rewrite_this>\nRewritten passage.\n</rewrite_this>',
+    });
+    const result = await h.api.APIService.fetchAIResponse(
+      { prompt: 'Improve clarity.' },
+      { cid: 'chat-1', mid: 'm1', text: 'Original passage.', source: 'textarea', originalValue: 'Original passage.', start: 0, end: 17 },
+      new AbortController().signal,
+    );
+    assert.equal(result.result, 'Rewritten passage.');
+    assert.doesNotMatch(result.result, /rewrite_this/);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+
 await ok('one-shot context exclusions prevent excluded context reads without changing persisted settings', async () => {
   const h = await loadApiHarness();
   try {
