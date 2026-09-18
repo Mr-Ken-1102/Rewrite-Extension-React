@@ -1,27 +1,27 @@
 import { useMemo } from 'react';
 
 export function useContextPresentation({ activeRole, config, tokenInfo, text }) {
-  const characterNames = tokenInfo.identities?.characterNames || [];
-  const personaNames = tokenInfo.identities?.personaNames || [];
-  const characterLabel = characterNames.length
-    ? `Char: ${characterNames.join(' · ')}`
-    : text('Character', 'Nhân vật');
-  const personaLabel = personaNames.length
-    ? `Persona: ${personaNames.join(' · ')}`
-    : 'Persona';
+  const characterNameText = Array.isArray(tokenInfo.identities?.characterNames)
+    ? tokenInfo.identities.characterNames.join(' · ')
+    : '';
+  const personaNameText = Array.isArray(tokenInfo.identities?.personaNames)
+    ? tokenInfo.identities.personaNames.join(' · ')
+    : '';
+  const characterLabel = characterNameText ? `Char: ${characterNameText}` : text('Character', 'Nhân vật');
+  const personaLabel = personaNameText ? `Persona: ${personaNameText}` : 'Persona';
 
   const radar = useMemo(() => {
     if (config.freeMode) return { radarText: text('✨ Free Mode', '✨ Chế độ tự do'), radarColor: 'var(--rwa2-brand)' };
     if (activeRole === 'user') return {
-      radarText: personaNames.length ? `✍️ Persona: ${personaNames.join(' · ')}` : text('✍️ User Persona', '✍️ Persona người dùng'),
+      radarText: personaNameText ? `✍️ Persona: ${personaNameText}` : text('✍️ User Persona', '✍️ Persona người dùng'),
       radarColor: 'var(--rwa2-positive)',
     };
     if (activeRole === 'assistant') return {
-      radarText: characterNames.length ? `🤖 Char: ${characterNames.join(' · ')}` : text('🤖 Character Card', '🤖 Thẻ nhân vật'),
+      radarText: characterNameText ? `🤖 Char: ${characterNameText}` : text('🤖 Character Card', '🤖 Thẻ nhân vật'),
       radarColor: 'var(--rwa2-brand)',
     };
     return { radarText: text('❓ System Context', '❓ Ngữ cảnh hệ thống'), radarColor: 'var(--rwa2-text-2)' };
-  }, [activeRole, characterNames, config.freeMode, personaNames, text]);
+  }, [activeRole, characterNameText, config.freeMode, personaNameText, text]);
 
   const contextSources = useMemo(() => {
     const sources = [];
