@@ -34,6 +34,14 @@ assert.match(edit, /disabled=\{!name\.trim\(\) \|\| !prompt\.trim\(\)\}/);
 const ledger = read('./src/components/modals/LedgerModal.jsx');
 assert.match(ledger, /role="status" aria-live="polite"/);
 
+const architect = read('./src/components/modals/AIArchitectModal.jsx');
+assert.match(architect, /rwa-architect-status/);
+assert.match(architect, /isGenerating && \(/);
+assert.match(architect, /rwa-activity-rail/);
+assert.match(architect, /rwa-activity-runner/);
+assert.match(architect, /Analyzing structure and drafting the preset/);
+assert.match(architect, /Working…/);
+
 const preview = read('./src/components/modals/PreviewModal.jsx');
 assert.match(preview, /partialResult/);
 assert.match(preview, /Live result/);
