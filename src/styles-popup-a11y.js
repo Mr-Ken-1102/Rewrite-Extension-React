@@ -10,22 +10,31 @@ export const RWA_POPUP_A11Y_CSS = `
 .rwa2-chip,
 .rwa2-control-label,
 .rwa2-length-value {
-  font-size: 10px !important;
+  font-size: 11px !important;
 }
 
 .rwa2-profile-name {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .rwa2-token-status {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.2;
 }
 
 .rwa2-chip {
-  min-height: 24px;
-  padding: 0 7px;
+  min-height: 26px;
+  padding: 0 8px;
 }
+
+/* Readability calibration only: preserve the popup typeface and hierarchy,
+   while lifting the smallest labels one step above the previous 9.5–11px range. */
+.rwa2-brand-title { font-size: 12.5px; }
+.rwa2-section-title { font-size: 12.5px; }
+.rwa2-popup .rwa2-auto-profile,
+.rwa2-popup .rwa2-action { font-size: 11.5px !important; }
+.rwa2-multi-notice { font-size: 11px; }
+.rwa2-tooltip { font-size: 11px; line-height: 1.45; }
 
 .rwa2-popup :is(
   .rwa2-icon-button,
