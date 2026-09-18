@@ -1,34 +1,74 @@
 import { useEffect, useState } from 'react';
 import { APIService } from '../services/apiService';
 
+function contextSelectionKey(selection) {
+  if (!selection?.text) return '';
+  if (selection.captureId) return String(selection.captureId);
+  return [selection.cid || '', selection.mid || '', selection.text].join('\u0000');
+}
+
 export function useContextInspector(selection, rewriteSelection, config) {
-  const [tokenInfo, setTokenInfo] = useState({ loading: false, parts: null, identities: null, error: '' });
+  const selectionKey = contextSelectionKey(selection);
+  const [tokenInfo, setTokenInfo] = useState({
+    loading: false,
+    parts: null,
+    identities: null,
+    error: '',
+    selectionKey: '',
+  });
 
   useEffect(() => {
     if (!selection?.text) {
-      setTokenInfo({ loading: false, parts: null, identities: null, error: '' });
+      setTokenInfo({ loading: false, parts: null, identities: null, error: '', selectionKey: '' });
       return undefined;
     }
     const controller = new AbortController();
     const oneShot = rewriteSelection();
-    setTokenInfo((current) => ({ ...current, loading: true, identities: null, error: '' }));
+    setTokenInfo((current) => {
+      const sameSelection = current.selectionKey === selectionKey;
+      return {
+        loading: true,
+        parts: sameSelection ? current.parts : null,
+        identities: sameSelection ? current.identities : null,
+        error: '',
+        selectionKey,
+      };
+    });
     APIService.inspectContext(oneShot, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) return;
-        if (result?.error) setTokenInfo({ loading: false, parts: null, identities: null, error: result.error });
-        else if (!result?.aborted) setTokenInfo({
-          loading: false,
-          parts: result?.parts || null,
-          identities: result?.identities || null,
-          error: '',
-        });
+        if (result?.error) {
+          setTokenInfo((current) => ({
+            loading: false,
+            parts: current.selectionKey === selectionKey ? current.parts : null,
+            identities: current.selectionKey === selectionKey ? current.identities : null,
+            error: result.error,
+            selectionKey,
+          }));
+        } else if (!result?.aborted) {
+          setTokenInfo({
+            loading: false,
+            parts: result?.parts || null,
+            identities: result?.identities || null,
+            error: '',
+            selectionKey,
+          });
+        }
       })
       .catch((error) => {
-        if (!controller.signal.aborted) setTokenInfo({ loading: false, parts: null, identities: null, error: error?.message || String(error) });
+        if (controller.signal.aborted) return;
+        setTokenInfo((current) => ({
+          loading: false,
+          parts: current.selectionKey === selectionKey ? current.parts : null,
+          identities: current.selectionKey === selectionKey ? current.identities : null,
+          error: error?.message || String(error),
+          selectionKey,
+        }));
       });
     return () => controller.abort();
   }, [
     rewriteSelection,
+    selectionKey,
     selection?.captureId,
     selection?.text,
     config.contextDepth,
@@ -43,5 +83,8 @@ export function useContextInspector(selection, rewriteSelection, config) {
     config.charCardIds,
   ]);
 
+  if (tokenInfo.selectionKey !== selectionKey) {
+    return { loading: !!selectionKey, parts: null, identities: null, error: '' };
+  }
   return tokenInfo;
 }
