@@ -2,11 +2,13 @@
 
 ## Certified baselines
 
-Rewrite Assistant v3.0.2 is cross-checked against **Marinara Engine v2.4.4 and v2.4.6**.
+Rewrite Assistant v3.0.3 is cross-checked against **Marinara Engine v2.4.4 and v2.4.6**.
 
-v3.0.2 additionally certifies exact selected-message Character targeting, identity-scoped Voice Profiles, and active-Persona Draft Reply against the same Engine contracts. Draft Reply uses Marinara chat/Persona metadata and the existing composer hook; it adds no automatic send API or new destructive message route.
+v3.0.3 retains the v3.0.2 exact selected-message Character targeting, identity-scoped Voice Profiles, and active-Persona Draft Reply guarantees, and additionally certifies Persona Reply UI integration across Marinara Roleplay, Conversation, and Game layouts. It adds no automatic send API or new destructive message route.
 
 The v2.4.6 audit additionally covers character-backed user identity (`chat.personaCharacterId`) and historical `personaSnapshot.source` metadata. Rewrite Assistant resolves `source: "character"` through the Character endpoint while retaining the v2.4.4 legacy interpretation for snapshots that do not carry a source field.
+
+Marinara Engine v2.4.6 currently marks Roleplay and Conversation composers with `data-chat-composer="true"`, while GameInput exposes its textarea only inside a `data-chat-resource-drop-exclude` region. Rewrite Assistant therefore uses the explicit composer marker first and a narrowly scoped Game-only fallback rather than a generic page textarea search.
 
 The compatibility checker validates these contracts directly from an Engine source tree:
 
@@ -20,6 +22,8 @@ The compatibility checker validates these contracts directly from an Engine sour
 - `/generate/raw` explicit aborted-response contract.
 - `/sidecar/tracker` 16,000-character limits.
 - `data-message-id`, `.mari-message-content`, `data-chat-composer="true"`, and active-chat storage hooks.
+- Chat layout mode roots: `data-chat-mode="roleplay"`, `data-chat-mode="conversation"`, and `data-chat-mode="game"`.
+- Roleplay/Conversation composer resource shells and the v2.4.6 GameInput resource shell/textarea fallback used for Persona Reply anchoring.
 - Personal Extension private-storage quota of 1,000,000 bytes.
 - Chat API normalization of `characterIds`.
 - Message sender `characterId` and historical user `personaSnapshot` metadata.
