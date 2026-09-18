@@ -30,6 +30,7 @@ export default function App() {
     reviewLedger,
     closeLedger,
   } = useRewriteSession(setActiveModal);
+  const settingsLayerVisible = ['settings', 'editProfile', 'aiArchitect'].includes(activeModal);
 
   return (
     <>
@@ -41,14 +42,18 @@ export default function App() {
           onOpenCustom={() => setActiveModal('custom')}
         />
       )}
-      {activeModal === 'settings' && (
+      {settingsLayerVisible && (
         <SettingsModal
+          suspended={activeModal !== 'settings'}
           onClose={() => setActiveModal(null)}
           openEditProfile={(profile) => {
             setModalPayload({ profile, returnTo: 'settings' });
             setActiveModal('editProfile');
           }}
-          openAIArchitect={() => setActiveModal('aiArchitect')}
+          openAIArchitect={() => {
+            setModalPayload({ returnTo: 'settings' });
+            setActiveModal('aiArchitect');
+          }}
         />
       )}
       {activeModal === 'custom' && (
