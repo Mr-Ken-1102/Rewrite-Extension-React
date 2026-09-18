@@ -142,7 +142,7 @@ export const DOMUtils = {
       const occ = this.selectionOccurrence(range, mid, text);
       const messageEl = this.messageElementForMid(mid);
       const detectedRole = messageEl?.getAttribute?.('data-message-role') || null;
-      const detectedCharacterId = messageEl?.getAttribute?.('data-card-css') || null;
+      const detectedCharacterId = messageEl?.getAttribute?.('data-card-css') || messageEl?.querySelector?.('[data-card-css]')?.getAttribute?.('data-card-css') || null;
       const detectedName = messageEl?.querySelector?.('.mari-message-name')?.textContent?.trim?.() || null;
       segments.push({
         source: 'message',
