@@ -14,6 +14,13 @@ import {
   normalizeRewriteResult,
 } from './prompt/promptService.js';
 import { resolveAutoProfileCharacter } from './policies/contextPolicy.js';
+import { getMessagePersonaSnapshot } from '../utils/messageContext.js';
+import {
+  fingerprintVoiceReference,
+  getVoiceProfile,
+  makeVoiceIdentityKey,
+  voiceIdentityFromMessage,
+} from './voiceProfileIdentity.js';
 import { normalizeProviderFailure } from './policies/providerPolicy.js';
 
 /**
@@ -114,48 +121,120 @@ export class APIService {
     if (!chatId) return { error: 'No active chat.' };
     try {
       const config = usePersistentStore.getState().config;
-      const characters = await this.fetchChatCharacters(chatId, signal);
-      if (!characters.length) return { error: 'This chat has no character to profile.' };
-
       let targetMessage = null;
-      if (options?.messageId) targetMessage = (await this.getMessageInfo(chatId, options.messageId, signal)).message;
-      const preferredCharacterIds = options?.preferredCharacterIds ?? config.charCardIds;
-      const characterId = resolveAutoProfileCharacter({ preferredCharacterIds, targetMessage, chatCharacters: characters });
-      if (!characterId) {
-        return { error: 'This chat has multiple possible characters. Select exactly one Character in Context settings or run auto-profile from an assistant message with an authoritative character ID.' };
+      if (options?.messageId) {
+        targetMessage = (await this.getMessageInfo(chatId, options.messageId, signal)).message;
+        if (!targetMessage) return { error: 'The selected message is no longer available, so its voice identity cannot be resolved.' };
       }
-      const character = characters.find((item) => item.id === characterId) || { id: characterId, name: characterId };
-      const card = await this.fetchCharCard(chatId, signal, [characterId]);
-      if (!card) return { error: 'The character card does not contain enough information to generate a voice profile.' };
 
+      let identity = voiceIdentityFromMessage(targetMessage);
+      let reference = '';
+
+      if (identity?.kind === 'character') {
+        reference = await this.fetchCharCard(chatId, signal, [identity.id]);
+        if (!identity.name) {
+          const characters = await this.fetchChatCharacters(chatId, signal);
+          const found = characters.find((item) => item.id === identity.id);
+          if (found?.name) identity = { ...identity, name: found.name };
+        }
+      } else if (identity?.kind === 'persona') {
+        const snapshot = getMessagePersonaSnapshot(targetMessage);
+        reference = await this.fetchUserPersona(chatId, signal, snapshot);
+        if (!identity.name) {
+          const match = String(reference || '').match(/^Name:\s*(.+)$/mi);
+          if (match?.[1]) identity = { ...identity, name: match[1].trim().slice(0, 160) };
+        }
+      } else {
+        // Manual generation from Settings has no selected message. Keep the
+        // previous safe Character fallback: one explicitly selected Character,
+        // or the only Character in the chat. Never guess among a group.
+        const characters = await this.fetchChatCharacters(chatId, signal);
+        const preferredCharacterIds = options?.preferredCharacterIds ?? config.charCardIds;
+        const characterId = resolveAutoProfileCharacter({
+          preferredCharacterIds,
+          targetMessage: null,
+          chatCharacters: characters,
+        });
+        if (!characterId) {
+          return {
+            error: 'No unambiguous voice identity is available. Select text from a Character/Persona message, or choose exactly one Character in Context settings.',
+          };
+        }
+        const character = characters.find((item) => item.id === characterId) || { id: characterId, name: characterId };
+        identity = {
+          kind: 'character',
+          source: 'character',
+          id: characterId,
+          name: character.name || characterId,
+        };
+        identity = { ...identity, key: makeVoiceIdentityKey(identity), weak: false };
+        reference = await this.fetchCharCard(chatId, signal, [characterId]);
+      }
+
+      if (!identity?.key) return { error: 'The selected message does not contain a stable Character or Persona identity.' };
+      if (options?.expectedIdentityKey && options.expectedIdentityKey !== identity.key) {
+        return { error: 'The selected message identity changed while the voice profile was being prepared. Re-select the text and try again.' };
+      }
+      if (!reference.trim()) {
+        return {
+          error: identity.kind === 'persona'
+            ? 'The selected Persona does not contain enough profile information to generate a voice profile.'
+            : 'The selected Character card does not contain enough information to generate a voice profile.',
+        };
+      }
+
+      const sourceFingerprint = fingerprintVoiceReference(reference);
+      const existing = getVoiceProfile(usePersistentStore.getState().autoProfiles, chatId, identity.key);
+      if (!options?.force && existing?.sourceFingerprint === sourceFingerprint) {
+        return { profile: existing, identity, reused: true, sourceFingerprint };
+      }
+
+      const label = identity.kind === 'persona' ? 'Persona' : 'Character';
       const response = await this.runInference(
-        'Output ONLY a valid JSON object with "name" (1-3 words) and "prompt" (one precise instruction to rewrite text in this character voice). No markdown fences or commentary.',
-        `Character reference:\n${card.slice(0, 3000)}`,
+        `Create one reusable rewrite voice profile for the supplied ${label}. Output ONLY a valid JSON object with "name" (1-3 words) and "prompt" (one precise instruction describing how to rewrite prose in this identity's voice). Preserve the identity's language, register, cadence, temperament, and stylistic habits. No markdown fences or commentary.`,
+        `${label} reference:\n${reference.slice(0, 3200)}`,
         signal,
         { chatId },
       );
       if (response?.aborted || response?.error) return response;
-      const raw = String(response.result || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+
+      const raw = String(response.result || '').trim().replace(/^\`\`\`(?:json)?\s*/i, '').replace(/\s*\`\`\`$/i, '');
       let data;
-      try { data = JSON.parse(raw); } catch { return { error: 'Auto-profile model response was not valid JSON.' }; }
+      try { data = JSON.parse(raw); } catch { return { error: 'Voice-profile model response was not valid JSON.' }; }
       if (typeof data?.name !== 'string' || typeof data?.prompt !== 'string' || !data.prompt.trim()) {
-        return { error: 'Auto-profile response was missing name or prompt.' };
+        return { error: 'Voice-profile response was missing name or prompt.' };
       }
+
+      const safeIdentityName = String(identity.name || identity.id || label).trim().slice(0, 160);
       const profile = {
-        id: `auto-${chatId}`,
-        name: data.name.trim().slice(0, 80) || `${character.name} Voice`,
+        id: `auto-${identity.kind}-${String(identity.id).slice(0, 100)}`,
+        name: data.name.trim().slice(0, 80) || `${safeIdentityName} Voice`,
         prompt: data.prompt.trim().slice(0, 5000),
         order: -1,
         auto: true,
+        identityKind: identity.kind,
+        identitySource: identity.source,
+        identityId: String(identity.id).slice(0, 220),
+        identityName: safeIdentityName,
+        identityKey: identity.key,
+        sourceFingerprint,
       };
-      usePersistentStore.getState().setAutoProfile(chatId, profile);
-      debugLogService.add('auto_profile.generated', { chatId, characterId, name: profile.name });
-      return { profile, characterId };
+      usePersistentStore.getState().setAutoProfile(chatId, identity.key, profile);
+      debugLogService.add('auto_profile.generated', {
+        chatId,
+        identityKind: identity.kind,
+        identityId: identity.id,
+        identityName: safeIdentityName,
+        sourceFingerprint,
+        name: profile.name,
+      });
+      return { profile, identity, reused: false, sourceFingerprint };
     } catch (err) {
       if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
       return normalizeProviderFailure(err);
     }
   }
+
 }
 
 export { REWRITE_SYSTEM_PROMPT, REWRITE_SYSTEM_PROMPT_CONCISE, rewriteSystemPrompt, escFence };
