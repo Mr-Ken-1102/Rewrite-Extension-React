@@ -326,7 +326,7 @@ export const RWA_WORLDCLASS_CSS = `
   border-radius: 50%;
   background: transparent;
   color: var(--rwa-wc-muted);
-  font: 700 10px/1 system-ui, sans-serif;
+  font: 700 10px/1 var(--rwa-host-font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   cursor: help;
   opacity: .78 !important;
   filter: none !important;
