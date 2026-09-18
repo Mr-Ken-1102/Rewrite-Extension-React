@@ -1037,7 +1037,10 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.doesNotMatch(context.slice(context.indexOf('function buildVoiceReference'), context.indexOf('export class ContextService')), /system_prompt|post_history_instructions/);
   assert.match(coordinator, /resolved\.selectionKey === selectionKey/);
   assert.match(coordinator, /targetMessage: message/);
-  assert.match(hook, /targetMessage,/);
+  assert.match(hook, /const targetMessageRef = useRef\(targetMessage\)/);
+  assert.match(hook, /targetMessageRef\.current = targetMessage/);
+  assert.match(hook, /targetMessage: targetMessageRef\.current/);
+  assert.doesNotMatch(hook.slice(hook.indexOf('  }, ['), hook.lastIndexOf(']);') + 3), /targetMessage,/);
   assert.match(hook, /expectedIdentityKey: identityKey/);
   assert.match(hook, /PROFILE_REVALIDATE_MS/);
   assert.match(hook, /PROFILE_REVALIDATE_MS - \(now - lastValidated\)/);

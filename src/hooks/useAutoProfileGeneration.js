@@ -16,7 +16,9 @@ export function useAutoProfileGeneration({
   const attemptsRef = useRef(new Map());
   const validatedRef = useRef(new Map());
   const profileRef = useRef(profile);
+  const targetMessageRef = useRef(targetMessage);
   profileRef.current = profile;
+  targetMessageRef.current = targetMessage;
   const [retryTick, setRetryTick] = useState(0);
 
   useEffect(() => {
@@ -55,7 +57,7 @@ export function useAutoProfileGeneration({
     attempts.set(runKey, { state: 'running', at: now });
     APIService.generateAutoProfile(cid, controller.signal, {
       messageId: selection?.mid,
-      targetMessage,
+      targetMessage: targetMessageRef.current,
       expectedIdentityKey: identityKey,
       preferredCharacterIds: config.charCardIds,
     }).then((result) => {
@@ -100,6 +102,5 @@ export function useAutoProfileGeneration({
     selection?.cid,
     selection?.mid,
     showToast,
-    targetMessage,
   ]);
 }
