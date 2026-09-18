@@ -135,12 +135,15 @@ ok('no persisted undo history in Zustand partialize', () => {
 });
 
 
-ok('new installs are privacy-minimal by default', () => {
+ok('new installs keep identity context opt-in while using the requested layout/history defaults', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
+  assert.match(schema, /cols:\s*4/);
+  assert.match(schema, /rows:\s*4/);
+  assert.match(schema, /historyDepth:\s*1/);
+  assert.match(schema, /contextDepth:\s*1/);
   assert.match(schema, /injectChar:\s*false/);
   assert.match(schema, /injectUser:\s*false/);
   assert.match(schema, /injectLorebook:\s*false/);
-  assert.match(schema, /contextDepth:\s*0/);
   assert.match(schema, /useExtenderMemory:\s*false/);
   assert.match(schema, /autoProfileEnabled:\s*false/);
 });
@@ -267,10 +270,13 @@ ok('sidecar limit is enforced at the provider boundary too', () => {
   assert.match(provider, /systemPrompt\.length > 16000 \|\| userPrompt\.length > 16000/);
 });
 
-ok('only the active settings layer is rendered as a modal', () => {
+ok('settings remains mounted and inert behind child dialogs to avoid compositor flashing', () => {
   const app = readFileSync('./src/App.jsx', 'utf8');
-  assert.match(app, /activeModal === 'settings'/);
-  assert.doesNotMatch(app, /\['settings', 'editProfile', 'aiArchitect'\]\.includes\(activeModal\)/);
+  const settings = readFileSync('./src/components/modals/SettingsModal.jsx', 'utf8');
+  assert.match(app, /\['settings', 'editProfile', 'aiArchitect'\]\.includes\(activeModal\)/);
+  assert.match(app, /suspended=\{activeModal !== 'settings'\}/);
+  assert.match(settings, /useDialogFocusTrap\(dialogRef, onClose, !suspended\)/);
+  assert.match(settings, /inert=\{suspended \? true : undefined\}/);
 });
 
 ok('clipboard fallback always removes its temporary textarea', () => {
@@ -285,14 +291,18 @@ ok('modern Marinara API fetch fails closed on HTTP errors', () => {
   assert.match(host, /const normalizedPath = path\.startsWith\('\/api\/'\) \? path\.slice\(4\) : path/);
 });
 
-ok('Marinara connection ids are revalidated without silent provider switching', () => {
+ok('Marinara routing is explicit, fail-closed, and never silently switches providers', () => {
   const provider = readFileSync('./src/services/providers/providerService.js', 'utf8');
   const tab = readFileSync('./src/components/modals/settings/TabAPI.jsx', 'utf8');
-  assert.match(provider, /list\.some\(\(item\) => item\.id === config\.connectionId\)/);
-  assert.match(provider, /if \(config\.connectionId\) usePersistentStore\.getState\(\)\.updateConfig\(\{ connectionId: '' \}\)/);
+  const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
+  assert.match(schema, /marinaraRouting:\s*'chat'/);
+  assert.match(provider, /config\.marinaraRouting === 'fixed' \? 'fixed' : 'chat'/);
+  assert.match(provider, /source: 'fixed'/);
+  assert.match(provider, /source: 'chat'/);
   assert.doesNotMatch(provider, /const first = list\[0\]\.id/);
-  assert.match(tab, /if \(config\.connectionId && !stillExists\) updateConfig\(\{ connectionId: '' \}\)/);
-  assert.doesNotMatch(tab, /connectionId: list\[0\]\?\.id/);
+  assert.match(tab, /Follow current chat \(default\)/);
+  assert.match(tab, /Use a specific Marinara connection/);
+  assert.match(tab, /value=\{config\.connectionId \|\| ''\}/);
 });
 
 ok('temperature zero is preserved in settings and provider payload', () => {
@@ -565,7 +575,7 @@ ok('parity part 2 adds context management without weakening provider trust', () 
   assert.match(contextTab, /CHARACTER CONTEXT PICKER/);
   assert.match(dataTab, /PORTABLE EXPORT \/ IMPORT/);
   assert.match(portable, /ROUTING_KEYS/);
-  assert.match(portable, /'connMode'.*'connectionId'.*'ollamaUrl'.*'ollamaModel'.*'extenderUrl'/s);
+  assert.match(portable, /'connMode'.*'marinaraRouting'.*'connectionId'.*'ollamaUrl'.*'ollamaModel'.*'extenderUrl'/s);
   assert.doesNotMatch(debug, /localStorage|storage\.patch|persist/);
 });
 
