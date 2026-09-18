@@ -286,7 +286,7 @@ export class ProviderService {
       const resolved = await this.resolveMarinaraConnection(config, signal, override.chatId);
       if (resolved.error || !resolved.connectionId) return { error: resolved.error || 'No Marinara connection is available.' };
       const connectionId = resolved.connectionId;
-      const fastRewrite = config.fastRewrite !== false;
+      const fastRewrite = override.rewriteRequest === true && config.fastRewrite !== false;
       debugLogService.add('inference.connection', {
         mode,
         source: resolved.source,
