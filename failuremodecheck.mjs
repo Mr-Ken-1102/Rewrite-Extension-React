@@ -1533,7 +1533,7 @@ await ok('auto Voice Profile generation reuses the already-resolved message snap
       }
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async () => ({ result: '{"name":"Fast Voice","prompt":"Use a direct cadence."}' });
+    h.provider.ProviderService.runInference = async () => ({ result: '{"name":"Fast Voice","prompt":"Use a direct cadence."}' });
     const targetMessage = { id: 'm-fast', role: 'assistant', characterId: 'char-fast', characterName: 'Fast', content: 'x' };
     const result = await h.api.APIService.generateAutoProfile('chat-fast', new AbortController().signal, {
       messageId: 'm-fast',
@@ -1566,7 +1566,7 @@ await ok('Voice Profile generation discards a source that changes while inferenc
       }
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async () => ({ result: '{"name":"Race Voice","prompt":"Use the old source."}' });
+    h.provider.ProviderService.runInference = async () => ({ result: '{"name":"Race Voice","prompt":"Use the old source."}' });
 
     const result = await h.api.APIService.generateAutoProfile('race-chat', new AbortController().signal, {
       messageId: 'm-race',
@@ -1593,7 +1593,7 @@ await ok('Voice Profile generation never saves after cancellation even if infere
       throw new Error(`unexpected API call: ${path}`);
     };
     const controller = new AbortController();
-    h.api.APIService.runInference = async () => {
+    h.provider.ProviderService.runInference = async () => {
       controller.abort();
       return { result: '{"name":"Abort Voice","prompt":"Should never persist."}' };
     };
@@ -1620,7 +1620,7 @@ await ok('manual voice-profile generation remains fail-closed and writes an iden
       if (path === '/characters/char-9') return { id: 'char-9', name: 'Aster', data: { name: 'Aster', personality: 'precise and dry' } };
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async () => ({ result: '{"name":"Aster Voice","prompt":"Rewrite in Aster’s precise, dry voice."}' });
+    h.provider.ProviderService.runInference = async () => ({ result: '{"name":"Aster Voice","prompt":"Rewrite in Aster’s precise, dry voice."}' });
     const result = await h.api.APIService.generateAutoProfile('chat-9', new AbortController().signal);
     assert.equal(result.profile.name, 'Aster Voice');
     assert.equal(result.profile.auto, true);
@@ -1648,7 +1648,7 @@ await ok('group-chat Character voice profiles are keyed to the exact selected me
       if (path === '/characters/char-b') return { id: 'char-b', data: { name: 'Bianca', personality: 'playful' } };
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async (_system, user) => user.includes('Alice')
+    h.provider.ProviderService.runInference = async (_system, user) => user.includes('Alice')
       ? { result: '{"name":"Alice Voice","prompt":"Write with Alice cadence."}' }
       : { result: '{"name":"Bianca Voice","prompt":"Write with Bianca cadence."}' };
 
@@ -1688,7 +1688,7 @@ await ok('Persona voice profiles follow the historical Persona snapshot on each 
       if (path === '/characters/personas/p-detective') return { id: 'p-detective', data: { name: 'Detective Ken', description: 'terse investigative diction' } };
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async (_system, user) => user.includes('Detective Ken')
+    h.provider.ProviderService.runInference = async (_system, user) => user.includes('Detective Ken')
       ? { result: '{"name":"Detective Voice","prompt":"Use terse investigative diction."}' }
       : { result: '{"name":"Calm Voice","prompt":"Use quiet reflective diction."}' };
 
@@ -1721,7 +1721,7 @@ await ok('voice-profile source fingerprint reuses unchanged profiles and regener
       throw new Error(`unexpected API call: ${path}`);
     };
     let inferenceCalls = 0;
-    h.api.APIService.runInference = async () => {
+    h.provider.ProviderService.runInference = async () => {
       inferenceCalls += 1;
       return { result: `{"name":"FP Voice","prompt":"Voice revision ${inferenceCalls}."}` };
     };
