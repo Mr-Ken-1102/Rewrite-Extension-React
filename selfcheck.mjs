@@ -185,7 +185,10 @@ ok('Marinara v2.4.4 raw-generation payload stays schema-compatible', () => {
   assert.match(provider, /generateRaw:\s*['"]\/generate\/raw['"]/);
   assert.match(provider, /connectionId,/);
   assert.match(provider, /messages:\s*\[/);
-  assert.match(provider, /streaming:\s*false/);
+  assert.match(provider, /streaming:\s*true/);
+  assert.match(provider, /runId,/);
+  assert.match(provider, /generateRaw\}\/abort/);
+  assert.match(provider, /reasoningEffort:\s*null/);
   assert.doesNotMatch(provider, /max_tokens\s*:/);
 });
 
