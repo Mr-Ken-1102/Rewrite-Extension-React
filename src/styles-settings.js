@@ -34,6 +34,7 @@ export const RWA_SETTINGS_CSS = `
   border-radius: 16px !important;
   background: var(--rwas-bg) !important;
   color: var(--rwas-text-2);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   box-shadow: 0 24px 72px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.035) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -91,8 +92,8 @@ export const RWA_SETTINGS_CSS = `
   color: var(--rwas-text);
   font-size: 17px;
   line-height: 1;
-  font-weight: 720;
-  letter-spacing: -.01em;
+  font-weight: 730;
+  letter-spacing: -.012em;
 }
 
 .rwas-settings .rwas-close {
@@ -201,7 +202,7 @@ export const RWA_SETTINGS_CSS = `
   color: inherit;
   font-size: 12.5px;
   line-height: 1.15;
-  font-weight: 680;
+  font-weight: 690;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -258,7 +259,7 @@ export const RWA_SETTINGS_CSS = `
   color: var(--rwas-text);
   font-size: 20px;
   line-height: 1.15;
-  font-weight: 720;
+  font-weight: 740;
   letter-spacing: -.018em;
 }
 
@@ -352,16 +353,16 @@ export const RWA_SETTINGS_CSS = `
 .rwas-body .rwa-lbl { font-size: 11px !important; }
 .rwas-body :is(.rwa-form-row > span, .rwa-form-grid > span) { font-size: 12.5px !important; }
 .rwas-body .rwa-inp { font-size: 12px !important; }
-.rwas-body .rwa-prev { font-size: 11.5px !important; line-height: 1.5 !important; }
+.rwas-body .rwa-prev { font-size: 11.5px !important; }
 .rwas-body .rwa-btn { font-size: 11.5px !important; }
 .rwas-body .rwa-setting-toggle-row > div > div { font-size: 13px; }
-.rwas-body .rwa-setting-toggle-row small { font-size: 11px; line-height: 1.4; }
+.rwas-body .rwa-setting-toggle-row small { font-size: 11px; }
 .rwas-body .rwa-connection-eyebrow { font-size: 10px; }
 .rwas-body .rwa-connection-name { font-size: 13.5px; }
-.rwas-body .rwa-connection-note { font-size: 11.5px; line-height: 1.5; }
+.rwas-body .rwa-connection-note { font-size: 11.5px; }
 .rwas-body .rwa-api-preset strong { font-size: 11px; }
 .rwas-body .rwa-api-preset span { font-size: 10.5px; }
-.rwas-body .rwa-request-note { font-size: 10.75px; line-height: 1.45; }
+.rwas-body .rwa-request-note { font-size: 10.75px; }
 
 .rwas-settings :is(.rwas-close, .rwas-nav-btn, .rwas-page-actions .rwa-btn, .rwas-done):focus-visible {
   outline: 2px solid rgba(209,154,69,.72);
