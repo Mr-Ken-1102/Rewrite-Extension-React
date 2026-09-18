@@ -1656,9 +1656,11 @@ await ok('rewrite session controller drops a late superseded provider result', a
     controllerSource = replaceImport(controllerSource, './ledgerSessionController', './mockLedger.mjs');
     controllerSource = replaceImport(controllerSource, './applySessionController', './mockApply.mjs');
     controllerSource = replaceImport(controllerSource, './rewriteSelection', './rewriteSelection.mjs');
+    controllerSource = replaceImport(controllerSource, './rewriteStreaming', './rewriteStreaming.mjs');
     await writeFile(join(dir, 'controller.mjs'), controllerSource);
     await copyFile('./src/controllers/rewriteExecution.js', join(dir, 'rewriteExecution.mjs'));
     await copyFile('./src/controllers/rewriteSelection.js', join(dir, 'rewriteSelection.mjs'));
+    await copyFile('./src/controllers/rewriteStreaming.js', join(dir, 'rewriteStreaming.mjs'));
 
     await writeFile(join(dir, 'mockApi.mjs'), `
 export const control = { queue: [] };
