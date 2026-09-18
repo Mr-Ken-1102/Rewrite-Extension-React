@@ -48,6 +48,13 @@ import {
   isRewriteContextStartBoundary,
 } from '../../src/utils/messageContext.js';
 
+let passed = 0;
+function ok(name, fn) {
+  fn();
+  passed += 1;
+  console.log(`✓ ${name}`);
+}
+
 ok('repository structure keeps architecture docs out of the root', () => {
   assert.equal(existsSync('./PARITY-DESIGN-GUARDRAILS.md'), false);
   assert.equal(existsSync('./docs/architecture/PARITY-DESIGN-GUARDRAILS.md'), true);
@@ -61,12 +68,6 @@ ok('repository structure keeps architecture docs out of the root', () => {
   assert.match(readme, /Beoopo’s Marinara Rewrite/);
 });
 
-let passed = 0;
-function ok(name, fn) {
-  fn();
-  passed += 1;
-  console.log(`✓ ${name}`);
-}
 
 function spliceMapped(rendered, raw, start, end, replacement) {
   const span = mapRenderedSpanToRaw(rendered, raw, start, end);
