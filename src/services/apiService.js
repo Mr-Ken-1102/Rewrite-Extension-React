@@ -11,6 +11,7 @@ import {
   escFence,
   estimateTokens,
   rewriteSystemPrompt,
+  normalizeRewriteResult,
 } from './prompt/promptService.js';
 import { resolveAutoProfileCharacter } from './policies/contextPolicy.js';
 import { normalizeProviderFailure } from './policies/providerPolicy.js';
@@ -105,6 +106,7 @@ export class APIService {
       response = normalizeProviderFailure(err);
     }
     if (response?.error && !response.errorCode) response = { ...response, ...normalizeProviderFailure(response.error, response.error) };
+    if (typeof response?.result === 'string') response = { ...response, result: normalizeRewriteResult(response.result) };
     return { ...response, droppedContext: promptInfo.dropped };
   }
 
