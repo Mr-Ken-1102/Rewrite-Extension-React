@@ -11,6 +11,7 @@ tools/
   build/                  Build/release orchestration
   quality/                Regression, failure, fuzz, UX and Engine checks
 docs/
+  architecture/           Current design guardrails and architecture decisions
   audits/
     YYYY-MM-DD/           Historical audit reports grouped by date
 CHANGELOG.md              Current release history
@@ -26,9 +27,10 @@ README.md                 Product and development overview
 
 1. Runtime implementation belongs under `src/`.
 2. Executable test/build utilities belong under `tools/`, not the repository root.
-3. Historical audit snapshots belong under `docs/audits/<date>/`.
-4. Current release documentation remains in the root because it is part of the public project entry surface.
-5. Do not place generated `dist/`, installable JSON, temporary logs, local backups, or vendor Engine trees in source control.
-6. Repository reorganization must not change runtime behavior; all quality gates and Engine compatibility checks must pass after structural changes.
+3. Current architecture/design guardrails belong under `docs/architecture/`.
+4. Historical audit snapshots belong under `docs/audits/<date>/`.
+5. Current release documentation remains in the root because it is part of the public project entry surface.
+6. Do not place generated `dist/`, installable JSON, temporary logs, local backups, or vendor Engine trees in source control.
+7. Repository reorganization must not change runtime behavior; all quality gates and Engine compatibility checks must pass after structural changes.
 
 The pre-cleanup rollback point for the v3.0.2 reorganization is maintained separately on the dedicated Git backup branch created before this cleanup.
