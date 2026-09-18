@@ -992,20 +992,23 @@ export const RWA_WORLDCLASS_CSS = `
   display: grid;
   grid-template-columns: 44px minmax(0,1fr) auto;
   align-items: center;
-  gap: 12px;
+  gap: 13px;
+  min-height: 70px;
   padding: 12px 14px;
-  border: 1px solid var(--rwa-wc-border);
-  border-radius: 11px;
-  background: rgba(255,255,255,.018);
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,.013));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
 }
 .rwa-about-mark {
   width: 44px;
   height: 44px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 11px;
   color: #17120a;
   background: var(--rwa-brand);
+  box-shadow: 0 7px 18px rgba(0,0,0,.20);
   font-size: 13px;
   font-weight: 900;
   letter-spacing: .04em;
@@ -1017,137 +1020,224 @@ export const RWA_WORLDCLASS_CSS = `
   font-size: 14px;
   line-height: 1.2;
   font-weight: 760;
+  letter-spacing: -.01em;
 }
 .rwa-about-subtitle {
   margin: 0;
   color: var(--rwa-wc-muted);
-  font-size: 10.5px;
-  line-height: 1.4;
+  font-size: 10.4px;
+  line-height: 1.45;
 }
 .rwa-about-status {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 0 8px;
+  min-height: 25px;
+  padding: 0 9px;
   border: 1px solid rgba(5,196,107,.18);
   border-radius: 999px;
   color: rgba(150,235,190,.82);
   background: rgba(5,196,107,.035);
-  font-size: 9.3px;
-  font-weight: 650;
+  font-size: 9.2px;
+  font-weight: 680;
   white-space: nowrap;
 }
 
 .rwa-about-section {
   min-width: 0;
-  margin-top: 18px;
+  margin-top: 20px;
 }
 .rwa-about-section-kicker {
-  margin-bottom: 6px;
+  margin-bottom: 7px;
   color: var(--rwa-brand);
-  font-size: 8.5px;
+  font-size: 8.4px;
   line-height: 1;
   font-weight: 820;
-  letter-spacing: .11em;
+  letter-spacing: .12em;
 }
 .rwa-about-section-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 10px;
+  gap: 18px;
+  margin-bottom: 11px;
 }
 .rwa-about-section-title {
   margin: 0;
   color: var(--rwa-wc-text);
   font-size: 13.5px;
   line-height: 1.3;
-  font-weight: 740;
+  font-weight: 750;
+  letter-spacing: -.008em;
 }
 .rwa-about-section-note {
   margin: 4px 0 0;
   color: var(--rwa-wc-muted);
   font-size: 10px;
-  line-height: 1.45;
+  line-height: 1.48;
 }
 .rwa-about-baseline {
   flex: 0 0 auto;
-  min-height: 24px;
+  min-height: 25px;
   display: inline-flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 9px;
   border: 1px solid rgba(255,255,255,.075);
   border-radius: 999px;
-  background: rgba(255,255,255,.02);
+  background: rgba(255,255,255,.018);
   color: var(--rwa-wc-subtle);
   font-size: 9px;
-  font-weight: 650;
+  font-weight: 680;
   white-space: nowrap;
 }
 
 .rwa-about-evolution-list {
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.07);
-  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.072);
+  border-radius: 11px;
   background: rgba(255,255,255,.012);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.014);
 }
 .rwa-about-evolution-row {
   display: grid;
-  grid-template-columns: 32px 166px minmax(0,1fr);
+  grid-template-columns: 34px 170px minmax(0,1fr);
   align-items: start;
-  gap: 12px;
-  padding: 11px 12px;
+  gap: 13px;
+  min-height: 58px;
+  padding: 12px 13px;
 }
 .rwa-about-evolution-row + .rwa-about-evolution-row {
-  border-top: 1px solid rgba(255,255,255,.055);
+  border-top: 1px solid rgba(255,255,255,.052);
 }
 .rwa-about-evolution-index {
   color: var(--rwa-brand);
   font-size: 9px;
-  line-height: 1.45;
-  font-weight: 800;
-  letter-spacing: .06em;
+  line-height: 1.5;
+  font-weight: 820;
+  letter-spacing: .07em;
 }
 .rwa-about-evolution-title {
   color: var(--rwa-wc-text-2);
-  font-size: 10.5px;
-  line-height: 1.45;
-  font-weight: 720;
+  font-size: 10.6px;
+  line-height: 1.48;
+  font-weight: 730;
 }
 .rwa-about-evolution-detail {
   color: var(--rwa-wc-muted);
   font-size: 10px;
-  line-height: 1.5;
+  line-height: 1.52;
 }
 
-.rwa-credit-list {
+.rwa-credits-container {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+.rwa-credits-hero {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 7px;
+  padding: 18px 20px 16px;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% -20%, rgba(209,154,69,.11), transparent 48%),
+    linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,.012));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+}
+.rwa-credits-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 1px;
+  border-radius: 13px;
+  color: #17120a;
+  background: var(--rwa-brand);
+  box-shadow: 0 10px 24px rgba(0,0,0,.24);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+.rwa-credits-eyebrow {
+  color: var(--rwa-brand);
+  font-size: 8.5px;
+  line-height: 1;
+  font-weight: 820;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.rwa-credits-title {
+  margin: 1px 0 0;
+  color: var(--rwa-wc-text);
+  font-size: 14px;
+  line-height: 1.28;
+  font-weight: 760;
+  letter-spacing: -.01em;
+}
+.rwa-credits-note {
+  max-width: 540px;
+  margin: 0;
+  color: var(--rwa-wc-muted);
+  font-size: 10.2px;
+  line-height: 1.52;
+}
+
+.rwa-credit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  grid-auto-rows: 1fr;
+  gap: 12px;
+  align-items: stretch;
 }
 .rwa-credit-card {
+  position: relative;
   min-width: 0;
-  padding: 14px;
-  border: 1px solid rgba(255,255,255,.07);
-  border-radius: 10px;
-  background: rgba(255,255,255,.016);
+  height: 100%;
+  padding: 15px 16px 16px;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,.020), rgba(255,255,255,.012));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
+}
+.rwa-credit-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 15px;
+  right: 15px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent);
 }
 .rwa-credit-card-special {
-  border-color: rgba(255,176,32,.24);
-  background: rgba(255,176,32,.035);
+  border-color: rgba(209,154,69,.25);
+  background: linear-gradient(180deg, rgba(209,154,69,.055), rgba(209,154,69,.024));
 }
+.rwa-credit-card-special::before {
+  background: linear-gradient(90deg, transparent, rgba(209,154,69,.30), transparent);
+}
+.rwa-credit-label {
+  margin-bottom: 8px;
+  color: var(--rwa-wc-subtle);
+  font-size: 8.4px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .115em;
+  text-transform: uppercase;
+}
+.rwa-credit-card-special .rwa-credit-label { color: rgba(224,177,100,.72); }
 .rwa-credit-name {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   color: var(--rwa-wc-text-2);
-  font-size: 11px;
-  line-height: 1.3;
-  font-weight: 740;
+  font-size: 11.2px;
+  line-height: 1.32;
+  font-weight: 760;
 }
 .rwa-credit-card-special .rwa-credit-name { color: var(--rwa-brand); }
 .rwa-credit-card p {
   margin: 0;
   color: var(--rwa-wc-muted);
-  font-size: 10.2px;
-  line-height: 1.55;
+  font-size: 10.1px;
+  line-height: 1.58;
 }
 
 /* --------------------------------------------------------------------------
@@ -1172,6 +1262,13 @@ export const RWA_WORLDCLASS_CSS = `
   }
   .rwa-about-evolution-detail {
     grid-column: 2;
+  }
+  .rwa-credit-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+  .rwa-credits-hero {
+    padding: 16px 14px 14px;
   }
 
   .rwa-settings-win {
