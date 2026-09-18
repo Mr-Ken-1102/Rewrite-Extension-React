@@ -60,7 +60,7 @@ assert.match(about, /21\/06\/2026/);
 assert.match(about, /EVOLUTION_ROWS/);
 assert.equal((about.match(/detailVi:/g) || []).length, 4);
 assert.match(worldclass, /\.rwa-about-evolution-list/);
-assert.match(worldclass, /grid-template-columns:\s*32px 166px minmax\(0,1fr\)/);
+assert.match(worldclass, /grid-template-columns:\s*34px 170px minmax\(0,1fr\)/);
 assert.match(credits, /TCLowe1982 \/ HolyKnight3/);
 assert.match(credits, /Claude Code/);
 assert.match(credits, /12 múi giờ/);
