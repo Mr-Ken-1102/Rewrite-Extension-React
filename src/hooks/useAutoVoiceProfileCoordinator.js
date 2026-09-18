@@ -3,7 +3,7 @@ import { usePersistentStore } from '../store/usePersistentStore';
 import { useRuntimeStore } from '../store/useRuntimeStore';
 import { useToastStore } from '../store/useToastStore';
 import { APIService } from '../services/apiService';
-import { voiceIdentityFromMessage } from '../services/voiceProfileIdentity.js';
+import { voiceIdentityFromMessage, voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
 import { useAutoProfileGeneration } from './useAutoProfileGeneration';
 
 export function useAutoVoiceProfileCoordinator() {
@@ -16,8 +16,19 @@ export function useAutoVoiceProfileCoordinator() {
   const showToast = useToastStore((state) => state.showToast);
   const [resolved, setResolved] = useState({ selectionKey: '', identity: null, targetMessage: null });
   const selectionKey = selection?.cid && selection?.mid ? `${selection.cid}\u0000${selection.mid}` : '';
-  const identity = resolved.selectionKey === selectionKey ? resolved.identity : null;
-  const targetMessage = resolved.selectionKey === selectionKey ? resolved.targetMessage : null;
+  const domIdentity = voiceIdentityFromSelection(selection);
+  const resolvedIdentity = resolved.selectionKey === selectionKey ? resolved.identity : null;
+  const resolvedMessage = resolved.selectionKey === selectionKey ? resolved.targetMessage : null;
+  const identity = domIdentity || resolvedIdentity;
+  const targetMessage = domIdentity
+    ? {
+      id: selection?.mid,
+      role: 'assistant',
+      characterId: domIdentity.id,
+      characterName: domIdentity.name || undefined,
+      content: selection?.text || '',
+    }
+    : resolvedMessage;
 
   useEffect(() => {
     if (!config.autoProfileEnabled || !selection?.cid || !selection?.mid) {
