@@ -136,6 +136,7 @@ export class APIService {
 
       let identity = voiceIdentityFromMessage(targetMessage);
       let reference = '';
+      let personaSnapshot = null;
 
       if (identity?.kind === 'character') {
         reference = await this.fetchCharacterVoiceReference(identity.id, signal);
@@ -145,12 +146,10 @@ export class APIService {
           if (found?.name) identity = { ...identity, name: found.name };
         }
       } else if (identity?.kind === 'persona') {
-        const snapshot = getMessagePersonaSnapshot(targetMessage);
-        reference = await this.fetchPersonaVoiceReference(snapshot, signal);
-        if (!identity.name) {
-          const match = String(reference || '').match(/^Name:\s*(.+)$/mi);
-          if (match?.[1]) identity = { ...identity, name: match[1].trim().slice(0, 160) };
-        }
+        personaSnapshot = getMessagePersonaSnapshot(targetMessage);
+        const details = await ContextService.fetchPersonaIdentityDetails(personaSnapshot, signal);
+        reference = details?.reference || '';
+        if (!identity.name && details?.name) identity = { ...identity, name: details.name };
       } else {
         // Manual generation from Settings has no selected message. Keep the
         // previous safe Character fallback: one explicitly selected Character,
@@ -178,6 +177,7 @@ export class APIService {
         reference = await this.fetchCharacterVoiceReference(characterId, signal);
       }
 
+      if (signal?.aborted) return { aborted: true };
       if (!identity?.key) return { error: 'The selected message does not contain a stable Character or Persona identity.' };
       if (options?.expectedIdentityKey && options.expectedIdentityKey !== identity.key) {
         return { error: 'The selected message identity changed while the voice profile was being prepared. Re-select the text and try again.' };
@@ -193,6 +193,7 @@ export class APIService {
       const sourceFingerprint = fingerprintVoiceReference(reference);
       const existing = getVoiceProfile(usePersistentStore.getState().autoProfiles, chatId, identity.key);
       if (!options?.force && existing?.sourceFingerprint === sourceFingerprint) {
+        if (signal?.aborted) return { aborted: true };
         return { profile: existing, identity, reused: true, sourceFingerprint };
       }
 
@@ -203,7 +204,22 @@ export class APIService {
         signal,
         { chatId },
       );
-      if (response?.aborted || response?.error) return response;
+      if (signal?.aborted || response?.aborted) return { aborted: true };
+      if (response?.error) return response;
+
+      const latestReference = identity.kind === 'persona'
+        ? await this.fetchPersonaVoiceReference(personaSnapshot, signal)
+        : await this.fetchCharacterVoiceReference(identity.id, signal);
+      if (signal?.aborted) return { aborted: true };
+      if (!latestReference.trim()) {
+        return { error: 'The voice source became unavailable while the profile was being generated. Nothing was saved.' };
+      }
+      const latestFingerprint = fingerprintVoiceReference(latestReference);
+      if (latestFingerprint !== sourceFingerprint) {
+        return {
+          error: 'The Character/Persona source changed while its voice profile was being generated. The stale result was discarded; retry with the current source.',
+        };
+      }
 
       const raw = String(response.result || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
       let data;
@@ -226,6 +242,7 @@ export class APIService {
         identityKey: identity.key,
         sourceFingerprint,
       };
+      if (signal?.aborted) return { aborted: true };
       usePersistentStore.getState().setAutoProfile(chatId, identity.key, profile);
       debugLogService.add('auto_profile.generated', {
         chatId,
