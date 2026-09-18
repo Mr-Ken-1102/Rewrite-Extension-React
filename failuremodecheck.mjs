@@ -99,6 +99,10 @@ export const MarinaraHost = {
     control.calls.push({ kind: 'fetch', path, options, timeout });
     return control.fetchHandler(path, options, timeout);
   },
+  async fetchStreaming(path, options) {
+    control.calls.push({ kind: 'fetch-stream', path, options, timeout: null });
+    return control.fetchHandler(path, options, null);
+  },
   isAbortError(err) { return err?.name === 'AbortError' || err?.message === 'cancelled'; },
 };
 `);
