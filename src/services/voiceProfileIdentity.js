@@ -62,6 +62,13 @@ export function voiceIdentityFromMessage(message) {
   return null;
 }
 
+export function resolveVoiceIdentity(selection, message) {
+  // A browser selection points at the exact rendered Character segment the
+  // user highlighted. Prefer that DOM-bound identity over a later API snapshot
+  // so group-chat enrichment or stale message metadata cannot jump speakers.
+  return voiceIdentityFromSelection(selection) || voiceIdentityFromMessage(message);
+}
+
 export function getVoiceProfile(autoProfiles, chatId, identityKey) {
   if (!chatId || !identityKey || !autoProfiles || typeof autoProfiles !== 'object') return null;
   const bucket = autoProfiles[chatId];
