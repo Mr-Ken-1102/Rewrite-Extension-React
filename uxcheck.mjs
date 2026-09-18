@@ -117,24 +117,34 @@ ok('Marinara inference resolves the current chat connection before fallback', ()
   assert.match(source, /current chat references a Marinara connection that is no longer available/i);
 });
 
-ok('Marinara empty output retries once with reasoning disabled and emits a distinct error code', () => {
+ok('Marinara streaming preserves empty-output recovery without duplicating fast rewrites', () => {
   const source = read('./src/services/providers/providerService.js');
-  assert.match(source, /const requestRaw = \(parameters\) => MarinaraHost\.apiFetch/);
+  assert.match(source, /const requestRaw = async \(parameters = null\) =>/);
+  assert.match(source, /streaming:\s*true/);
+  assert.match(source, /runId,/);
+  assert.match(source, /readRawStream\(response, signal, override\.onProgress\)/);
   assert.match(source, /requestRaw\(\{ reasoningEffort: null \}\)/);
+  assert.match(source, /if \(!content\.trim\(\) && !fastRewrite\)/);
   assert.match(source, /inference\.empty_response/);
   assert.match(source, /RWA_PROVIDER_EMPTY_RESPONSE/);
-  assert.match(source, /retried once with reasoning disabled/i);
 });
 
 ok('rewrite and auto-profile inference carry chat identity to the provider', () => {
   const source = read('./src/services/apiService.js');
-  assert.match(source, /\{ chatId: savedSel\?\.cid \|\| '' \}/);
+  assert.match(source, /chatId: savedSel\?\.cid \|\| ''/);
+  assert.match(source, /onProgress: hooks\?\.onProgress/);
   assert.match(source, /\{ chatId \}/);
 });
 
-ok('Marinara timeout protects non-streaming cold-model requests', () => {
+ok('normal Marinara rewrites stream without a client deadline while explicit tests may stay bounded', () => {
   const source = read('./src/services/providers/providerService.js');
-  assert.match(source, /mode === 'marinara' \? Math\.max\(90000, configuredTimeout\)/);
+  const settings = read('./src/components/modals/settings/TabAPI.jsx');
+  assert.match(source, /marinaraTimeoutMs/);
+  assert.match(source, /Number\(override\.marinaraTimeoutMs\) \|\| 0/);
+  assert.match(source, /MarinaraHost\.fetch\(\`\/api\$\{ENDPOINTS\.generateRaw\}\`/);
+  assert.match(source, /\$\{ENDPOINTS\.generateRaw\}\/abort/);
+  assert.doesNotMatch(source, /Math\.max\(90000, configuredTimeout\)/);
+  assert.match(settings, /marinaraTimeoutMs:/);
 });
 
 ok('settings expose current-chat connection without duplicate model selection', () => {
