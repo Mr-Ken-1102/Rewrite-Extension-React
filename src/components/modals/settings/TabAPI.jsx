@@ -392,6 +392,13 @@ export const TabAPI = () => {
         </div>
         <ToggleSwitch checked={config.conciseSysPrompt} onChange={(value) => updateConfig({ conciseSysPrompt: value })} />
       </div>
+      <div className="rwa-setting-toggle-row">
+        <div>
+          <div>{t(language, 'Fast rewrite', 'Viết lại nhanh')}</div>
+          <small>{t(language, 'For Marinara connections, disable model reasoning for rewrite calls when the provider supports it. This keeps the chat model unchanged and usually reduces latency for line-editing tasks.', 'Với kết nối Marinara, tắt reasoning riêng cho request viết lại khi provider hỗ trợ. Model của chat không thay đổi và thường giảm đáng kể độ trễ cho tác vụ biên tập câu chữ.')}</small>
+        </div>
+        <ToggleSwitch checked={config.fastRewrite !== false} onChange={(value) => updateConfig({ fastRewrite: value })} />
+      </div>
 
       <div className="rwa-lbl rwa-settings-section-title">{t(language, 'REQUEST SAFETY', 'AN TOÀN REQUEST')}</div>
       <div className="rwa-form-grid">
@@ -401,7 +408,7 @@ export const TabAPI = () => {
         <input type="number" className="rwa-inp" min="8000" max="120000" step="1000" value={config.maxPromptChars || 32000} onChange={(event) => updateConfig({ maxPromptChars: Math.max(8000, Math.min(120000, Number(event.target.value) || 32000)) })} />
       </div>
       {config.connMode === 'marinara' && (
-        <div className="rwa-request-note">{t(language, 'Marinara /generate/raw uses at least a 90-second safety window for cold local models; this field can extend it further.', 'Marinara /generate/raw dùng tối thiểu 90 giây cho model cục bộ đang nguội; trường này có thể kéo dài thêm thời gian chờ.')}</div>
+        <div className="rwa-request-note">{t(language, 'Normal Marinara rewrites do not use a client-side deadline: the active chat provider is allowed to finish, while Cancel aborts the actual Marinara generation. The timeout field remains applicable to Direct API, Extender, Sidecar, and the connection test.', 'Rewrite bình thường qua Marinara không bị cắt bởi deadline phía extension: provider của chat được phép chạy đến khi hoàn tất, còn nút Hủy sẽ dừng generation thật trong Marinara. Trường timeout vẫn áp dụng cho Direct API, Extender, Sidecar và bài kiểm tra kết nối.')}</div>
       )}
 
       <Button glow={false} className="rwa-full-width" variant="rwa-accept" onClick={handleTest} disabled={busy}>
