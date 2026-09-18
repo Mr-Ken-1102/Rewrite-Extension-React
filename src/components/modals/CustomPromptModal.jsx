@@ -124,6 +124,15 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
         </Button>
       </div>
 
+      {isRefining && (
+        <div className="rwa-refine-status" role="status" aria-live="polite">
+          <div className="rwa-activity-rail" aria-hidden="true">
+            <span className="rwa-activity-runner"></span>
+          </div>
+          <span>Refining the instruction with the current model…</span>
+        </div>
+      )}
+
       {customs.length > 0 && (
         <>
           <div className="rwa-lbl">History Log (Custom Prompts)</div>
