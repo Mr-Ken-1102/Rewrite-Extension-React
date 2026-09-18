@@ -1,4 +1,4 @@
-export const STORE_VERSION = 5;
+export const STORE_VERSION = 6;
 
 export const DEFAULT_PROFILES = [
   { id: 'expand',      name: 'Expand',             order: 0,  prompt: 'Expand the passage with more descriptive detail, sensory imagery, and action. Add no new plot events.' },
@@ -30,6 +30,8 @@ export const DEFAULT_CONFIG = {
   historyDepth: 5,
   compact: false,
   conciseSysPrompt: false,
+  fastRewrite: false,
+  marinaraTimeoutMs: 0,
   localContextEnabled: false,
   localContextWords: 150,
   injectChar: false,
@@ -99,6 +101,8 @@ export function sanitizeConfig(value, legacyVersion = STORE_VERSION) {
     historyDepth: Math.trunc(clampNumber(input.historyDepth, 1, 20, DEFAULT_CONFIG.historyDepth)),
     compact: cleanBoolean(input.compact, DEFAULT_CONFIG.compact),
     conciseSysPrompt: cleanBoolean(input.conciseSysPrompt, DEFAULT_CONFIG.conciseSysPrompt),
+    fastRewrite: cleanBoolean(input.fastRewrite, DEFAULT_CONFIG.fastRewrite),
+    marinaraTimeoutMs: Math.trunc(clampNumber(input.marinaraTimeoutMs, 0, 600000, DEFAULT_CONFIG.marinaraTimeoutMs)),
     localContextEnabled: cleanBoolean(input.localContextEnabled, DEFAULT_CONFIG.localContextEnabled),
     localContextWords: Math.trunc(clampNumber(input.localContextWords, 50, 400, DEFAULT_CONFIG.localContextWords)),
     injectChar: cleanBoolean(input.injectChar, DEFAULT_CONFIG.injectChar),
