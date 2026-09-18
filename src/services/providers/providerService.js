@@ -171,54 +171,79 @@ export class ProviderService {
   static async resolveMarinaraConnection(config, signal, chatId = '') {
     const list = await this.listConnections(signal);
     const requestedChatId = String(chatId || '').trim();
+    const routing = config.marinaraRouting === 'fixed' ? 'fixed' : 'chat';
 
-    if (requestedChatId) {
-      let chat;
-      try {
-        chat = await MarinaraHost.apiFetch(`${ENDPOINTS.chats}/${encodeURIComponent(requestedChatId)}`, { signal }, 15000);
-      } catch (err) {
-        if (signal?.aborted || MarinaraHost.isAbortError(err)) throw err;
+    if (routing === 'fixed') {
+      const fixedId = String(config.connectionId || '').trim();
+      if (!fixedId) {
         return {
           connectionId: '',
           connection: null,
-          source: 'chat',
+          source: 'fixed-empty',
           chatId: requestedChatId,
-          error: `Could not read the current chat connection from Marinara: ${err?.message || String(err)}`,
+          error: 'Rewrite Assistant is set to use a specific Marinara connection, but no connection is selected.',
         };
       }
-
-      const chatConnectionId = typeof chat?.connectionId === 'string' ? chat.connectionId.trim() : '';
-      if (chatConnectionId) {
-        const connection = list.find((item) => item.id === chatConnectionId) || null;
-        if (!connection) {
-          return {
-            connectionId: '',
-            connection: null,
-            source: 'chat',
-            chatId: requestedChatId,
-            error: 'The current chat references a Marinara connection that is no longer available. Choose a valid connection in the chat settings first.',
-          };
-        }
-        return { connectionId: chatConnectionId, connection, source: 'chat', chatId: requestedChatId, error: '' };
+      const connection = list.find((item) => item.id === fixedId) || null;
+      if (!connection) {
+        usePersistentStore.getState().updateConfig({ connectionId: '' });
+        return {
+          connectionId: '',
+          connection: null,
+          source: 'fixed-missing',
+          chatId: requestedChatId,
+          error: 'The selected Marinara connection is no longer available. Choose another connection in Rewrite Assistant settings.',
+        };
       }
+      return { connectionId: fixedId, connection, source: 'fixed', chatId: requestedChatId, error: '' };
     }
 
-    const fallbackId = String(config.connectionId || '').trim();
-    if (config.connectionId && list.some((item) => item.id === config.connectionId)) {
-      const connection = list.find((item) => item.id === fallbackId) || null;
-      return { connectionId: fallbackId, connection, source: 'fallback', chatId: requestedChatId, error: '' };
+    if (!requestedChatId) {
+      return {
+        connectionId: '',
+        connection: null,
+        source: 'chat-empty',
+        chatId: '',
+        error: 'No active chat is available to resolve its Marinara connection.',
+      };
     }
-    if (config.connectionId) usePersistentStore.getState().updateConfig({ connectionId: '' });
 
-    return {
-      connectionId: '',
-      connection: null,
-      source: requestedChatId ? 'chat-empty' : 'fallback-empty',
-      chatId: requestedChatId,
-      error: requestedChatId
-        ? 'The current chat has no Marinara connection. Choose a connection in the chat settings, or configure a fallback connection in Rewrite Assistant.'
-        : 'No Marinara connection is available for this request.',
-    };
+    let chat;
+    try {
+      chat = await MarinaraHost.apiFetch(`${ENDPOINTS.chats}/${encodeURIComponent(requestedChatId)}`, { signal }, 15000);
+    } catch (err) {
+      if (signal?.aborted || MarinaraHost.isAbortError(err)) throw err;
+      return {
+        connectionId: '',
+        connection: null,
+        source: 'chat',
+        chatId: requestedChatId,
+        error: `Could not read the current chat connection from Marinara: ${err?.message || String(err)}`,
+      };
+    }
+
+    const chatConnectionId = typeof chat?.connectionId === 'string' ? chat.connectionId.trim() : '';
+    if (!chatConnectionId) {
+      return {
+        connectionId: '',
+        connection: null,
+        source: 'chat-empty',
+        chatId: requestedChatId,
+        error: 'The current chat has no Marinara connection. Choose a connection in the chat settings, or switch Rewrite Assistant to a specific connection.',
+      };
+    }
+
+    const connection = list.find((item) => item.id === chatConnectionId) || null;
+    if (!connection) {
+      return {
+        connectionId: '',
+        connection: null,
+        source: 'chat',
+        chatId: requestedChatId,
+        error: 'The current chat references a Marinara connection that is no longer available. Choose a valid connection in the chat settings first.',
+      };
+    }
+    return { connectionId: chatConnectionId, connection, source: 'chat', chatId: requestedChatId, error: '' };
   }
 
   static async resolveConnectionId(config, signal, chatId = '') {
