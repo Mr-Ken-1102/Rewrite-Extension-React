@@ -183,6 +183,7 @@ export class DraftReplyService {
     adjustment = '',
     previousDraft = '',
     expectedPersonaKey = '',
+    expectedPersonaFingerprint = '',
     signal,
     onProgress,
     onStreamStatus,
@@ -209,12 +210,24 @@ export class DraftReplyService {
           error: 'The active Persona changed after this Draft Reply session started. Reopen Draft Reply so it cannot write as the wrong Persona.',
         };
       }
+      if (expectedPersonaFingerprint && expectedPersonaFingerprint !== personaFingerprint) {
+        return {
+          error: 'The active Persona card changed after this Draft Reply session started. Reopen Draft Reply so it uses the current Persona data.',
+        };
+      }
 
       const characterNames = new Map(characters.map((item) => [String(item.id), String(item.name || item.id)]));
       const historyDepth = Math.max(1, Math.min(30, Math.trunc(Number(config.draftReplyHistoryDepth) || 8)));
       const history = draftHistory(messages, characterNames, historyDepth);
       if (typeof onMeta === 'function') {
-        try { onMeta({ persona: identity, voiceProfile: profile || null, historyDepth }); } catch { /* UI metadata must not block generation */ }
+        try {
+          onMeta({
+            persona: identity,
+            personaSourceFingerprint: personaFingerprint,
+            voiceProfile: profile || null,
+            historyDepth,
+          });
+        } catch { /* UI metadata must not block generation */ }
       }
 
       const instruction = clean(direction, 6000);
@@ -292,6 +305,7 @@ Hard rules:
         result: validation.text,
         streamed: response?.streamed === true,
         persona: identity,
+        personaSourceFingerprint: personaFingerprint,
         voiceProfile: profile || null,
         historyDepth,
       };
