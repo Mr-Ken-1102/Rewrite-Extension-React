@@ -189,7 +189,7 @@ async function requestMarinaraRawStream({
   };
 
   try {
-    const response = await MarinaraHost.fetch(endpoint, {
+    const response = await MarinaraHost.fetchStreaming(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ async function requestMarinaraRawStream({
       }),
       signal: requestController.signal,
       cache: 'no-store',
-    }, 0);
+    });
 
     if (!response.ok) {
       const payload = await readProviderPayload(response);
