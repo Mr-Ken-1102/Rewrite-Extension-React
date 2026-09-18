@@ -14,6 +14,7 @@ import {
 } from '../../src/utils/chatComposerAnchor.js';
 import {
   clampFloatingPanelPosition,
+  defaultDraftReplyPanelPosition,
   defaultFloatingPanelPosition,
   getVisualViewportBounds,
 } from '../../src/utils/floatingPanelGeometry.js';
@@ -439,6 +440,21 @@ ok('modeless Draft Reply geometry stays inside the visual viewport', () => {
   );
   assert.equal(initial.left, 180);
   assert.ok(initial.top >= 28 && initial.top <= 68);
+
+  const contextual = defaultDraftReplyPanelPosition(
+    { width: 620, height: 420 },
+    bounds,
+    {
+      root: {
+        getBoundingClientRect: () => ({ left: 100, top: 20, right: 900, bottom: 660, width: 800, height: 640 }),
+      },
+      shell: {
+        getBoundingClientRect: () => ({ left: 100, top: 700, right: 900, bottom: 760, width: 800, height: 60 }),
+      },
+    },
+  );
+  assert.equal(contextual.left, 190);
+  assert.ok(contextual.top >= 100 && contextual.top <= 130);
 });
 
 ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-sends', () => {
@@ -454,6 +470,7 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
 
   assert.match(app, /<DraftReplyLauncher/);
   assert.match(app, /<DraftReplyModal/);
+  assert.match(app, /draftUiOpen \|\| !!popupPosition/);
   assert.match(service, /CURRENT USER PERSONA/);
   assert.match(service, /Never write, invent, or continue dialogue/);
   assert.match(service, /ProviderService\.runInference/);
@@ -477,9 +494,17 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(launcher, /suppressClickRef/);
   assert.match(dragHook, /Math\.hypot\(dx, dy\) >= 3/);
   assert.match(dragHook, /allowInteractiveRoot/);
+  assert.match(dragHook, /panel\.style\.left =/);
+  assert.match(dragHook, /panel\.style\.top =/);
+  assert.match(dragHook, /panel\.dataset\.rwaDragging = 'true'/);
+  assert.match(dragHook, /delete panel\.dataset\.rwaDragging/);
   assert.match(dom, /resolveMarinaraChatComposer/);
   assert.match(dom, /resolveMarinaraChatComposerAnchor/);
   assert.match(launcher, /Trả lời Persona|Persona Reply/);
+  assert.match(session, /chatMode/);
+  assert.match(session, /MutationObserver/);
+  assert.match(session, /activeAnchor\?\.mode !== current\.chatMode/);
+  assert.match(session, /verifiedAnchor\?\.mode !== current\.chatMode/);
   assert.match(session, /activeChatId !== current\.chatId/);
   assert.match(session, /DraftReplyService\.resolveActivePersona\(chatId/);
   assert.match(session, /personaResolving: true/);
@@ -490,6 +515,9 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(modal, /Resolving Persona/);
   assert.match(modal, /disabled=\{isPersonaResolving \|\| !state\.persona\?\.key\}/);
   assert.match(modal, /useFloatingPanelDrag/);
+  assert.match(modal, /sessionPanelPositions/);
+  assert.match(modal, /defaultDraftReplyPanelPosition/);
+  assert.match(modal, /panel\.dataset\.rwaDragging === 'true'/);
   assert.match(modal, /aria-modal="false"/);
   assert.match(modal, /data-rwa-feature="draft-reply-window"/);
   assert.match(modal, /rwa-draft-header/);
