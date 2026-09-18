@@ -14,6 +14,7 @@ export const PreviewModal = ({
   progress = null,
   pieces = null,
   applyReport = '',
+  streamed = false,
   onAccept,
   onReplaceAll,
   onManualSave,
@@ -30,6 +31,7 @@ export const PreviewModal = ({
   const timerRef = useRef(null);
   const isLoading = status === 'loading';
   const isApplying = status === 'applying';
+  const isPartial = status === 'partial';
   const isMerged = Array.isArray(pieces) && pieces.length > 1;
 
   useEffect(() => {
@@ -46,7 +48,7 @@ export const PreviewModal = ({
 
   useEffect(() => {
     let mounted = true;
-    if (!isLoading && !isMerged && !config.showDiff && config.typewriter && result) {
+    if (!isLoading && !isMerged && !config.showDiff && config.typewriter && result && !streamed) {
       const tokens = result.split(/(\s+)/);
       if (result.length > 8000 || tokens.length > 1200) {
         setTypewriterText(result);
@@ -72,7 +74,7 @@ export const PreviewModal = ({
       mounted = false;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isLoading, isMerged, config.showDiff, config.typewriter, result]);
+  }, [isLoading, isMerged, config.showDiff, config.typewriter, result, streamed]);
 
   const getWcDiff = () => {
     const wc = (s) => (s || '').trim().split(/\s+/).filter(Boolean).length;
@@ -121,7 +123,9 @@ export const PreviewModal = ({
     ? `${profileName} — ${text('Processing…', 'Đang xử lý…')}`
     : isApplying
       ? `${profileName} — ${text('Applying…', 'Đang áp dụng…')}`
-      : `${profileName} — ${text('Result', 'Kết quả')}`;
+      : isPartial
+        ? `${profileName} — ${text('Partial recovery', 'Khôi phục kết quả một phần')}`
+        : `${profileName} — ${text('Result', 'Kết quả')}`;
 
   return (
     <Modal
@@ -138,10 +142,18 @@ export const PreviewModal = ({
             <div className="rwa-plbl rwar-label">{text('Selected Passage', 'Đoạn đã chọn')}</div>
             <div className="rwa-prev rwa-shimmer rwar-selected">{selection?.text}</div>
           </section>
-          <div className="rwar-writing" aria-live="polite">
-            <div className="rwa-pulse" />
-            <div className="rwar-writing-copy">{text('Writing with Intelligence…', 'Đang viết lại…')}</div>
-          </div>
+          {result ? (
+            <section className="rwar-section rwar-live-section" aria-live="polite">
+              <div className="rwa-plbl rwar-label">{text('Live output', 'Kết quả đang stream')}</div>
+              <div className="rwa-prev rwar-live-output">{result}</div>
+              <div className="rwar-writing-copy rwar-writing-copy-live">{text('Receiving from Marinara…', 'Đang nhận dữ liệu từ Marinara…')}</div>
+            </section>
+          ) : (
+            <div className="rwar-writing" aria-live="polite">
+              <div className="rwa-pulse" />
+              <div className="rwar-writing-copy">{text('Writing with Intelligence…', 'Đang viết lại…')}</div>
+            </div>
+          )}
           <div className="rwar-loading-actions">
             <Button glow={false} onClick={onClose}>{text('Cancel', 'Hủy')}</Button>
           </div>
@@ -207,18 +219,20 @@ export const PreviewModal = ({
 
           <div className="rwar-actions">
             <div className="rwar-actions-primary">
-              <Button glow={false} variant="rwa-accept" onClick={() => onAccept?.(result, selection)} disabled={isApplying} className="rwar-accept">
+              <Button glow={false} variant="rwa-accept" onClick={() => onAccept?.(result, selection)} disabled={isApplying || isPartial} className="rwar-accept">
                 {isApplying
                   ? text('Applying…', 'Đang áp dụng…')
-                  : isMerged
-                    ? text('✓ Accept All', '✓ Chấp nhận tất cả')
-                    : text('✓ Accept', '✓ Chấp nhận')}
+                  : isPartial
+                    ? text('Incomplete result', 'Kết quả chưa hoàn tất')
+                    : isMerged
+                      ? text('✓ Accept All', '✓ Chấp nhận tất cả')
+                      : text('✓ Accept', '✓ Chấp nhận')}
               </Button>
               {!isMerged && onManualSave ? (
-                <Button glow={false} onClick={() => onManualSave(result, selection)} disabled={isApplying}>{text('Open native editor', 'Mở trình chỉnh sửa gốc')}</Button>
+                <Button glow={false} onClick={() => onManualSave(result, selection)} disabled={isApplying || isPartial}>{text('Open native editor', 'Mở trình chỉnh sửa gốc')}</Button>
               ) : null}
               {selection?.source === 'textarea' && !isMerged ? (
-                <Button glow={false} variant="rwa-replace" onClick={handleReplaceAllClick} disabled={isApplying}>{text('Replace All', 'Thay thế toàn bộ')}</Button>
+                <Button glow={false} variant="rwa-replace" onClick={handleReplaceAllClick} disabled={isApplying || isPartial}>{text('Replace All', 'Thay thế toàn bộ')}</Button>
               ) : null}
             </div>
             <div className="rwar-actions-tools">
