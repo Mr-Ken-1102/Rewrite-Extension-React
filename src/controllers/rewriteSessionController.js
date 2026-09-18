@@ -13,6 +13,7 @@ import { createExecutionCoordinator } from './rewriteExecution';
 import { createLedgerSessionController } from './ledgerSessionController';
 import { createApplySessionController } from './applySessionController';
 import { executionMeta, segmentSelection } from './rewriteSelection';
+import { createStreamProgressHook, partialRecoveryState, providerResponseMeta } from './rewriteResponseState';
 
 export const RESIZABLE_OVERFLOW_CODES = new Set(['RWA_TARGET_TOO_LARGE', 'RWA_PROVIDER_CONTEXT_LIMIT']);
 
@@ -89,14 +90,7 @@ export function createRewriteSessionController({
     try {
       const resp = await APIService.fetchAIResponse(profile, selection, execution.controller.signal, {
         onContextTrim: contextTrimHook,
-        onProgress: (partialResult) => {
-          if (!executions.isCurrent(execution)) return;
-          const live = typeof partialResult === 'string' ? partialResult : '';
-          if (!live) return;
-          setState((current) => current?.status === 'loading'
-            ? { ...current, result: live, streamed: true }
-            : current);
-        },
+        onProgress: createStreamProgressHook({ executions, execution, setState }),
       });
       if (!executions.isCurrent(execution)) return;
       if (resp?.aborted) {
@@ -109,33 +103,20 @@ export function createRewriteSessionController({
         return;
       }
       if (resp?.error) {
-        const partialResult = typeof resp?.partialResult === 'string' ? resp.partialResult.trim() : '';
-        if (partialResult) {
-          setState({
-            ...loadingState,
-            status: 'partial',
-            result: partialResult,
-            streamed: resp.streamed === true,
-            providerMode: config.connMode,
-            errorCode: resp.errorCode || null,
-            connectionSource: resp.connectionSource || null,
-            connectionId: resp.connectionId || null,
-            applyReport: 'Generation ended before Marinara confirmed completion. The received text is preserved for recovery only; Accept is disabled. You can copy, save, or retry.',
-          });
+        const partial = partialRecoveryState(
+          loadingState,
+          resp,
+          config.connMode,
+          'Generation ended before Marinara confirmed completion. The received text is preserved for recovery only; Accept is disabled. You can copy, save, or retry.',
+        );
+        if (partial) {
+          setState(partial);
           return;
         }
         const prefix = meta.kind === 'sequential' && (meta.results || []).some((item) => item?.applied)
           ? `${partialApplySummary(meta.results, meta.segments.length)} `
           : '';
-        setState({
-          ...loadingState,
-          status: 'error',
-          errorMsg: `${prefix}${resp.error}`,
-          errorCode: resp.errorCode || null,
-          providerMode: config.connMode,
-          connectionSource: resp.connectionSource || null,
-          connectionId: resp.connectionId || null,
-        });
+        setState({ ...loadingState, status: 'error', errorMsg: `${prefix}${resp.error}`, ...providerResponseMeta(resp, config.connMode) });
         return;
       }
       const result = typeof resp?.result === 'string' ? resp.result.trim() : '';
@@ -143,7 +124,7 @@ export function createRewriteSessionController({
         setState({ ...loadingState, status: 'error', errorMsg: 'The LLM returned an empty response. Verify configuration.' });
         return;
       }
-      const successState = { ...loadingState, status: 'success', result, streamed: resp?.streamed === true, providerMode: config.connMode, connectionSource: resp?.connectionSource || null, connectionId: resp?.connectionId || null };
+      const successState = { ...loadingState, status: 'success', result, ...providerResponseMeta(resp, config.connMode) };
       setState(successState);
       if (usePersistentStore.getState().config.autoApply) await applyController.accept(successState, result, selection);
     } catch (error) {
@@ -214,14 +195,7 @@ export function createRewriteSessionController({
         context: mergedContext.context,
         systemPromptSuffix: markerRule,
         onContextTrim: contextTrimHook,
-        onProgress: (partialResult) => {
-          if (!executions.isCurrent(execution)) return;
-          const live = typeof partialResult === 'string' ? partialResult : '';
-          if (!live) return;
-          setState((current) => current?.status === 'loading'
-            ? { ...current, result: live, streamed: true }
-            : current);
-        },
+        onProgress: createStreamProgressHook({ executions, execution, setState }),
       });
       if (!executions.isCurrent(execution)) return;
       if (response?.aborted) {
@@ -235,30 +209,17 @@ export function createRewriteSessionController({
           await runSequential(profile, parentSelection, segments, 0, []);
           return;
         }
-        const partialResult = typeof response?.partialResult === 'string' ? response.partialResult.trim() : '';
-        if (partialResult) {
-          setState({
-            ...loadingState,
-            status: 'partial',
-            result: partialResult,
-            streamed: response.streamed === true,
-            providerMode: config.connMode,
-            errorCode: response.errorCode || null,
-            connectionSource: response.connectionSource || null,
-            connectionId: response.connectionId || null,
-            applyReport: 'Merged generation ended before completion. The partial stream is recovery-only and cannot be applied because section markers were not fully validated.',
-          });
+        const partial = partialRecoveryState(
+          loadingState,
+          response,
+          config.connMode,
+          'Merged generation ended before completion. The partial stream is recovery-only and cannot be applied because section markers were not fully validated.',
+        );
+        if (partial) {
+          setState(partial);
           return;
         }
-        setState({
-          ...loadingState,
-          status: 'error',
-          errorMsg: response.error,
-          errorCode: response.errorCode || null,
-          providerMode: config.connMode,
-          connectionSource: response.connectionSource || null,
-          connectionId: response.connectionId || null,
-        });
+        setState({ ...loadingState, status: 'error', errorMsg: response.error, ...providerResponseMeta(response, config.connMode) });
         return;
       }
       const parsed = splitMergedResult(response?.result || '', merged.markers);
@@ -269,7 +230,7 @@ export function createRewriteSessionController({
         return;
       }
       const rawRecovery = parsed.pieces.map((piece, index) => `--- Message ${index + 1} ---\n${piece}`).join('\n\n');
-      const successState = { ...loadingState, status: 'success', pieces: parsed.pieces, result: rawRecovery, streamed: response?.streamed === true, providerMode: config.connMode, connectionSource: response?.connectionSource || null, connectionId: response?.connectionId || null };
+      const successState = { ...loadingState, status: 'success', pieces: parsed.pieces, result: rawRecovery, ...providerResponseMeta(response, config.connMode) };
       setState(successState);
       if (usePersistentStore.getState().config.autoApply) await applyController.applyMergedSequence(successState);
     } catch (error) {
