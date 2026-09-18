@@ -118,6 +118,8 @@ export function createRewriteSessionController({
             streamed: resp.streamed === true,
             providerMode: config.connMode,
             errorCode: resp.errorCode || null,
+            connectionSource: resp.connectionSource || null,
+            connectionId: resp.connectionId || null,
             applyReport: 'Generation ended before Marinara confirmed completion. The received text is preserved for recovery only; Accept is disabled. You can copy, save, or retry.',
           });
           return;
@@ -131,6 +133,8 @@ export function createRewriteSessionController({
           errorMsg: `${prefix}${resp.error}`,
           errorCode: resp.errorCode || null,
           providerMode: config.connMode,
+          connectionSource: resp.connectionSource || null,
+          connectionId: resp.connectionId || null,
         });
         return;
       }
@@ -139,7 +143,7 @@ export function createRewriteSessionController({
         setState({ ...loadingState, status: 'error', errorMsg: 'The LLM returned an empty response. Verify configuration.' });
         return;
       }
-      const successState = { ...loadingState, status: 'success', result, streamed: resp?.streamed === true, providerMode: config.connMode };
+      const successState = { ...loadingState, status: 'success', result, streamed: resp?.streamed === true, providerMode: config.connMode, connectionSource: resp?.connectionSource || null, connectionId: resp?.connectionId || null };
       setState(successState);
       if (usePersistentStore.getState().config.autoApply) await applyController.accept(successState, result, selection);
     } catch (error) {
@@ -240,6 +244,8 @@ export function createRewriteSessionController({
             streamed: response.streamed === true,
             providerMode: config.connMode,
             errorCode: response.errorCode || null,
+            connectionSource: response.connectionSource || null,
+            connectionId: response.connectionId || null,
             applyReport: 'Merged generation ended before completion. The partial stream is recovery-only and cannot be applied because section markers were not fully validated.',
           });
           return;
@@ -250,6 +256,8 @@ export function createRewriteSessionController({
           errorMsg: response.error,
           errorCode: response.errorCode || null,
           providerMode: config.connMode,
+          connectionSource: response.connectionSource || null,
+          connectionId: response.connectionId || null,
         });
         return;
       }
@@ -261,7 +269,7 @@ export function createRewriteSessionController({
         return;
       }
       const rawRecovery = parsed.pieces.map((piece, index) => `--- Message ${index + 1} ---\n${piece}`).join('\n\n');
-      const successState = { ...loadingState, status: 'success', pieces: parsed.pieces, result: rawRecovery, streamed: response?.streamed === true, providerMode: config.connMode };
+      const successState = { ...loadingState, status: 'success', pieces: parsed.pieces, result: rawRecovery, streamed: response?.streamed === true, providerMode: config.connMode, connectionSource: response?.connectionSource || null, connectionId: response?.connectionId || null };
       setState(successState);
       if (usePersistentStore.getState().config.autoApply) await applyController.applyMergedSequence(successState);
     } catch (error) {
