@@ -11,7 +11,7 @@ export function useContextInspector(selection, rewriteSelection, config) {
     }
     const controller = new AbortController();
     const oneShot = rewriteSelection();
-    setTokenInfo((current) => ({ ...current, loading: true, error: '' }));
+    setTokenInfo((current) => ({ ...current, loading: true, identities: null, error: '' }));
     APIService.inspectContext(oneShot, controller.signal)
       .then((result) => {
         if (controller.signal.aborted) return;
