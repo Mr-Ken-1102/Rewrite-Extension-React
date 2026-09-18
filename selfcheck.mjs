@@ -525,10 +525,11 @@ ok('private storage read cleans stale legacy origin duplicate', () => {
 
 ok('role radar does not default unknown messages to assistant', () => {
   const radar = readFileSync('./src/hooks/useRoleRadar.js', 'utf8');
-  const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
+  const presentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
   assert.match(radar, /return radarRole \|\| domRole \|\| null/);
   assert.doesNotMatch(radar, /isUserDOM \? 'user' : 'assistant'/);
-  assert.match(popup, /if \(activeRole === 'assistant'\)/);
+  assert.match(presentation, /if \(activeRole === 'assistant'\)/);
+  assert.match(presentation, /System Context/);
 });
 
 ok('parity foundation preserves Rewrite strengths while adding safe reference features', () => {
