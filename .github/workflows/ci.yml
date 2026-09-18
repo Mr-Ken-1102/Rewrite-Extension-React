@@ -25,40 +25,40 @@ jobs:
       # These gates intentionally run before npm ci. A registry/toolchain outage
       # must not hide a source, failure-mode, or installable-contract regression.
       - name: Dependency-free source gate
-        run: node sourcecheck.mjs
+        run: node tools/quality/sourcecheck.mjs
 
       - name: Dependency-free regression gate
-        run: node selfcheck.mjs
+        run: node tools/quality/selfcheck.mjs
 
       - name: Dependency-free failure-mode gate
-        run: node failuremodecheck.mjs
+        run: node tools/quality/failuremodecheck.mjs
 
       - name: Dependency-free property/fuzz gate
-        run: node propertycheck.mjs
+        run: node tools/quality/propertycheck.mjs
 
       - name: Dependency-free manifest gate
-        run: node manifestcheck.mjs
+        run: node tools/quality/manifestcheck.mjs
 
       - name: Dependency-free UX lifecycle and connection gate
-        run: node uxcheck.mjs
+        run: node tools/quality/uxcheck.mjs
 
       - name: Dependency-free popup architecture gate
-        run: node popupcheck.mjs
+        run: node tools/quality/popupcheck.mjs
 
       - name: Dependency-free popup readability and focus gate
-        run: node popupcalibrationcheck.mjs
+        run: node tools/quality/popupcalibrationcheck.mjs
 
       - name: Dependency-free popup interaction and tooltip gate
-        run: node interactioncheck.mjs
+        run: node tools/quality/interactioncheck.mjs
 
       - name: Dependency-free modal performance and semantics gate
-        run: node modalcheck.mjs
+        run: node tools/quality/modalcheck.mjs
 
       - name: Dependency-free settings architecture gate
-        run: node settingscheck.mjs
+        run: node tools/quality/settingscheck.mjs
 
       - name: Dependency-free LAN inference and result UI gate
-        run: node lancheck.mjs
+        run: node tools/quality/lancheck.mjs
 
       - name: Install locked dependencies
         run: npm ci
@@ -94,7 +94,7 @@ jobs:
           path: vendor/marinara-engine
 
       - name: Cross-check pinned Engine v2.4.4 contract
-        run: node engine-compatcheck.mjs vendor/marinara-engine 2.4.4
+        run: node tools/quality/engine-compatcheck.mjs vendor/marinara-engine 2.4.4
 
       - name: Checkout pinned Marinara Engine v2.4.6 source
         uses: actions/checkout@v4
@@ -104,7 +104,7 @@ jobs:
           path: vendor/marinara-engine-246
 
       - name: Cross-check pinned Engine v2.4.6 contract
-        run: node engine-compatcheck.mjs vendor/marinara-engine-246 2.4.6
+        run: node tools/quality/engine-compatcheck.mjs vendor/marinara-engine-246 2.4.6
 
       - name: Hash verified installable artifact
         run: sha256sum rewrite-assistant-react.json > rewrite-assistant-react.json.sha256
