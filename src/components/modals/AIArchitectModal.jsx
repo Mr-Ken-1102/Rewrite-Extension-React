@@ -138,8 +138,13 @@ export const AIArchitectModal = ({ onClose, onDone }) => {
         </div>
       )}
 
-      <div role="status" aria-live="polite" style={{ fontSize: '11.5px', color: 'rgba(255,255,255,0.4)', minHeight: '16px', marginBottom: '8px' }}>
-        {statusText}
+      <div className={'rwa-architect-status ' + (isGenerating ? 'rwa-architect-status-active' : '')} role="status" aria-live="polite">
+        {isGenerating && (
+          <div className="rwa-activity-rail" aria-hidden="true">
+            <span className="rwa-activity-runner"></span>
+          </div>
+        )}
+        <span className="rwa-architect-status-copy">{statusText}</span>
       </div>
 
       <div className="rwa-foot">
@@ -149,7 +154,7 @@ export const AIArchitectModal = ({ onClose, onDone }) => {
           </Button>
         )}
         <Button glow={false} variant="rwa-accept" onClick={handleGenerate} disabled={isGenerating || !inputValue.trim()} style={{ flex: '1 1 0%', color: hasResult ? 'white' : undefined }}>
-          {isGenerating ? '...' : (hasResult ? 'ReGenerate' : 'Generate')}
+          {isGenerating ? 'Working…' : (hasResult ? 'ReGenerate' : 'Generate')}
         </Button>
         <Button glow={false} onClick={handleClose} style={{ flex: '1 1 0%' }}>
           Cancel
