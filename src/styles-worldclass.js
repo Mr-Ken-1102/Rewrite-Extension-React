@@ -1,5 +1,15 @@
 export const RWA_WORLDCLASS_CSS = `
 /* v3.0.1 unified interface system: floating command palette + settings workspace. */
+@keyframes rwa-activity-sweep {
+  0% { transform: translateX(-125%); }
+  55% { transform: translateX(150%); }
+  100% { transform: translateX(150%); }
+}
+@keyframes rwa-feature-sweep {
+  0% { transform: translateX(-120%); opacity: .35; }
+  45% { opacity: .95; }
+  70%, 100% { transform: translateX(245%); opacity: .35; }
+}
 :host {
   --rwa-brand: #ffb020;
   --rwa-brand-strong: #ffc247;
@@ -26,6 +36,39 @@ export const RWA_WORLDCLASS_CSS = `
 /* --------------------------------------------------------------------------
    Shared extension surfaces
    -------------------------------------------------------------------------- */
+.rwa-architect-status {
+  min-height: 34px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  margin: 5px 0 1px;
+  color: var(--rwa-wc-subtle);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+.rwa-architect-status-active { color: var(--rwa-wc-muted); }
+.rwa-activity-rail {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.045);
+}
+.rwa-activity-runner {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--rwa-brand), #ff7043, transparent);
+  box-shadow: 0 0 12px rgba(255,176,32,.20);
+  animation: rwa-activity-sweep 1.35s cubic-bezier(.42,0,.22,1) infinite;
+}
+.rwa-architect-status-copy {
+  min-height: 14px;
+  display: block;
+}
+
 .rwa-win,
 .rwa-err-window {
   border: 1px solid var(--rwa-wc-border) !important;
@@ -1042,6 +1085,81 @@ export const RWA_WORLDCLASS_CSS = `
   white-space: nowrap;
 }
 
+.rwa-about-release {
+  min-width: 0;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(209,154,69,.17);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(209,154,69,.075), transparent 36%),
+    linear-gradient(180deg, rgba(209,154,69,.030), rgba(255,255,255,.010));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
+}
+.rwa-about-release-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.rwa-about-release-badge {
+  flex: 0 0 auto;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid rgba(209,154,69,.28);
+  border-radius: 999px;
+  background: rgba(209,154,69,.08);
+  color: var(--rwa-brand);
+  font-size: 9.2px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.rwa-about-feature-rail {
+  position: relative;
+  height: 3px;
+  margin: 11px 0 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+}
+.rwa-about-feature-runner {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 32%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(209,154,69,.40), var(--rwa-brand), rgba(255,112,67,.70), transparent);
+  box-shadow: 0 0 12px rgba(209,154,69,.18);
+  animation: rwa-feature-sweep 2.8s cubic-bezier(.42,0,.24,1) infinite;
+}
+.rwa-about-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 9px;
+}
+.rwa-about-highlight-card {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(255,255,255,.065);
+  border-radius: 10px;
+  background: rgba(255,255,255,.016);
+}
+.rwa-about-highlight-card strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--rwa-wc-text-2);
+  font-size: 10.3px;
+  line-height: 1.35;
+  font-weight: 740;
+}
+.rwa-about-highlight-card span {
+  display: block;
+  color: var(--rwa-wc-muted);
+  font-size: 9.7px;
+  line-height: 1.52;
+}
+
 .rwa-about-section {
   min-width: 0;
   margin-top: 20px;
@@ -1251,6 +1369,13 @@ export const RWA_WORLDCLASS_CSS = `
     grid-column: 2;
     justify-self: start;
   }
+  .rwa-about-release-head {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .rwa-about-highlight-grid {
+    grid-template-columns: 1fr;
+  }
   .rwa-about-section-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -1337,6 +1462,9 @@ export const RWA_WORLDCLASS_CSS = `
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .rwa-activity-runner,
+  .rwa-about-feature-runner { animation: none !important; transform: none !important; width: 100%; opacity: .55; }
+
   .rwa-popup-main,
   .rwa-popup-main *,
   .rwa-settings-win,
