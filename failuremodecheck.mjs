@@ -402,6 +402,28 @@ await ok('modern Marinara API writes force CSRF and JSON headers', async () => {
   }
 });
 
+await ok('streaming host fetch keeps the caller AbortSignal attached after headers resolve', async () => {
+  const h = await loadHostHarness();
+  try {
+    let capturedSignal = null;
+    h.runtime.control.host = {
+      fetch: async (_input, init) => {
+        capturedSignal = init.signal;
+        return new Response('ok', { status: 200 });
+      },
+    };
+    const controller = new AbortController();
+    const response = await h.hostModule.MarinaraHost.fetchStreaming('/stream', { signal: controller.signal });
+    assert.equal(response.status, 200);
+    assert.equal(capturedSignal, controller.signal);
+    controller.abort(new DOMException('cancel', 'AbortError'));
+    assert.equal(capturedSignal.aborted, true);
+  } finally {
+    h.restore();
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 await ok('Marinara API HTTP failures remain failures with status evidence', async () => {
   const h = await loadHostHarness();
   try {
