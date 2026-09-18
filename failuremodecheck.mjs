@@ -207,6 +207,7 @@ await ok('Marinara rewrites stream the active chat connection without a client-s
       new AbortController().signal,
       {
         chatId: 'chat-1',
+        rewriteRequest: true,
         onProgress: (value) => progress.push(value),
         onStreamStatus: (value) => statuses.push(value),
       },
@@ -257,7 +258,7 @@ await ok('Cancel aborts both the browser request and the active Marinara raw gen
     };
 
     const controller = new AbortController();
-    const pending = h.api.APIService.runInference('system', 'user', controller.signal, { chatId: 'chat-1' });
+    const pending = h.api.APIService.runInference('system', 'user', controller.signal, { chatId: 'chat-1', rewriteRequest: true });
     await started;
     controller.abort(new DOMException('user cancelled', 'AbortError'));
     const result = await pending;
