@@ -172,6 +172,7 @@ export const RWA_RESULT_CSS = `
 }
 
 .rwar-actions {
+  box-sizing: border-box;
   min-height: 46px;
   display: flex;
   align-items: center;
