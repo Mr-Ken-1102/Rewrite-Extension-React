@@ -102,7 +102,7 @@ const NavGlyph = ({ type }) => {
   return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>;
 };
 
-export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => {
+export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspended = false }) => {
   const uiLanguage = usePersistentStore((state) => state.config.uiLanguage);
   const vi = uiLanguage === 'vi';
   const [activeTab, setActiveTab] = useState('profiles');
@@ -110,7 +110,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
   const bodyRef = useRef(null);
   const dialogRef = useRef(null);
   const scrollPositionsRef = useRef({});
-  useDialogFocusTrap(dialogRef, onClose);
+  useDialogFocusTrap(dialogRef, onClose, !suspended);
 
   const rememberSectionScroll = () => {
     if (bodyRef.current && !showAbout) scrollPositionsRef.current[activeTab] = bodyRef.current.scrollTop;
@@ -159,7 +159,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect }) => 
   const activeDescription = vi ? activeSection.descriptionVi : activeSection.description;
 
   return (
-    <div className="rwa-ov rwas-overlay">
+    <div className={`rwa-ov rwas-overlay ${suspended ? 'rwas-suspended' : ''}`.trim()} aria-hidden={suspended || undefined} inert={suspended ? true : undefined}>
       <div
         ref={dialogRef}
         className="rwa-win rwas-settings"
