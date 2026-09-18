@@ -148,6 +148,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
     hasAutoProfile: !!autoProfile,
+    fastRewrite: config.fastRewrite !== false,
   });
 
   const runProfile = useCallback((profile) => {
