@@ -5,7 +5,7 @@ import { useToastStore } from '../../store/useToastStore';
 import { DOMUtils } from '../../utils/domUtils.js';
 import {
   clampFloatingPanelPosition,
-  defaultFloatingPanelPosition,
+  defaultDraftReplyPanelPosition,
   getVisualViewportBounds,
 } from '../../utils/floatingPanelGeometry.js';
 import { useFloatingPanelDrag } from '../../hooks/useFloatingPanelDrag.js';
@@ -15,6 +15,8 @@ function modeCopy(language, mode) {
   if (mode === 'continue') return vi ? 'Viết tiếp bản nháp' : 'Continue Draft';
   return vi ? 'Ý tưởng → câu trả lời' : 'Idea → Reply';
 }
+
+const sessionPanelPositions = new Map();
 
 export function DraftReplyModal({
   state,
@@ -40,8 +42,10 @@ export function DraftReplyModal({
   }, [state?.direction, state?.mode]);
 
   const commitPosition = useCallback((next) => {
-    setPosition(next);
-  }, []);
+    const normalized = { left: Math.round(next.left), top: Math.round(next.top) };
+    if (state?.chatMode) sessionPanelPositions.set(state.chatMode, normalized);
+    setPosition(normalized);
+  }, [state?.chatMode]);
   const handleDragStart = useFloatingPanelDrag({ panelRef, onPositionChange: commitPosition });
 
   useLayoutEffect(() => {
@@ -52,12 +56,21 @@ export function DraftReplyModal({
     let frame = 0;
     const place = () => {
       frame = 0;
+      if (panel.dataset.rwaDragging === 'true') return;
       const rect = panel.getBoundingClientRect();
       const size = { width: rect.width, height: rect.height };
       const bounds = getVisualViewportBounds(window);
-      setPosition((current) => current
-        ? clampFloatingPanelPosition(current, size, bounds)
-        : defaultFloatingPanelPosition(size, bounds));
+      const anchor = DOMUtils.getChatComposerAnchor();
+      setPosition((current) => {
+        const remembered = state?.chatMode ? sessionPanelPositions.get(state.chatMode) : null;
+        const next = current
+          ? clampFloatingPanelPosition(current, size, bounds)
+          : remembered
+            ? clampFloatingPanelPosition(remembered, size, bounds)
+            : defaultDraftReplyPanelPosition(size, bounds, anchor);
+        if (state?.chatMode) sessionPanelPositions.set(state.chatMode, next);
+        return next;
+      });
     };
     const schedule = () => {
       if (frame) return;
@@ -78,7 +91,7 @@ export function DraftReplyModal({
       window.visualViewport?.removeEventListener?.('resize', schedule);
       window.visualViewport?.removeEventListener?.('scroll', schedule);
     };
-  }, [state?.chatId]);
+  }, [state?.chatId, state?.chatMode]);
 
   if (!state) return null;
 
