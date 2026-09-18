@@ -5,7 +5,7 @@ import {
   isLikelyLocalNetworkUrl,
   normalizeProviderFailure,
   withProviderNetworkHints,
-} from './src/services/policies/providerPolicy.js';
+} from '../../src/services/policies/providerPolicy.js';
 
 const read = (path) => readFileSync(path, 'utf8');
 let passed = 0;

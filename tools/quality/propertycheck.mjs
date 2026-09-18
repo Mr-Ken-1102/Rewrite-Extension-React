@@ -4,7 +4,7 @@ import {
   fingerprintOk,
   mapRenderedSpanToRaw,
   spanIsBalanced,
-} from './src/services/spanMapper.js';
+} from '../../src/services/spanMapper.js';
 import {
   MAX_LEDGER_SOURCE_CHARS,
   assembleLedgerText,
@@ -14,7 +14,7 @@ import {
   splitMergedResult,
   splitTextToLedgerSlices,
   subdivideLedgerSlice,
-} from './src/services/advancedRewriteService.js';
+} from '../../src/services/advancedRewriteService.js';
 
 const INITIAL_SEED = 0x5eed1234;
 let seed = INITIAL_SEED >>> 0;

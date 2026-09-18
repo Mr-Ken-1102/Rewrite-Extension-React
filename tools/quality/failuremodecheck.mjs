@@ -3,10 +3,10 @@ import { mkdtemp, readFile, rm, writeFile, copyFile, mkdir } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { deriveTrimmedSelection, extractSurroundingContext } from './src/utils/selectionContext.js';
-import { CONTEXT_DROP_ORDER, analyzeMergedMessageCompatibility, resolveAutoProfileCharacter } from './src/services/policies/contextPolicy.js';
-import { normalizeProviderFailure, validateProviderHttpUrl } from './src/services/policies/providerPolicy.js';
-import { createExecutionCoordinator } from './src/controllers/rewriteExecution.js';
+import { deriveTrimmedSelection, extractSurroundingContext } from '../../src/utils/selectionContext.js';
+import { CONTEXT_DROP_ORDER, analyzeMergedMessageCompatibility, resolveAutoProfileCharacter } from '../../src/services/policies/contextPolicy.js';
+import { normalizeProviderFailure, validateProviderHttpUrl } from '../../src/services/policies/providerPolicy.js';
+import { createExecutionCoordinator } from '../../src/controllers/rewriteExecution.js';
 import {
   assembleLedgerText,
   buildMergedPayload,
@@ -19,7 +19,7 @@ import {
   splitTextToLedgerSlices,
   stripMessageSelectionEdgeWhitespace,
   subdivideLedgerSlice,
-} from './src/services/advancedRewriteService.js';
+} from '../../src/services/advancedRewriteService.js';
 
 let passed = 0;
 async function ok(name, fn) {
