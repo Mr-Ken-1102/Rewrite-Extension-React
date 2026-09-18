@@ -174,6 +174,28 @@ ok('Full-page runtime injects extension JavaScript with the host API bound as ma
 
 
 if (expectedVersion === '2.4.6') {
+  ok('Engine 2.4.6 exposes distinct Roleplay, Conversation, and Game composer contracts', () => {
+    const roleplaySurface = read('packages/client/src/components/chat/ChatRoleplaySurface.tsx');
+    const conversationView = read('packages/client/src/components/chat/ConversationView.tsx');
+    const chatInput = read('packages/client/src/components/chat/ChatInput.tsx');
+    const conversationInput = read('packages/client/src/components/chat/ConversationInput.tsx');
+    const gameSurface = read('packages/client/src/components/game/GameSurface.tsx');
+    const gameInput = read('packages/client/src/components/game/GameInput.tsx');
+
+    assert.match(roleplaySurface, /data-chat-mode="roleplay"/);
+    assert.match(conversationView, /data-chat-mode="conversation"/);
+    assert.match(gameSurface, /data-chat-mode="game"/);
+
+    assert.match(chatInput, /data-chat-resource-drop-exclude/);
+    assert.match(chatInput, /data-chat-composer="true"/);
+    assert.match(conversationInput, /data-chat-resource-drop-exclude/);
+    assert.match(conversationInput, /data-chat-composer="true"/);
+
+    assert.match(gameInput, /data-chat-resource-drop-exclude/);
+    assert.match(gameInput, /<textarea/);
+    assert.doesNotMatch(gameInput, /data-chat-composer=/);
+  });
+
   ok('Engine 2.4.6 supports character-backed chat user identity snapshots', () => {
     const chatTypes = read('packages/shared/src/types/chat.ts');
     const chatSchema = read('packages/shared/src/schemas/chat.schema.ts');
