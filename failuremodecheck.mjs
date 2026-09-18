@@ -146,15 +146,193 @@ export const MarinaraHost = {
   source = replaceImport(source, './policies/providerPolicy.js', './policies/providerPolicy.mjs');
   await writeFile(join(dir, 'apiService.mjs'), source);
 
+  let draftSource = await readFile('./src/services/draftReplyService.js', 'utf8');
+  draftSource = replaceImport(draftSource, '../store/usePersistentStore', './mockStore.mjs');
+  draftSource = replaceImport(draftSource, './context/contextService.js', './context/contextService.mjs');
+  draftSource = replaceImport(draftSource, './providers/providerService.js', './providers/providerService.mjs');
+  draftSource = replaceImport(draftSource, './voiceProfileIdentity.js', './voiceProfileIdentity.mjs');
+  draftSource = replaceImport(draftSource, '../utils/messageContext.js', './messageContext.mjs');
+  await writeFile(join(dir, 'draftReplyService.mjs'), draftSource);
+
   return {
     dir,
     api: await importFresh(join(dir, 'apiService.mjs')),
+    draft: await importFresh(join(dir, 'draftReplyService.mjs')),
     context: await import(pathToFileURL(join(dir, 'context', 'contextService.mjs')).href),
     provider: await import(pathToFileURL(join(dir, 'providers', 'providerService.mjs')).href),
     store: await import(pathToFileURL(join(dir, 'mockStore.mjs')).href),
     host: await import(pathToFileURL(join(dir, 'mockHost.mjs')).href),
   };
 }
+
+
+await ok('selected assistant Character outranks a stale manual Character fallback', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      injectChar: true,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: ['char-old'],
+    };
+    const requested = [];
+    h.host.control.apiHandler = async (path) => {
+      requested.push(path);
+      if (path === '/characters/char-new') {
+        return { id: 'char-new', data: { name: 'Sami 1.17', personality: 'new sender voice' } };
+      }
+      if (path === '/characters/char-old') {
+        throw new Error('stale manual Character must not be fetched');
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    const context = await h.context.ContextService.collectContext({
+      cid: 'chat-group',
+      mid: 'm-new',
+      text: 'selected text',
+      detectedRole: 'assistant',
+      detectedCharacterId: 'char-new',
+      detectedName: 'Sami 1.17',
+    }, new AbortController().signal);
+
+    assert.match(context.character, /Name: Sami 1\.17/);
+    assert.deepEqual(requested, ['/characters/char-new']);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply writes only the active Persona and preserves named multi-character history', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'sidecar',
+      draftReplyHistoryDepth: 8,
+    };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/chat-draft') {
+        return {
+          id: 'chat-draft',
+          personaId: 'persona-current',
+          personaCharacterId: null,
+          characterIds: ['char-sami-2', 'char-sami-117'],
+        };
+      }
+      if (path === '/characters/personas/persona-current') {
+        return {
+          id: 'persona-current',
+          data: {
+            name: 'Current Ken',
+            personality: 'warm but concise',
+            description: 'Replies naturally in Vietnamese.',
+          },
+        };
+      }
+      if (path === '/characters/char-sami-2') {
+        return { id: 'char-sami-2', data: { name: 'Hương Sami 2.0', personality: 'older version' } };
+      }
+      if (path === '/characters/char-sami-117') {
+        return { id: 'char-sami-117', data: { name: 'Sami 1.17', personality: 'current speaker' } };
+      }
+      if (path === '/chats/chat-draft/messages') {
+        return [
+          {
+            id: 'u-old',
+            role: 'user',
+            content: 'Tin nhắn cũ.',
+            extra: { personaSnapshot: { personaId: 'persona-old', name: 'Old Ken', source: 'persona' } },
+          },
+          {
+            id: 'a-2',
+            role: 'assistant',
+            characterId: 'char-sami-2',
+            content: 'Lời của Sami 2.0.',
+            extra: {},
+          },
+          {
+            id: 'hidden',
+            role: 'assistant',
+            characterId: 'char-sami-2',
+            content: 'SECRET HIDDEN LINE',
+            extra: { hiddenFromAI: true },
+          },
+          {
+            id: 'a-117',
+            role: 'assistant',
+            characterId: 'char-sami-117',
+            content: 'Lời mới nhất của Sami 1.17.',
+            extra: {},
+          },
+        ];
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    let captured = null;
+    h.provider.ProviderService.runInference = async (systemPrompt, userPrompt, _signal, override) => {
+      captured = { systemPrompt, userPrompt, override };
+      return { result: 'Em hiểu rồi, để em thử nói theo cách của mình nhé.', streamed: false };
+    };
+
+    const meta = [];
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'chat-draft',
+      direction: 'trả lời dịu dàng nhưng có chút trêu',
+      mode: 'idea',
+      signal: new AbortController().signal,
+      onMeta: (value) => meta.push(value),
+    });
+
+    assert.equal(result.persona.name, 'Current Ken');
+    assert.match(captured.systemPrompt, /exactly ONE unsent roleplay-chat reply/);
+    assert.match(captured.systemPrompt, /Never write, invent, or continue dialogue/);
+    assert.match(captured.userPrompt, /ACTIVE PERSONA\nName: Current Ken/);
+    assert.match(captured.userPrompt, /Old Ken: Tin nhắn cũ/);
+    assert.match(captured.userPrompt, /Hương Sami 2\.0: Lời của Sami 2\.0/);
+    assert.match(captured.userPrompt, /Sami 1\.17: Lời mới nhất của Sami 1\.17/);
+    assert.doesNotMatch(captured.userPrompt, /SECRET HIDDEN LINE/);
+    assert.match(captured.userPrompt, /trả lời dịu dàng nhưng có chút trêu/);
+    assert.equal(captured.override.chatId, 'chat-draft');
+    assert.equal(result.result, 'Em hiểu rồi, để em thử nói theo cách của mình nhé.');
+    assert.equal(meta.at(-1).persona.name, 'Current Ken');
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply refuses Continue mode without a user draft instead of inventing intent', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/chat-empty') return { id: 'chat-empty', personaId: 'p', characterIds: [] };
+      if (path === '/characters/personas/p') return { id: 'p', data: { name: 'P', personality: 'plain' } };
+      if (path === '/chats/chat-empty/messages') return [{ id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} }];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    let inferenceCalls = 0;
+    h.provider.ProviderService.runInference = async () => {
+      inferenceCalls += 1;
+      return { result: 'should not happen' };
+    };
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'chat-empty',
+      direction: '',
+      mode: 'continue',
+      signal: new AbortController().signal,
+    });
+    assert.match(result.error, /needs at least a few words/i);
+    assert.equal(inferenceCalls, 0);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
 
 await ok('fixed Marinara routing never silently switches providers', async () => {
   const h = await loadApiHarness();
