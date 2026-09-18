@@ -12,6 +12,8 @@ export const PreviewModal = ({
   profile,
   selection,
   progress = null,
+  partialResult = '',
+  streamed = false,
   pieces = null,
   applyReport = '',
   onAccept,
@@ -46,7 +48,7 @@ export const PreviewModal = ({
 
   useEffect(() => {
     let mounted = true;
-    if (!isLoading && !isMerged && !config.showDiff && config.typewriter && result) {
+    if (!isLoading && !isMerged && !config.showDiff && config.typewriter && !streamed && result) {
       const tokens = result.split(/(\s+)/);
       if (result.length > 8000 || tokens.length > 1200) {
         setTypewriterText(result);
@@ -72,7 +74,7 @@ export const PreviewModal = ({
       mounted = false;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isLoading, isMerged, config.showDiff, config.typewriter, result]);
+  }, [isLoading, isMerged, config.showDiff, config.typewriter, result, streamed]);
 
   const getWcDiff = () => {
     const wc = (s) => (s || '').trim().split(/\s+/).filter(Boolean).length;
@@ -140,8 +142,16 @@ export const PreviewModal = ({
           </section>
           <div className="rwar-writing" aria-live="polite">
             <div className="rwa-pulse" />
-            <div className="rwar-writing-copy">{text('Writing with Intelligence…', 'Đang viết lại…')}</div>
+            <div className="rwar-writing-copy">{partialResult
+              ? text('Receiving result…', 'Đang nhận kết quả…')
+              : text('Writing with Intelligence…', 'Đang viết lại…')}</div>
           </div>
+          {partialResult ? (
+            <section className="rwar-section rwar-streaming-section" aria-label={text('Live generated text', 'Văn bản đang được tạo')}>
+              <div className="rwa-plbl rwar-label">{text('Live result', 'Kết quả trực tiếp')}</div>
+              <div className="rwa-prev rwar-result-preview rwar-streaming-result">{partialResult}</div>
+            </section>
+          ) : null}
           <div className="rwar-loading-actions">
             <Button glow={false} onClick={onClose}>{text('Cancel', 'Hủy')}</Button>
           </div>
