@@ -233,7 +233,7 @@ export const PreviewModal = ({
             />
           </section>
 
-          <div className="rwar-actions">
+          <div className={`rwar-actions ${selection?.source === 'textarea' ? 'rwar-actions-seven' : ''}`.trim()}>
             <div className="rwar-actions-primary">
               <Button
                 glow={false}
@@ -254,7 +254,12 @@ export const PreviewModal = ({
                       : text('✓ Accept', '✓ Chấp nhận')}
               </Button>
               {!isMerged && onManualSave ? (
-                <Button glow={false} onClick={() => onManualSave(result, selection)} disabled={isApplying || nativeEditorPrepared}>
+                <Button
+                  glow={false}
+                  className="rwar-native-editor"
+                  onClick={() => onManualSave(result, selection)}
+                  disabled={isApplying || nativeEditorPrepared}
+                >
                   {nativeEditorPrepared ? text('Native editor ready', 'Trình sửa đã sẵn sàng') : text('Open native editor', 'Mở trình chỉnh sửa gốc')}
                 </Button>
               ) : null}
@@ -265,7 +270,18 @@ export const PreviewModal = ({
             <div className="rwar-actions-tools">
               <Button glow={false} onClick={handleCopy} disabled={isApplying || !result}>{text('Copy', 'Sao chép')}</Button>
               <Button glow={false} onClick={handleSaveFile} disabled={isApplying || !result}>{text('Save .txt', 'Lưu .txt')}</Button>
-              <Button glow={false} onClick={onRetry} disabled={isApplying || nativeEditorPrepared}>{text('Retry', 'Thử lại')}</Button>
+              <Button
+                glow={false}
+                className="rwar-rewrite-again"
+                onClick={onRetry}
+                disabled={isApplying || nativeEditorPrepared}
+                title={text(
+                  'Generate another version from the same original selection with the same rewrite style.',
+                  'Tạo thêm một phiên bản mới từ đúng đoạn gốc với cùng kiểu viết lại.',
+                )}
+              >
+                {text('↻ Rewrite again', '↻ Viết lại lần nữa')}
+              </Button>
               <Button glow={false} onClick={onClose} disabled={isApplying}>{text('Close', 'Đóng')}</Button>
             </div>
           </div>
