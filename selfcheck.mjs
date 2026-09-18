@@ -810,6 +810,8 @@ ok('ledger resume identity changes with inference semantics but ignores unrelate
   assert.equal(signature, ledgerExecutionSignature(profile, selection, { ...base, cols: 6 }));
   assert.notEqual(signature, ledgerExecutionSignature({ ...profile, prompt: 'Compress precisely.' }, selection, base));
   assert.notEqual(signature, ledgerExecutionSignature(profile, selection, { ...base, connectionId: 'conn-b' }));
+  assert.notEqual(signature, ledgerExecutionSignature(profile, selection, { ...base, marinaraRouting: 'fixed' }));
+  assert.notEqual(signature, ledgerExecutionSignature(profile, selection, { ...base, fastRewrite: true }));
   assert.notEqual(signature, ledgerExecutionSignature(profile, selection, { ...base, conciseSysPrompt: true }));
   assert.notEqual(signature, ledgerExecutionSignature(profile, { ...selection, fp: { before: 'changed' } }, base));
 });
