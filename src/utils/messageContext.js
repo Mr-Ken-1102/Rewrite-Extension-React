@@ -43,9 +43,18 @@ export function isMessageHiddenFromRewriteContext(message, audienceCharacterId =
 export function isRewriteContextStartBoundary(message, audienceCharacterId = null) {
   const extra = safeExtra(message?.extra);
   if (extra.isConversationStart === true) return true;
-  if (!audienceCharacterId || !Array.isArray(extra.conversationStartForCharacterIds)) return false;
-  const audience = String(audienceCharacterId);
-  return extra.conversationStartForCharacterIds.some((id) => typeof id === 'string' && id.trim() === audience);
+  if (!Array.isArray(extra.conversationStartForCharacterIds)) return false;
+
+  const scopedStarts = extra.conversationStartForCharacterIds
+    .filter((id) => typeof id === 'string' && id.trim())
+    .map((id) => id.trim());
+  if (!scopedStarts.length) return false;
+
+  // Without one unambiguous Character audience (for example Draft Reply or a
+  // user/narrator rewrite), fail closed at any Engine-scoped conversation start
+  // instead of backfilling history across a boundary intended for some speaker.
+  if (!audienceCharacterId) return true;
+  return scopedStarts.includes(String(audienceCharacterId));
 }
 
 function roleLabel(role) {

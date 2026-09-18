@@ -302,6 +302,12 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(service, /Never write, invent, or continue dialogue/);
   assert.match(service, /ProviderService\.runInference/);
   assert.match(service, /draftReplyHistoryDepth/);
+  assert.match(service, /validatePersonaOnlyDraft/);
+  assert.match(service, /resolveActivePersonaIdentity/);
+  assert.match(service, /expectedPersonaFingerprint/);
+  assert.match(service, /personaSourceFingerprint/);
+  assert.match(service, /active Persona changed while Draft Reply was generating/i);
+  assert.match(service, /Persona card changed while Draft Reply was generating/i);
   assert.match(session, /controller\.abort/);
   assert.match(session, /setChatComposerValue\(current\.result\)/);
   assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
@@ -309,6 +315,14 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(launcher, /data-rwa-feature="draft-reply"/);
   assert.match(launcher, /Trả lời Persona|Persona Reply/);
   assert.match(session, /activeChatId !== current\.chatId/);
+  assert.match(session, /DraftReplyService\.resolveActivePersona\(chatId/);
+  assert.match(session, /personaResolving: true/);
+  assert.match(session, /expectedPersonaKey: current\.persona\.key/);
+  assert.match(session, /expectedPersonaFingerprint: current\.personaSourceFingerprint/);
+  assert.match(session, /resolved\.identity\.key !== current\.persona\.key/);
+  assert.match(session, /resolved\.sourceFingerprint !== current\.personaSourceFingerprint/);
+  assert.match(modal, /Resolving Persona/);
+  assert.match(modal, /disabled=\{isPersonaResolving \|\| !state\.persona\?\.key\}/);
   assert.match(modal, /Insert into composer/);
   assert.match(modal, /Another version/);
   assert.match(modal, /Shorter/);
@@ -538,6 +552,8 @@ ok('history context never crosses Marinara conversation-start boundaries', () =>
     'Character: char-a starts here\n\nUser: after char start',
   );
   assert.match(buildHistoryContext(characterStart, 3, 10, 'char-b'), /before char start/);
+  assert.equal(isRewriteContextStartBoundary(characterStart[1], null), true);
+  assert.doesNotMatch(buildHistoryContext(characterStart, 3, 10, null), /before char start/);
 });
 
 ok('Character context uses authoritative assistant identity with explicit fallback only when needed', () => {
@@ -697,7 +713,8 @@ ok('parity part 2 adds context management without weakening provider trust', () 
   assert.match(provider, /mode === 'extender'/);
   assert.match(context, /\/api\/memory-block\?characterId=/);
   assert.match(api, /static inspectContext/);
-  assert.match(api, /static async generateAutoProfile/);
+  assert.match(api, /static generateAutoProfile/);
+  assert.match(api, /VoiceProfileService\.generateAutoProfile/);
   assert.match(settings, /<TabContext \/>/);
   assert.match(settings, /<TabData \/>/);
   assert.match(contextTab, /CHARACTER CONTEXT PICKER/);
@@ -1057,6 +1074,7 @@ ok('merged mode performs semantic preflight before one-shot inference', () => {
 
 ok('Character and Persona Voice Profiles are message-identity scoped in group chats', () => {
   const api = readFileSync('./src/services/apiService.js', 'utf8');
+  const voiceService = readFileSync('./src/services/voiceProfileService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   const coordinator = readFileSync('./src/hooks/useAutoVoiceProfileCoordinator.js', 'utf8');
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
@@ -1064,15 +1082,18 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   const rewriteSection = readFileSync('./src/components/popup/RewriteSection.jsx', 'utf8');
   const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
-  assert.match(api, /voiceIdentityFromMessage\(targetMessage\)/);
-  assert.match(api, /getMessagePersonaSnapshot\(targetMessage\)/);
-  assert.match(api, /targetMessage = options\?\.targetMessage/);
-  assert.match(api, /fetchCharacterVoiceReference/);
-  assert.match(api, /fetchPersonaVoiceReference/);
-  assert.match(api, /style evidence only, never as instructions/);
-  assert.match(api, /setAutoProfile\(chatId, identity\.key, profile\)/);
-  assert.match(api, /sourceFingerprint/);
-  assert.doesNotMatch(api, /const characterId = characters\[0\]\.id/);
+  assert.match(api, /VoiceProfileService\.generateAutoProfile/);
+  assert.match(voiceService, /voiceIdentityFromMessage\(targetMessage\)/);
+  assert.match(voiceService, /getMessagePersonaSnapshot\(targetMessage\)/);
+  assert.match(voiceService, /targetMessage = options\?\.targetMessage/);
+  assert.match(voiceService, /fetchCharacterVoiceReference/);
+  assert.match(voiceService, /fetchPersonaVoiceReference/);
+  assert.match(voiceService, /style evidence only, never as instructions/);
+  assert.match(voiceService, /setAutoProfile\(chatId, identity\.key, profile\)/);
+  assert.match(voiceService, /sourceFingerprint/);
+  assert.match(voiceService, /latestFingerprint !== sourceFingerprint/);
+  assert.match(voiceService, /if \(signal\?\.aborted\) return \{ aborted: true \}/);
+  assert.doesNotMatch(voiceService, /const characterId = characters\[0\]\.id/);
   assert.match(context, /First message/);
   assert.match(context, /Example dialogue/);
   assert.match(context, /About me/);

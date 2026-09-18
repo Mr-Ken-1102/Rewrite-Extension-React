@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DraftReplyService } from '../services/draftReplyService.js';
 import { DOMUtils } from '../utils/domUtils.js';
 import { useRuntimeStore } from '../store/useRuntimeStore';
@@ -9,12 +9,15 @@ function baseState(chatId, direction) {
     status: 'editing',
     chatId,
     direction,
-    mode: direction.trim() ? 'idea' : 'idea',
+    mode: 'idea',
     result: '',
     partialResult: '',
     streamStatus: null,
     streamChars: 0,
     persona: null,
+    personaSourceFingerprint: '',
+    personaResolving: true,
+    personaResolutionFailed: false,
     voiceProfile: null,
     historyDepth: 0,
     error: '',
@@ -24,6 +27,10 @@ function baseState(chatId, direction) {
 export function useDraftReplySession() {
   const [draftState, setDraftState] = useState(null);
   const controllerRef = useRef(null);
+  const personaControllerRef = useRef(null);
+  const sessionSeqRef = useRef(0);
+  const draftStateRef = useRef(draftState);
+  draftStateRef.current = draftState;
   const showToast = useToastStore((state) => state.showToast);
 
   const abortCurrent = useCallback(() => {
@@ -34,6 +41,13 @@ export function useDraftReplySession() {
     useRuntimeStore.getState().unregisterController(controller);
   }, []);
 
+  const abortPersonaResolution = useCallback(() => {
+    const controller = personaControllerRef.current;
+    if (!controller) return;
+    personaControllerRef.current = null;
+    try { controller.abort(new DOMException('Persona resolution cancelled', 'AbortError')); } catch { controller.abort(); }
+  }, []);
+
   const openDraftReply = useCallback(() => {
     const chatId = DOMUtils.getChatId();
     const composer = DOMUtils.getChatComposer();
@@ -41,8 +55,57 @@ export function useDraftReplySession() {
       showToast('Draft Reply needs an active Marinara chat composer.', 'warn');
       return;
     }
+
+    abortCurrent();
+    abortPersonaResolution();
+    const sessionId = sessionSeqRef.current + 1;
+    sessionSeqRef.current = sessionId;
     setDraftState(baseState(chatId, composer.value || ''));
-  }, [showToast]);
+
+    const controller = new AbortController();
+    personaControllerRef.current = controller;
+    void DraftReplyService.resolveActivePersona(chatId, controller.signal)
+      .then((resolved) => {
+        if (controller.signal.aborted || sessionSeqRef.current !== sessionId) return;
+        if (DOMUtils.getChatId() !== chatId) {
+          setDraftState(null);
+          return;
+        }
+        if (!resolved?.identity?.key) {
+          setDraftState((current) => current?.chatId === chatId ? {
+            ...current,
+            status: 'error',
+            personaResolving: false,
+            personaResolutionFailed: true,
+            error: 'This chat has no active Persona. Choose a Persona in Marinara, then reopen Draft Reply.',
+          } : current);
+          return;
+        }
+        setDraftState((current) => current?.chatId === chatId ? {
+          ...current,
+          status: 'editing',
+          persona: resolved.identity,
+          personaSourceFingerprint: resolved.sourceFingerprint || '',
+          personaResolving: false,
+          personaResolutionFailed: false,
+          voiceProfile: resolved.profile || null,
+          error: '',
+        } : current);
+      })
+      .catch((error) => {
+        if (controller.signal.aborted || sessionSeqRef.current !== sessionId) return;
+        setDraftState((current) => current?.chatId === chatId ? {
+          ...current,
+          status: 'error',
+          personaResolving: false,
+          personaResolutionFailed: true,
+          error: `Could not resolve the active Persona safely: ${error?.message || String(error)}`,
+        } : current);
+      })
+      .finally(() => {
+        if (personaControllerRef.current === controller) personaControllerRef.current = null;
+      });
+  }, [abortCurrent, abortPersonaResolution, showToast]);
 
   const updateDraftInput = useCallback((patch) => {
     setDraftState((current) => current ? { ...current, ...(patch || {}) } : current);
@@ -56,6 +119,14 @@ export function useDraftReplySession() {
   }) => {
     const current = draftState;
     if (!current?.chatId) return;
+    if (current.personaResolving) {
+      showToast('Draft Reply is still resolving the active Persona. Try again in a moment.', 'warn');
+      return;
+    }
+    if (!current.persona?.key || !current.personaSourceFingerprint) {
+      showToast('Draft Reply cannot verify the active Persona. Reopen Draft Reply before generating.', 'warn');
+      return;
+    }
 
     const activeChatId = DOMUtils.getChatId();
     if (!activeChatId || activeChatId !== current.chatId) {
@@ -93,12 +164,15 @@ export function useDraftReplySession() {
         mode: nextMode,
         adjustment,
         previousDraft,
+        expectedPersonaKey: current.persona.key,
+        expectedPersonaFingerprint: current.personaSourceFingerprint,
         signal: controller.signal,
         onMeta: (meta) => {
           if (controller.signal.aborted) return;
           setDraftState((state) => state ? {
             ...state,
             persona: meta?.persona || state.persona,
+            personaSourceFingerprint: meta?.personaSourceFingerprint || state.personaSourceFingerprint,
             voiceProfile: meta?.voiceProfile || null,
             historyDepth: meta?.historyDepth || state.historyDepth,
           } : state);
@@ -138,6 +212,7 @@ export function useDraftReplySession() {
         result: response.result || '',
         partialResult: response.result || state.partialResult,
         persona: response.persona || state.persona,
+        personaSourceFingerprint: response.personaSourceFingerprint || state.personaSourceFingerprint,
         voiceProfile: response.voiceProfile || null,
         historyDepth: response.historyDepth || state.historyDepth,
         streamStatus: response.streamed ? 'done' : null,
@@ -171,31 +246,70 @@ export function useDraftReplySession() {
   }, [abortCurrent]);
 
   const closeDraftReply = useCallback(() => {
+    sessionSeqRef.current += 1;
     abortCurrent();
+    abortPersonaResolution();
     setDraftState(null);
-  }, [abortCurrent]);
+  }, [abortCurrent, abortPersonaResolution]);
 
-  const insertDraftReply = useCallback(() => {
+  const insertDraftReply = useCallback(async () => {
     const current = draftState;
-    if (!current?.result) return false;
+    if (!current?.result || current.status !== 'success') return false;
     if (DOMUtils.getChatId() !== current.chatId) {
       showToast('The active chat changed. Draft Reply was not inserted into a different chat.', 'warn');
       return false;
     }
-    const inserted = DOMUtils.setChatComposerValue(current.result);
-    showToast(
-      inserted
-        ? 'Draft inserted into the composer. Review it, edit anything you want, then press Send yourself.'
-        : 'Could not find the active Marinara composer. The generated draft remains available for copying.',
-      inserted ? 'ok' : 'warn',
-    );
-    if (inserted) setDraftState(null);
-    return inserted;
+    if (!current.persona?.key || !current.personaSourceFingerprint) {
+      showToast('Draft Reply cannot verify which Persona owns this draft. Nothing was inserted.', 'warn');
+      return false;
+    }
+
+    try {
+      const resolved = await DraftReplyService.resolveActivePersona(current.chatId, new AbortController().signal);
+      const live = draftStateRef.current;
+      if (
+        !live
+        || live.status !== 'success'
+        || live.chatId !== current.chatId
+        || live.result !== current.result
+        || live.persona?.key !== current.persona.key
+        || live.personaSourceFingerprint !== current.personaSourceFingerprint
+      ) return false;
+
+      if (DOMUtils.getChatId() !== current.chatId) {
+        showToast('The active chat changed during Persona verification. Nothing was inserted.', 'warn');
+        return false;
+      }
+      if (!resolved.identity || resolved.identity.key !== current.persona.key) {
+        showToast('The active Persona changed after this draft was generated. Reopen Draft Reply before inserting.', 'warn');
+        return false;
+      }
+      if (!resolved.sourceFingerprint || resolved.sourceFingerprint !== current.personaSourceFingerprint) {
+        showToast('The active Persona card changed after this draft was generated. Generate a new draft before inserting.', 'warn');
+        return false;
+      }
+
+      const inserted = DOMUtils.setChatComposerValue(current.result);
+      showToast(
+        inserted
+          ? 'Draft inserted into the composer. Review it, edit anything you want, then press Send yourself.'
+          : 'Could not find the active Marinara composer. The generated draft remains available for copying.',
+        inserted ? 'ok' : 'warn',
+      );
+      if (inserted) {
+        sessionSeqRef.current += 1;
+        setDraftState(null);
+      }
+      return inserted;
+    } catch (error) {
+      showToast(`Could not verify the active Persona, so Draft Reply was not inserted: ${error?.message || String(error)}`, 'warn');
+      return false;
+    }
   }, [draftState, showToast]);
 
   const rewriteDraftAgain = useCallback((kind = 'another') => {
     const current = draftState;
-    if (!current) return;
+    if (!current || current.status !== 'success') return;
     const adjustment = kind === 'shorter'
       ? 'Rewrite the previous draft more concisely while preserving its intent and Persona voice.'
       : kind === 'longer'
@@ -208,6 +322,12 @@ export function useDraftReplySession() {
       previousDraft: current.result,
     });
   }, [draftState, generateDraftReply]);
+
+  useEffect(() => () => {
+    sessionSeqRef.current += 1;
+    abortCurrent();
+    abortPersonaResolution();
+  }, [abortCurrent, abortPersonaResolution]);
 
   return {
     draftState,

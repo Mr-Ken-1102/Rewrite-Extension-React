@@ -190,16 +190,24 @@ export class ContextService {
     }
   }
 
-  static async fetchPersonaVoiceReference(preferredSnapshot, signal) {
+  static async fetchPersonaIdentityDetails(preferredSnapshot, signal) {
     const snapshot = preferredSnapshot && typeof preferredSnapshot === 'object' ? preferredSnapshot : null;
     const identityId = typeof snapshot?.personaId === 'string' ? snapshot.personaId.trim() : '';
-    if (!identityId) return '';
+    if (!identityId) return null;
 
     const source = snapshot?.source === 'character' ? 'character' : 'persona';
     const endpoint = source === 'character' ? ENDPOINTS.chars : ENDPOINTS.personas;
+    const entity = await MarinaraHost.apiFetch(`${endpoint}/${encodeURIComponent(identityId)}`, { signal }, 15000);
+    const data = safeObject(entity?.data);
+    const name = String(snapshot?.name || data.name || entity?.name || '').trim().slice(0, 160);
+    const reference = buildVoiceReference(entity, source === 'character' ? 'character' : 'persona', name);
+    return { id: identityId, source, name, reference, entity };
+  }
+
+  static async fetchPersonaVoiceReference(preferredSnapshot, signal) {
     try {
-      const identity = await MarinaraHost.apiFetch(`${endpoint}/${encodeURIComponent(identityId)}`, { signal }, 15000);
-      return buildVoiceReference(identity, source === 'character' ? 'character' : 'persona', snapshot?.name || '');
+      const details = await this.fetchPersonaIdentityDetails(preferredSnapshot, signal);
+      return details?.reference || '';
     } catch (err) {
       if (MarinaraHost.isAbortError(err) || signal?.aborted) throw err;
       return '';
