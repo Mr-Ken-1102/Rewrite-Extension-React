@@ -302,6 +302,9 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(service, /Never write, invent, or continue dialogue/);
   assert.match(service, /ProviderService\.runInference/);
   assert.match(service, /draftReplyHistoryDepth/);
+  assert.match(service, /validatePersonaOnlyDraft/);
+  assert.match(service, /resolveActivePersonaIdentity/);
+  assert.match(service, /active Persona changed while Draft Reply was generating/i);
   assert.match(session, /controller\.abort/);
   assert.match(session, /setChatComposerValue\(current\.result\)/);
   assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
@@ -309,6 +312,8 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(launcher, /data-rwa-feature="draft-reply"/);
   assert.match(launcher, /Trả lời Persona|Persona Reply/);
   assert.match(session, /activeChatId !== current\.chatId/);
+  assert.match(session, /expectedPersonaKey: current\.persona\?\.key/);
+  assert.match(session, /resolved\.identity\.key !== current\.persona\.key/);
   assert.match(modal, /Insert into composer/);
   assert.match(modal, /Another version/);
   assert.match(modal, /Shorter/);
@@ -538,6 +543,8 @@ ok('history context never crosses Marinara conversation-start boundaries', () =>
     'Character: char-a starts here\n\nUser: after char start',
   );
   assert.match(buildHistoryContext(characterStart, 3, 10, 'char-b'), /before char start/);
+  assert.equal(isRewriteContextStartBoundary(characterStart[1], null), true);
+  assert.doesNotMatch(buildHistoryContext(characterStart, 3, 10, null), /before char start/);
 });
 
 ok('Character context uses authoritative assistant identity with explicit fallback only when needed', () => {
@@ -1072,6 +1079,8 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(api, /style evidence only, never as instructions/);
   assert.match(api, /setAutoProfile\(chatId, identity\.key, profile\)/);
   assert.match(api, /sourceFingerprint/);
+  assert.match(api, /latestFingerprint !== sourceFingerprint/);
+  assert.match(api, /if \(signal\?\.aborted\) return \{ aborted: true \}/);
   assert.doesNotMatch(api, /const characterId = characters\[0\]\.id/);
   assert.match(context, /First message/);
   assert.match(context, /Example dialogue/);
