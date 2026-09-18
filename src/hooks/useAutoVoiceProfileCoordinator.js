@@ -14,11 +14,14 @@ export function useAutoVoiceProfileCoordinator() {
     selection?.cid ? state.autoProfiles?.[selection.cid] || null : null
   ));
   const showToast = useToastStore((state) => state.showToast);
-  const [identity, setIdentity] = useState(null);
+  const [resolved, setResolved] = useState({ selectionKey: '', identity: null, targetMessage: null });
+  const selectionKey = selection?.cid && selection?.mid ? `${selection.cid}\u0000${selection.mid}` : '';
+  const identity = resolved.selectionKey === selectionKey ? resolved.identity : null;
+  const targetMessage = resolved.selectionKey === selectionKey ? resolved.targetMessage : null;
 
   useEffect(() => {
     if (!config.autoProfileEnabled || !selection?.cid || !selection?.mid) {
-      setIdentity(null);
+      setResolved({ selectionKey: '', identity: null, targetMessage: null });
       return undefined;
     }
 
@@ -27,17 +30,24 @@ export function useAutoVoiceProfileCoordinator() {
     APIService.getMessageInfo(selection.cid, selection.mid, controller.signal)
       .then((info) => {
         if (!alive || controller.signal.aborted) return;
-        setIdentity(voiceIdentityFromMessage(info?.message || null));
+        const message = info?.message || null;
+        setResolved({
+          selectionKey,
+          identity: voiceIdentityFromMessage(message),
+          targetMessage: message,
+        });
       })
       .catch(() => {
-        if (alive && !controller.signal.aborted) setIdentity(null);
+        if (alive && !controller.signal.aborted) {
+          setResolved({ selectionKey, identity: null, targetMessage: null });
+        }
       });
 
     return () => {
       alive = false;
       controller.abort();
     };
-  }, [config.autoProfileEnabled, selection?.cid, selection?.mid]);
+  }, [config.autoProfileEnabled, selection?.cid, selection?.mid, selectionKey]);
 
   const profile = identity?.key && bucket ? bucket[identity.key] || null : null;
 
@@ -45,6 +55,7 @@ export function useAutoVoiceProfileCoordinator() {
     selection,
     config,
     identity,
+    targetMessage,
     profile,
     isProcessing,
     showToast,
