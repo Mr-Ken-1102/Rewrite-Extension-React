@@ -377,7 +377,7 @@ export class ContextService {
     }
 
     const domIdentity = voiceIdentityFromSelection(savedSel);
-    const role = savedSel?.detectedRole || info.message?.role || null;
+    const role = info.message?.role || savedSel.detectedRole || null;
     const authoritativeCharacterId = role === 'assistant'
       ? (domIdentity?.id || info.message?.characterId || '')
       : '';
