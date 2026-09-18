@@ -8,6 +8,7 @@ export function useAutoProfileGeneration({
   selection,
   config,
   identity,
+  targetMessage,
   profile,
   isProcessing,
   showToast,
@@ -50,6 +51,7 @@ export function useAutoProfileGeneration({
     attempts.set(runKey, { state: 'running', at: now });
     APIService.generateAutoProfile(cid, controller.signal, {
       messageId: selection?.mid,
+      targetMessage,
       expectedIdentityKey: identityKey,
       preferredCharacterIds: config.charCardIds,
     }).then((result) => {
@@ -93,5 +95,6 @@ export function useAutoProfileGeneration({
     selection?.cid,
     selection?.mid,
     showToast,
+    targetMessage,
   ]);
 }
