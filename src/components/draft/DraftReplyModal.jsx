@@ -154,7 +154,10 @@ export function DraftReplyModal({
       }}
     >
       <header className="rwa-draft-header" onPointerDown={handleDragStart}>
-        <div className="rwa-draft-title">{text('Draft Reply', 'Soạn câu trả lời')}</div>
+        <div className="rwa-draft-brand">
+          <span className="rwa-draft-brand-eyebrow">Rewrite Assistant</span>
+          <span className="rwa-draft-title">{text('Draft Reply', 'Soạn câu trả lời')}</span>
+        </div>
         <div className="rwa-draft-header-right">
           <span className="rwa-draft-persona-chip" title={profileLabel}>✦ {personaLabel}</span>
           <button
@@ -175,11 +178,14 @@ export function DraftReplyModal({
       </header>
 
       <div className="rwa-draft-body">
-        <div className="rwa-draft-profile-note">{profileLabel}</div>
-
         {!isSuccess && !isError && (
           <>
-            <div className="rwa-plbl">{text('How should this reply be written?', 'Bạn muốn câu trả lời được viết như thế nào?')}</div>
+            <div className="rwa-draft-guidance-row">
+              <span className="rwa-draft-guidance-question">
+                {text('How should this reply be written?', 'Bạn muốn câu trả lời theo hướng nào?')}
+              </span>
+              <span className="rwa-draft-guidance-source" title={profileLabel}>{profileLabel}</span>
+            </div>
             <div className="rwa-draft-mode-row" role="group" aria-label={text('Draft Reply mode', 'Chế độ Soạn câu trả lời')}>
               {['idea', 'continue'].map((value) => (
                 <button
