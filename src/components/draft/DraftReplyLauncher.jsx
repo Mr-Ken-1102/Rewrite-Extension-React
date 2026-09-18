@@ -97,7 +97,7 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
       aria-label={title}
     >
       <span className="rwa-draft-launcher-icon" aria-hidden="true">✦</span>
-      <span>{language === 'vi' ? 'Persona Reply' : 'Persona Reply'}</span>
+      <span>{language === 'vi' ? 'Trả lời Persona' : 'Persona Reply'}</span>
     </button>
   );
 }
