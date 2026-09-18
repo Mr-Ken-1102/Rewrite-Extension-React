@@ -30,8 +30,8 @@ Run:
 ```bash
 npm run compat:engine -- /absolute/path/to/Marinara-Engine-main
 # Optional explicit expected version during an Engine upgrade audit:
-node engine-compatcheck.mjs /absolute/path/to/Marinara-Engine-2.4.4 2.4.4
-node engine-compatcheck.mjs /absolute/path/to/Marinara-Engine-2.4.6 2.4.6
+node tools/quality/engine-compatcheck.mjs /absolute/path/to/Marinara-Engine-2.4.4 2.4.4
+node tools/quality/engine-compatcheck.mjs /absolute/path/to/Marinara-Engine-2.4.6 2.4.6
 ```
 
 Do not assume a future Marinara release is compatible merely because the manifest still installs. The checker accepts an explicit expected-version argument for upgrade audits, but passing it is only a contract preflight: a new Engine release still requires source-diff review plus the full test/build/live matrix before the compatibility baseline is changed.
