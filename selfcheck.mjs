@@ -554,8 +554,9 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(popup, /pinnedPos/);
   assert.match(contextPanel, /This rewrite:/);
   assert.match(contextPanel, /rwa2-context-applied/);
-  assert.match(popup, /Char: \$\{characterNames\.join/);
-  assert.match(popup, /Persona: \$\{personaNames\.join/);
+  const contextPresentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
+  assert.match(contextPresentation, /Char: \$\{characterNames\.join/);
+  assert.match(contextPresentation, /Persona: \$\{personaNames\.join/);
   assert.match(preview, /Rewrite again/);
   assert.match(preview, /Viết lại lần nữa/);
   assert.match(preview, /Copied result to clipboard/);
