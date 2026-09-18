@@ -704,7 +704,8 @@ ok('parity part 2 adds context management without weakening provider trust', () 
   assert.match(provider, /mode === 'extender'/);
   assert.match(context, /\/api\/memory-block\?characterId=/);
   assert.match(api, /static inspectContext/);
-  assert.match(api, /static async generateAutoProfile/);
+  assert.match(api, /static generateAutoProfile/);
+  assert.match(api, /VoiceProfileService\.generateAutoProfile/);
   assert.match(settings, /<TabContext \/>/);
   assert.match(settings, /<TabData \/>/);
   assert.match(contextTab, /CHARACTER CONTEXT PICKER/);
