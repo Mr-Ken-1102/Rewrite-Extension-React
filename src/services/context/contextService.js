@@ -6,7 +6,7 @@ import { extractSurroundingContext } from '../../utils/selectionContext.js';
 import { analyzeMergedMessageCompatibility } from '../policies/contextPolicy.js';
 import { validateProviderHttpUrl } from '../policies/providerPolicy.js';
 import { estimateTokens } from '../prompt/promptService.js';
-import { resolveVoiceIdentity, voiceIdentityFromMessage, voiceIdentityFromSelection } from '../voiceProfileIdentity.js';
+import { resolveVoiceIdentity, voiceIdentityFromSelection } from '../voiceProfileIdentity.js';
 
 const ENDPOINTS = {
   chats: '/chats',
