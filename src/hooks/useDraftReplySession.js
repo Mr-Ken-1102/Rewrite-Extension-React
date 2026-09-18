@@ -156,7 +156,7 @@ export function useDraftReplySession() {
       if (controllerRef.current === controller) controllerRef.current = null;
       useRuntimeStore.getState().unregisterController(controller);
     }
-  }, [abortCurrent, draftState]);
+  }, [abortCurrent, draftState, showToast]);
 
   const cancelGeneration = useCallback(() => {
     abortCurrent();
