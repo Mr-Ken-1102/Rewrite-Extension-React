@@ -2,23 +2,26 @@ export const RWA_DRAFT_REPLY_CSS = `
 .rwa-draft-launcher {
   position: fixed;
   z-index: 10003;
-  width: 30px;
+  width: 118px;
   height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  gap: 6px;
+  padding: 0 10px;
   border: 1px solid color-mix(in srgb, var(--rwa-primary) 46%, transparent);
   border-radius: 10px;
   background: color-mix(in srgb, var(--rwa-panel-bg) 92%, black 8%);
   color: var(--rwa-primary);
   box-shadow: 0 7px 20px rgba(0,0,0,.28), 0 0 14px color-mix(in srgb, var(--rwa-primary) 18%, transparent);
-  font: 800 15px/1 var(--rwa-host-font, system-ui, sans-serif);
+  font: 800 10.5px/1 var(--rwa-host-font, system-ui, sans-serif);
+  letter-spacing: .01em;
   cursor: pointer;
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
 }
+.rwa-draft-launcher-icon { font-size: 14px; line-height: 1; }
 .rwa-draft-launcher:hover, .rwa-draft-launcher:focus-visible {
   transform: translateY(-1px);
   border-color: var(--rwa-primary);
