@@ -164,6 +164,17 @@ ok('popup keeps explicit one-shot and token-estimate copy contracts', () => {
   assert.match(source, /rwa2-context-applied/);
 });
 
+ok('context refresh keeps resolved identity and token text stable while toggles re-inspect', () => {
+  const hook = read('./src/hooks/useContextInspector.js');
+  const panel = read('./src/components/popup/ContextPanel.jsx');
+  assert.match(hook, /const sameSelection = current\.selectionKey === selectionKey/);
+  assert.match(hook, /identities: sameSelection \? current\.identities : null/);
+  assert.match(hook, /parts: sameSelection \? current\.parts : null/);
+  assert.match(panel, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.doesNotMatch(hook, /loading: true, identities: null/);
+});
+
+
 ok('profile columns are configurable beyond two on the wide popup', () => {
   const profileGrid = read('./src/components/popup/ProfileGrid.jsx');
   const popup = read('./src/components/PopupMain.jsx');
