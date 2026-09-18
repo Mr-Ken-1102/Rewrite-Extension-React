@@ -13,13 +13,14 @@ export function useContextInspector(selection, rewriteSelection, config) {
     loading: false,
     parts: null,
     identities: null,
+    voiceIdentity: null,
     error: '',
     selectionKey: '',
   });
 
   useEffect(() => {
     if (!selection?.text) {
-      setTokenInfo({ loading: false, parts: null, identities: null, error: '', selectionKey: '' });
+      setTokenInfo({ loading: false, parts: null, identities: null, voiceIdentity: null, error: '', selectionKey: '' });
       return undefined;
     }
     const controller = new AbortController();
@@ -30,6 +31,7 @@ export function useContextInspector(selection, rewriteSelection, config) {
         loading: true,
         parts: sameSelection ? current.parts : null,
         identities: sameSelection ? current.identities : null,
+        voiceIdentity: sameSelection ? current.voiceIdentity : null,
         error: '',
         selectionKey,
       };
@@ -42,6 +44,7 @@ export function useContextInspector(selection, rewriteSelection, config) {
             loading: false,
             parts: current.selectionKey === selectionKey ? current.parts : null,
             identities: current.selectionKey === selectionKey ? current.identities : null,
+            voiceIdentity: current.selectionKey === selectionKey ? current.voiceIdentity : null,
             error: result.error,
             selectionKey,
           }));
@@ -50,6 +53,7 @@ export function useContextInspector(selection, rewriteSelection, config) {
             loading: false,
             parts: result?.parts || null,
             identities: result?.identities || null,
+            voiceIdentity: result?.voiceIdentity || null,
             error: '',
             selectionKey,
           });
@@ -61,6 +65,7 @@ export function useContextInspector(selection, rewriteSelection, config) {
           loading: false,
           parts: current.selectionKey === selectionKey ? current.parts : null,
           identities: current.selectionKey === selectionKey ? current.identities : null,
+          voiceIdentity: current.selectionKey === selectionKey ? current.voiceIdentity : null,
           error: error?.message || String(error),
           selectionKey,
         }));
@@ -84,7 +89,7 @@ export function useContextInspector(selection, rewriteSelection, config) {
   ]);
 
   if (tokenInfo.selectionKey !== selectionKey) {
-    return { loading: !!selectionKey, parts: null, identities: null, error: '' };
+    return { loading: !!selectionKey, parts: null, identities: null, voiceIdentity: null, error: '' };
   }
   return tokenInfo;
 }
