@@ -1135,12 +1135,13 @@ export const RWA_WORLDCLASS_CSS = `
 }
 .rwa-about-highlight-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0,1fr));
   gap: 9px;
 }
 .rwa-about-highlight-card {
   min-width: 0;
-  padding: 10px 11px;
+  min-height: 104px;
+  padding: 11px 12px;
   border: 1px solid rgba(255,255,255,.065);
   border-radius: 10px;
   background: rgba(255,255,255,.016);
