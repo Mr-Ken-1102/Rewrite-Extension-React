@@ -343,7 +343,8 @@ export class ContextService {
 
   static async getMessageInfo(cid, mid, signal) {
     const messages = await this.fetchMessages(cid, signal);
-    const index = messages.findIndex((message) => message?.id === mid);
+    const targetId = String(mid ?? '');
+    const index = messages.findIndex((message) => String(message?.id ?? '') === targetId);
     return { messages, index, message: index >= 0 ? messages[index] : null };
   }
 
@@ -379,18 +380,23 @@ export class ContextService {
     const history = wantsHistory
       ? this.buildHistoryContext(info.messages, info.index, config.contextDepth, info.message?.characterId || null)
       : '';
-    const authoritativeSender = role === 'assistant' ? normalizeIdList(info.message?.characterId) : [];
-    const characterIds = explicitCharacterIds.length ? explicitCharacterIds : authoritativeSender;
+    const authoritativeSender = role === 'assistant'
+      ? normalizeIdList(info.message?.characterId || savedSel?.detectedCharacterId)
+      : [];
+    // When rewriting an assistant message, the message's own Character is the
+    // authoritative identity. Manual Character selections remain a fallback
+    // for user/narrator text or legacy messages that lack sender metadata.
+    const characterIds = authoritativeSender.length ? authoritativeSender : explicitCharacterIds;
     const surrounding = wantsSurrounding ? extractSurroundingContext(savedSel, config.localContextWords) : '';
     const speaker = wantsSpeaker ? this.speakerNote(role) : '';
     const [character, persona, lore, memory] = await Promise.all([
-      wantsCharacter && (explicitCharacterIds.length > 0 || role === 'assistant')
+      wantsCharacter && characterIds.length > 0
         ? this.fetchCharCard(savedSel.cid, signal, characterIds) : Promise.resolve(''),
       wantsPersona && role === 'user'
         ? this.fetchUserPersona(savedSel.cid, signal, getMessagePersonaSnapshot(info.message)) : Promise.resolve(''),
       wantsLore ? this.fetchLorebookContext(savedSel.cid, signal) : Promise.resolve(''),
       wantsMemory
-        ? this.fetchExtenderMemory(savedSel.cid, signal, explicitCharacterIds.length ? explicitCharacterIds : authoritativeSender) : Promise.resolve(''),
+        ? this.fetchExtenderMemory(savedSel.cid, signal, authoritativeSender.length ? authoritativeSender : explicitCharacterIds) : Promise.resolve(''),
     ]);
     return { role, character, persona, lore, surrounding, history, memory, speaker, messageInfo: info };
   }
