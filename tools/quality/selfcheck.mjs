@@ -839,7 +839,7 @@ ok('CI keeps Node 24 security, pinned Engine, real artifact validation, and uplo
   assert.match(ci, /npm audit --omit=dev --audit-level=high/);
   assert.match(ci, /npm audit --audit-level=moderate/);
   assert.match(ci, /ref: 1a299369ac7025028c3ce1b80cc59f47b7b0691b/);
-  assert.match(ci, /node engine-compatcheck\.mjs vendor\/marinara-engine/);
+  assert.match(ci, /node tools\/quality\/engine-compatcheck\.mjs vendor\/marinara-engine/);
   assert.match(ci, /Verify real installable artifact/);
   assert.match(ci, /actions\/upload-artifact@v4/);
 });
