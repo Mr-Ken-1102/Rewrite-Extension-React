@@ -80,6 +80,8 @@ export default function App() {
           message={processState.errorMsg}
           mode={processState.providerMode}
           errorCode={processState.errorCode}
+          connectionSource={processState.connectionSource}
+          connectionId={processState.connectionId}
           onClose={handleCancelProcess}
         />
       )}
