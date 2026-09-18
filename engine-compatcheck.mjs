@@ -67,12 +67,15 @@ ok('Lorebook scan is GET and returns an entries envelope', () => {
   assert.match(src, /totalTokens:/);
 });
 
-ok('/generate/raw accepts connectionId + messages + streaming', () => {
+ok('/generate/raw supports streaming, run ids, and explicit abort', () => {
   const src = read('packages/server/src/routes/generate/raw-route.ts');
   assert.match(src, /connectionId:\s*z\.string/);
   assert.match(src, /messages:\s*z\.array\(rawMessageSchema\)/);
   assert.match(src, /streaming:\s*z\.boolean\(\)\.optional\(\)/);
   assert.match(src, /app\.post\("\/raw"/);
+  assert.match(src, /app\.post\("\/raw\/abort"/);
+  assert.match(src, /sendSseEvent\(reply, \{ type: "raw_started", data: \{ runId \} \}\)/);
+  assert.match(src, /sendSseEvent\(reply, \{ type: "token"/);
   assert.match(src, /return reply\.send\(\{ aborted: true, runId \}\)/);
 });
 
