@@ -179,8 +179,8 @@ export function ContextPanel({
                   className={`rwa2-chip ${excluded ? 'rwa2-chip-off' : ''}`}
                   aria-pressed={!excluded}
                   title={text(
-                    `${excluded ? 'Excluded from' : 'Included in'} this rewrite only`,
-                    `${excluded ? 'Đã loại khỏi' : 'Đã đưa vào'} lần viết lại này`,
+                    `${source.label} — ${excluded ? 'Excluded from' : 'Included in'} this rewrite only`,
+                    `${source.label} — ${excluded ? 'Đã loại khỏi' : 'Đã đưa vào'} lần viết lại này`,
                   )}
                   onClick={(event) => {
                     event.preventDefault();
