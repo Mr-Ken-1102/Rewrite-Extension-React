@@ -231,6 +231,41 @@ export const DOMUtils = {
     };
   },
 
+  getChatComposer() {
+    const candidates = [...document.querySelectorAll('textarea[data-chat-composer="true"], textarea[data-chat-composer]')];
+    return candidates.find((element) => {
+      if (!(element instanceof HTMLTextAreaElement)) return false;
+      const rect = element.getBoundingClientRect?.();
+      return rect && rect.width > 0 && rect.height > 0;
+    }) || null;
+  },
+
+  getChatComposerAnchor() {
+    const composer = this.getChatComposer();
+    if (!composer) return null;
+    const shell = composer.closest('.mari-chat-input, .chat-input-container') || composer.parentElement || composer;
+    const send = shell.querySelector?.('.mari-chat-send-btn') || null;
+    return { composer, shell, send };
+  },
+
+  setChatComposerValue(value) {
+    const composer = this.getChatComposer();
+    if (!composer) return false;
+    const next = String(value ?? '');
+    try {
+      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+      if (setter) setter.call(composer, next);
+      else composer.value = next;
+      composer.dispatchEvent(new Event('input', { bubbles: true }));
+      composer.focus({ preventScroll: true });
+      const caret = next.length;
+      composer.setSelectionRange(caret, caret);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+
   async safeCopy(txt) {
     try {
       await navigator.clipboard.writeText(String(txt ?? ''));
