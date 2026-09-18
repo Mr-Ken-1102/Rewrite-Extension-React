@@ -47,12 +47,8 @@ export class APIService {
   static fetchUserPersona(cid, signal, preferredSnapshot = null) {
     return ContextService.fetchUserPersona(cid, signal, preferredSnapshot);
   }
-  static fetchCharacterVoiceReference(characterId, signal) {
-    return ContextService.fetchCharacterVoiceReference(characterId, signal);
-  }
-  static fetchPersonaVoiceReference(preferredSnapshot, signal) {
-    return ContextService.fetchPersonaVoiceReference(preferredSnapshot, signal);
-  }
+  static fetchCharacterVoiceReference(characterId, signal) { return ContextService.fetchCharacterVoiceReference(characterId, signal); }
+  static fetchPersonaVoiceReference(preferredSnapshot, signal) { return ContextService.fetchPersonaVoiceReference(preferredSnapshot, signal); }
   static fetchLorebookContext(cid, signal) { return ContextService.fetchLorebookContext(cid, signal); }
   static fetchExtenderMemoryViaLorebooks(cid, signal) { return ContextService.fetchExtenderMemoryViaLorebooks(cid, signal); }
   static fetchExtenderMemory(cid, signal, characterIds = []) {
