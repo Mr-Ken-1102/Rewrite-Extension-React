@@ -36,7 +36,7 @@ export const EditProfileModal = ({ profileToEdit, initialDraft, onClose }) => {
   };
 
   return (
-    <Modal title={`${profileToEdit ? 'Modify' : 'Create'} Style Preset`} onClose={onClose} width="640px">
+    <Modal title={`${profileToEdit ? 'Modify' : 'Create'} Style Preset`} onClose={onClose} width="640px" animate={false}>
       <div className="rwa-lbl">Style Name</div>
       <input
         type="text"
