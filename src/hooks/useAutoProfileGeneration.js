@@ -14,6 +14,8 @@ export function useAutoProfileGeneration({
 }) {
   const attemptsRef = useRef(new Map());
   const validatedRef = useRef(new Map());
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
   const [retryTick, setRetryTick] = useState(0);
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export function useAutoProfileGeneration({
     const now = Date.now();
     const runKey = `${cid}\u0000${identityKey}`;
     const lastValidated = validatedRef.current.get(runKey) || 0;
-    const needsValidation = !profile || (now - lastValidated >= PROFILE_REVALIDATE_MS);
+    const needsValidation = !profileRef.current || (now - lastValidated >= PROFILE_REVALIDATE_MS);
     if (!needsValidation) return undefined;
 
     const attempts = attemptsRef.current;
@@ -87,7 +89,6 @@ export function useAutoProfileGeneration({
     config.charCardIds,
     identity?.key,
     isProcessing,
-    profile,
     retryTick,
     selection?.cid,
     selection?.mid,
