@@ -9,7 +9,6 @@ import { deriveTrimmedSelection } from '../utils/selectionContext';
 import { useRoleRadar } from '../hooks/useRoleRadar';
 import { useContextInspector } from '../hooks/useContextInspector';
 import { useContextPresentation } from '../hooks/useContextPresentation';
-import { useAutoProfileGeneration } from '../hooks/useAutoProfileGeneration';
 import { usePopupDrag } from '../hooks/usePopupDrag';
 import { usePopupPosition } from '../hooks/usePopupPosition';
 import { PopupHeader } from './popup/PopupHeader';
@@ -137,14 +136,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     text,
   });
 
-  useAutoProfileGeneration({
-    selection,
-    config,
-    identity: voiceIdentity,
-    profile: autoProfile,
-    isProcessing,
-    showToast,
-  });
   const handleDragStart = usePopupDrag({ popupRef, pinnedPos: config.pinnedPos, updateConfig });
   const { finalLeft, finalTop, finalVisibility } = usePopupPosition({
     popupPosition,
