@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNativeEvents } from './hooks/useNativeEvents';
 import { useRewriteSession } from './hooks/useRewriteSession';
 import { useAutoVoiceProfileCoordinator } from './hooks/useAutoVoiceProfileCoordinator';
+import { useDraftReplySession } from './hooks/useDraftReplySession';
 import { useRuntimeStore } from './store/useRuntimeStore';
 import { ToastContainer } from './components/ui/ToastContainer';
 import { PopupMain } from './components/PopupMain';
@@ -12,6 +13,8 @@ import { AIArchitectModal } from './components/modals/AIArchitectModal';
 import { PreviewModal } from './components/modals/PreviewModal';
 import { LedgerModal } from './components/modals/LedgerModal';
 import { ErrorModal } from './components/modals/ErrorModal';
+import { DraftReplyLauncher } from './components/draft/DraftReplyLauncher';
+import { DraftReplyModal } from './components/draft/DraftReplyModal';
 
 export default function App() {
   useNativeEvents();
@@ -32,16 +35,42 @@ export default function App() {
     reviewLedger,
     closeLedger,
   } = useRewriteSession(setActiveModal);
+  const {
+    draftState,
+    openDraftReply,
+    updateDraftInput,
+    generateDraftReply,
+    cancelGeneration: cancelDraftGeneration,
+    closeDraftReply,
+    insertDraftReply,
+    rewriteDraftAgain,
+  } = useDraftReplySession();
   const settingsLayerVisible = ['settings', 'editProfile', 'aiArchitect'].includes(activeModal);
+  const draftUiOpen = !!draftState;
 
   return (
     <>
       <ToastContainer />
-      {popupPosition && !activeModal && !processState && (
+      <DraftReplyLauncher
+        onOpen={openDraftReply}
+        hidden={!!activeModal || !!processState || draftUiOpen}
+      />
+      {popupPosition && !activeModal && !processState && !draftUiOpen && (
         <PopupMain
           onRewrite={handleRewrite}
           onOpenSettings={() => setActiveModal('settings')}
           onOpenCustom={() => setActiveModal('custom')}
+        />
+      )}
+      {draftState && (
+        <DraftReplyModal
+          state={draftState}
+          onUpdateInput={updateDraftInput}
+          onGenerate={generateDraftReply}
+          onCancelGeneration={cancelDraftGeneration}
+          onClose={closeDraftReply}
+          onInsert={insertDraftReply}
+          onRewriteAgain={rewriteDraftAgain}
         />
       )}
       {settingsLayerVisible && (
