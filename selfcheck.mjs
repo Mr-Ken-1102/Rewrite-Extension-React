@@ -493,7 +493,7 @@ ok('failed commits keep the generated result recoverable in preview', () => {
   assert.match(apply, /let commitInFlight = false/);
   assert.match(apply, /if \(!targetState \|\| commitInFlight\) return/);
   assert.match(apply, /if \(!applied\) \{[\s\S]*status: 'success'/s);
-  assert.match(app, /\['loading', 'success', 'applying'\]/);
+  assert.match(app, /\['loading', 'success', 'partial', 'applying'\]/);
   assert.match(preview, /const isApplying = status === 'applying'/);
   assert.match(preview, /onClose=\{isApplying \? \(\) => \{\} : onClose\}/);
   assert.match(editor, /Clipboard recovery also failed; preview remains open so you can copy the result manually/);
