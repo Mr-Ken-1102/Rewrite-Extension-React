@@ -79,12 +79,15 @@ npm run bundle
 
 ## Verification included in the repository
 
-- `sourcecheck.mjs` — dependency-free lockfile/import/runtime-syntax/high-risk-pattern gate.
-- `manifestcheck.mjs` / `extension-manifest.mjs` — dependency-free Marinara v2.4.4–v2.4.6 installable-manifest factory and preflight validator.
-- `selfcheck.mjs` — regression invariants for selection mapping, privacy defaults, persistence, provider limits, modal/storage lifecycle, and destructive-write guards.
-- `failuremodecheck.mjs` — executable mocks for provider trust, abort/timeout behavior, HTTP/CSRF handling, storage migration, and destructive-write races.
-- `propertycheck.mjs` — deterministic property/fuzz coverage for span mapping, context fingerprints, Unicode/grapheme-safe Ledger splitting/assembly/subdivision, capacity bounds, and merged-marker integrity.
-- `engine-compatcheck.mjs` — checks the extension's assumptions directly against a Marinara Engine source tree, including 2.4.6 character-backed user identity.
+Quality and compatibility tooling is grouped under `tools/quality/`; build orchestration lives under `tools/build/`. Historical audits are archived by date under `docs/audits/` so the repository root stays focused on product source, configuration, and current release documentation.
+
+- `tools/quality/sourcecheck.mjs` — dependency-free lockfile/import/runtime-syntax/high-risk-pattern gate.
+- `tools/quality/manifestcheck.mjs` / `extension-manifest.mjs` — dependency-free Marinara v2.4.4–v2.4.6 installable-manifest factory and preflight validator.
+- `tools/quality/selfcheck.mjs` — regression invariants for selection mapping, privacy defaults, persistence, provider limits, modal/storage lifecycle, and destructive-write guards.
+- `tools/quality/failuremodecheck.mjs` — executable mocks for provider trust, abort/timeout behavior, HTTP/CSRF handling, storage migration, and destructive-write races.
+- `tools/quality/propertycheck.mjs` — deterministic property/fuzz coverage for span mapping, context fingerprints, Unicode/grapheme-safe Ledger splitting/assembly/subdivision, capacity bounds, and merged-marker integrity.
+- `tools/quality/engine-compatcheck.mjs` — checks the extension's assumptions directly against a Marinara Engine source tree, including 2.4.6 character-backed user identity.
+- `tools/build/build-extension.mjs` — verified installable JSON build orchestration.
 - `.github/workflows/ci.yml` — clean-install CI gate.
 
 See `COMPATIBILITY.md`, `SECURITY-PRIVACY.md`, and `CHANGELOG.md` for details.
