@@ -588,12 +588,14 @@ ok('historical user messages preserve their persona identity', () => {
 ok('assistant rewrites never let a stale manual Character override the selected sender', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
+  const domIdentity = readFileSync('./src/utils/messageDomIdentity.js', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
   assert.match(context, /domIdentity\?\.id \|\| info\.message\?\.characterId/);
   assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
   assert.match(context, /fetchCharCard\(savedSel\.cid, signal, characterIds\)/);
-  assert.match(dom, /data-card-css/);
-  assert.match(dom, /mari-message-name/);
+  assert.match(dom, /readMessageDomIdentity/);
+  assert.match(domIdentity, /data-card-css/);
+  assert.match(domIdentity, /mari-message-name/);
   assert.match(identity, /resolveVoiceIdentity/);
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   assert.match(popup, /voiceIdentityFromSelection\(selection\) \|\| tokenInfo\.voiceIdentity/);
