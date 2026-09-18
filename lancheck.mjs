@@ -70,6 +70,7 @@ ok('Marinara raw SSE parser survives arbitrary chunk boundaries', () => {
 ok('Marinara mode streams raw generation, preserves partial recovery, and can abort by runId', () => {
   const source = read('./src/services/providers/providerService.js');
   assert.match(source, /streaming:\s*true/);
+  assert.match(source, /MarinaraHost\.fetchStreaming/);
   assert.match(source, /Accept:\s*'text\/event-stream'/);
   assert.match(source, /generateRawAbort:\s*'\/generate\/raw\/abort'/);
   assert.match(source, /partialResult:\s*partial \|\| undefined/);
