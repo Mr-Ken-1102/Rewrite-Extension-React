@@ -49,6 +49,22 @@ function extractMemoryBlock(value) {
   return (match ? match[1] : raw).trim().slice(0, 8000);
 }
 
+function extractIdentityNames(value) {
+  const names = [];
+  const seen = new Set();
+  const re = /^Name:\s*(.+)$/gmi;
+  let match;
+  while ((match = re.exec(String(value || '')))) {
+    const name = String(match[1] || '').trim().slice(0, 160);
+    const key = name.toLocaleLowerCase();
+    if (!name || seen.has(key)) continue;
+    seen.add(key);
+    names.push(name);
+    if (names.length >= 3) break;
+  }
+  return names;
+}
+
 function capWords(value, maxWords = 400) {
   const words = String(value || '').trim().split(/\s+/).filter(Boolean);
   return words.slice(0, maxWords).join(' ') + (words.length > maxWords ? '…' : '');
@@ -358,7 +374,14 @@ export class ContextService {
         speaker: estimateTokens(context.speaker),
       };
       parts.total = Object.values(parts).reduce((sum, value) => sum + value, 0);
-      return { parts, role: context.role };
+      return {
+        parts,
+        role: context.role,
+        identities: {
+          characterNames: extractIdentityNames(context.character),
+          personaNames: extractIdentityNames(context.persona),
+        },
+      };
     } catch (err) {
       if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
       return { error: err?.message || String(err) };
