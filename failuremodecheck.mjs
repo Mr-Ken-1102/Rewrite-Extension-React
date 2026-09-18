@@ -169,6 +169,101 @@ await ok('Marinara connection selection never silently switches providers', asyn
   }
 });
 
+
+await ok('Marinara rewrites stream the active chat connection without a client-side deadline', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'marinara', connectionId: '', requestTimeoutMs: 5000, fastRewrite: true,
+    };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/connections') return [{ id: 'chat-conn', name: 'Chat provider' }];
+      if (path === '/chats/chat-1') return { id: 'chat-1', connectionId: 'chat-conn' };
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    let requestBody = null;
+    h.host.control.fetchHandler = async (url, options) => {
+      assert.equal(url, '/api/generate/raw');
+      requestBody = JSON.parse(options.body);
+      const chunks = [
+        'data: {"type":"raw_started","data":{"runId":"server-run"}}\n\n',
+        'data: {"type":"token","data":"hel"}\n\n',
+        'data: {"type":"token","data":"lo"}\n\n',
+        'data: {"type":"result","data":{"content":"hello"}}\n\n',
+        'data: {"type":"done","data":""}\n\n',
+      ];
+      return new Response(new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
+          controller.close();
+        },
+      }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    };
+    const progress = [];
+    const result = await h.api.APIService.runInference(
+      'system',
+      'user',
+      new AbortController().signal,
+      { chatId: 'chat-1', onProgress: (value) => progress.push(value) },
+    );
+    assert.deepEqual(result, { result: 'hello', streamed: true });
+    assert.equal(requestBody.connectionId, 'chat-conn');
+    assert.equal(requestBody.streaming, true);
+    assert.equal(requestBody.parameters.reasoningEffort, null);
+    assert.match(requestBody.runId, /^rwa-/);
+    const rawCall = h.host.control.calls.find((call) => call.kind === 'fetch' && call.path === '/api/generate/raw');
+    assert.equal(rawCall.timeout, 0);
+    assert.equal(progress.at(-1), 'hello');
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Cancel aborts both the browser request and the active Marinara raw generation', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'marinara', connectionId: '', requestTimeoutMs: 45000, fastRewrite: true,
+    };
+    let abortBody = null;
+    h.host.control.apiHandler = async (path, options) => {
+      if (path === '/connections') return [{ id: 'chat-conn' }];
+      if (path === '/chats/chat-1') return { id: 'chat-1', connectionId: 'chat-conn' };
+      if (path === '/generate/raw/abort') {
+        abortBody = JSON.parse(options.body);
+        return { aborted: true };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    let requestBody = null;
+    let startedResolve;
+    const started = new Promise((resolve) => { startedResolve = resolve; });
+    h.host.control.fetchHandler = async (_url, options) => {
+      requestBody = JSON.parse(options.body);
+      startedResolve();
+      return new Promise((_resolve, reject) => {
+        const fail = () => reject(options.signal?.reason || new DOMException('cancelled', 'AbortError'));
+        if (options.signal?.aborted) fail();
+        else options.signal?.addEventListener('abort', fail, { once: true });
+      });
+    };
+
+    const controller = new AbortController();
+    const pending = h.api.APIService.runInference('system', 'user', controller.signal, { chatId: 'chat-1' });
+    await started;
+    controller.abort(new DOMException('user cancelled', 'AbortError'));
+    const result = await pending;
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.deepEqual(result, { aborted: true });
+    assert.ok(abortBody, 'server abort endpoint was not called');
+    assert.equal(abortBody.connectionId, 'chat-conn');
+    assert.equal(abortBody.runId, requestBody.runId);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 await ok('enabled message context fails closed when Marinara metadata cannot be read', async () => {
   const h = await loadApiHarness();
   try {
