@@ -1,5 +1,6 @@
 import { usePersistentStore } from '../store/usePersistentStore';
 import { ContextService } from './context/contextService.js';
+import { MarinaraHost } from './marinaraHost';
 import { ProviderService } from './providers/providerService.js';
 import {
   fingerprintVoiceReference,
@@ -11,6 +12,8 @@ import {
   isMessageHiddenFromRewriteContext,
   isRewriteContextStartBoundary,
 } from '../utils/messageContext.js';
+
+const MAX_DRAFT_RESULT_CHARS = 20_000;
 
 function clean(value, max = 10000) {
   return String(value || '').trim().slice(0, max);
@@ -24,12 +27,30 @@ function currentPersonaSnapshot(chat) {
   return null;
 }
 
-function nameFromReference(reference) {
-  const match = String(reference || '').match(/^Name:\s*(.+)$/mi);
-  return match?.[1]?.trim?.().slice(0, 160) || '';
+function personaIdentity(snapshot, name = '') {
+  if (!snapshot?.personaId) return null;
+  const identity = {
+    kind: 'persona',
+    source: snapshot.source === 'character' ? 'character' : 'persona',
+    id: snapshot.personaId,
+    name: clean(name, 160),
+  };
+  return { ...identity, key: makeVoiceIdentityKey(identity), weak: false };
 }
 
-function draftHistory(messages, characterNames, depth, activePersonaName) {
+function characterSpeaker(message, characterNames) {
+  const mapped = characterNames.get(String(message?.characterId || '')) || '';
+  const direct = clean(
+    message?.characterName
+    || message?.name
+    || message?.senderName
+    || message?.extra?.characterName,
+    160,
+  );
+  return direct || mapped || 'Character';
+}
+
+function draftHistory(messages, characterNames, depth) {
   const limit = Math.max(1, Math.min(30, Math.trunc(Number(depth) || 8)));
   const selected = [];
 
@@ -37,7 +58,8 @@ function draftHistory(messages, characterNames, depth, activePersonaName) {
     const message = messages[index];
     if (!message) continue;
     const boundary = isRewriteContextStartBoundary(message, null);
-    if (!isMessageHiddenFromRewriteContext(message, null)) selected.push(message);
+    const supportedRole = message.role === 'assistant' || message.role === 'user' || message.role === 'narrator';
+    if (supportedRole && !isMessageHiddenFromRewriteContext(message, null)) selected.push(message);
     if (boundary) break;
   }
   selected.reverse();
@@ -45,17 +67,20 @@ function draftHistory(messages, characterNames, depth, activePersonaName) {
   return selected.map((message) => {
     let speaker = 'Message';
     if (message.role === 'assistant') {
-      speaker = characterNames.get(String(message.characterId || '')) || 'Character';
+      speaker = characterSpeaker(message, characterNames);
     } else if (message.role === 'user') {
-      speaker = getMessagePersonaSnapshot(message)?.name || activePersonaName || 'User';
+      const snapshot = getMessagePersonaSnapshot(message);
+      speaker = snapshot?.name || (snapshot ? 'Persona' : 'User');
     } else if (message.role === 'narrator') {
       speaker = 'Narrator';
-    } else if (message.role === 'system') {
-      speaker = 'System';
     }
     const messageContent = clean(message.content, 1800);
     return messageContent ? `${speaker}: ${messageContent}` : '';
   }).filter(Boolean).join('\n\n').slice(0, 14000);
+}
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^$()|[\]\\]/g, '\\$&');
 }
 
 function normalizeDraftReply(value, personaName = '') {
@@ -63,33 +88,81 @@ function normalizeDraftReply(value, personaName = '') {
   if (!text) return '';
   text = text.replace(/^<\s*draft_reply\s*>\s*/i, '').replace(/\s*<\s*\/\s*draft_reply\s*>\s*$/i, '').trim();
 
-  const labels = ['User', 'Persona', personaName].filter(Boolean)
-    .map((label) => label.replace(/[.*+?^$()|[\]\\]/g, '\\$&'));
+  const labels = ['User', 'Persona', personaName].filter(Boolean).map(escapeRegex);
   if (labels.length) {
     text = text.replace(new RegExp(`^(?:${labels.join('|')})\\s*:\\s*`, 'i'), '').trim();
   }
   return text;
 }
 
+export function validatePersonaOnlyDraft(value, personaName = '', characterNames = []) {
+  const text = normalizeDraftReply(value, personaName);
+  if (!text) return { ok: false, error: 'The provider completed Draft Reply but returned no usable Persona text.', text: '' };
+  if (text.length > MAX_DRAFT_RESULT_CHARS) {
+    return {
+      ok: false,
+      error: 'The provider returned an unusually large Draft Reply. It was rejected instead of truncating or inserting partial text.',
+      text: '',
+    };
+  }
+  if (/<\s*\/?\s*draft_reply\b/i.test(text)) {
+    return { ok: false, error: 'The provider returned malformed Draft Reply protocol text. Nothing was inserted.', text: '' };
+  }
+
+  const forbiddenLabels = [
+    'Assistant',
+    'Character',
+    'Narrator',
+    'System',
+    'User',
+    'Persona',
+    ...characterNames,
+  ].map((label) => clean(label, 160)).filter(Boolean);
+
+  const unique = [...new Set(forbiddenLabels.map((label) => label.toLocaleLowerCase()))];
+  const patterns = unique.map(escapeRegex);
+  if (patterns.length) {
+    const speakerLine = new RegExp(
+      `^[\\t ]*(?:[-•][\\t ]*)?(?:\\*\\*)?(?:${patterns.join('|')})(?:\\*\\*)?[\\t ]*:[\\t ]*\\S`,
+      'im',
+    );
+    if (speakerLine.test(text)) {
+      return {
+        ok: false,
+        error: 'The provider included a labeled Character/Narrator/extra speaker turn. Draft Reply rejected it so only the active Persona can be inserted.',
+        text: '',
+      };
+    }
+  }
+
+  return { ok: true, error: '', text };
+}
+
 export class DraftReplyService {
-  static async resolveActivePersona(chatId, signal) {
+  static async resolveActivePersonaIdentity(chatId, signal) {
     const chat = await ContextService.fetchChat(chatId, signal);
     const snapshot = currentPersonaSnapshot(chat);
-    if (!snapshot) return { chat, identity: null, reference: '', profile: null };
-
-    const reference = await ContextService.fetchPersonaVoiceReference(snapshot, signal);
-    const name = nameFromReference(reference) || 'User';
-    const identity = {
-      kind: 'persona',
-      source: snapshot.source,
-      id: snapshot.personaId,
-      name,
+    return {
+      chat,
+      snapshot,
+      identity: snapshot ? personaIdentity(snapshot) : null,
     };
-    identity.key = makeVoiceIdentityKey(identity);
+  }
 
+  static async resolveActivePersona(chatId, signal) {
+    const resolved = await this.resolveActivePersonaIdentity(chatId, signal);
+    const { chat, snapshot } = resolved;
+    if (!snapshot) return { chat, snapshot: null, identity: null, reference: '', profile: null };
+
+    const details = await ContextService.fetchPersonaIdentityDetails(snapshot, signal);
+    if (!details) return { chat, snapshot, identity: resolved.identity, reference: '', profile: null };
+
+    const name = details.name || 'Persona';
+    const identity = personaIdentity(snapshot, name);
+    const reference = details.reference || '';
     const stored = getVoiceProfile(usePersistentStore.getState().autoProfiles, chatId, identity.key);
     const currentFingerprint = reference ? fingerprintVoiceReference(reference) : '';
-    const profile = stored && stored.sourceFingerprint && stored.sourceFingerprint === currentFingerprint
+    const profile = stored && stored.sourceFingerprint && currentFingerprint && stored.sourceFingerprint === currentFingerprint
       ? stored
       : null;
 
@@ -102,6 +175,7 @@ export class DraftReplyService {
     mode = 'idea',
     adjustment = '',
     previousDraft = '',
+    expectedPersonaKey = '',
     signal,
     onProgress,
     onStreamStatus,
@@ -109,41 +183,50 @@ export class DraftReplyService {
   }) {
     if (!chatId) return { error: 'No active chat is available.' };
 
-    const config = usePersistentStore.getState().config;
-    const [{ identity, reference, profile }, messages, characters] = await Promise.all([
-      this.resolveActivePersona(chatId, signal),
-      ContextService.fetchMessages(chatId, signal),
-      ContextService.fetchChatCharacters(chatId, signal),
-    ]);
+    try {
+      const config = usePersistentStore.getState().config;
+      const [{ identity, reference, profile }, messages, characters] = await Promise.all([
+        this.resolveActivePersona(chatId, signal),
+        ContextService.fetchMessages(chatId, signal),
+        ContextService.fetchChatCharacters(chatId, signal),
+      ]);
 
-    if (!identity) {
-      return {
-        error: 'This chat has no active Persona. Choose a Persona in Marinara before using Draft Reply so the extension never guesses who it should write as.',
-      };
-    }
+      if (signal?.aborted) return { aborted: true };
+      if (!identity) {
+        return {
+          error: 'This chat has no active Persona. Choose a Persona in Marinara before using Draft Reply so the extension never guesses who it should write as.',
+        };
+      }
+      if (expectedPersonaKey && expectedPersonaKey !== identity.key) {
+        return {
+          error: 'The active Persona changed after this Draft Reply session started. Reopen Draft Reply so it cannot write as the wrong Persona.',
+        };
+      }
 
-    const characterNames = new Map(characters.map((item) => [String(item.id), String(item.name || item.id)]));
-    const historyDepth = Math.max(1, Math.min(30, Math.trunc(Number(config.draftReplyHistoryDepth) || 8)));
-    const history = draftHistory(messages, characterNames, historyDepth, identity.name);
-    if (typeof onMeta === 'function') {
-      try { onMeta({ persona: identity, voiceProfile: profile || null, historyDepth }); } catch { /* UI metadata must not block generation */ }
-    }
-    const instruction = clean(direction, 6000);
-    const previous = clean(previousDraft, 6000);
-    const adjustmentText = clean(adjustment, 800);
+      const characterNames = new Map(characters.map((item) => [String(item.id), String(item.name || item.id)]));
+      const historyDepth = Math.max(1, Math.min(30, Math.trunc(Number(config.draftReplyHistoryDepth) || 8)));
+      const history = draftHistory(messages, characterNames, historyDepth);
+      if (typeof onMeta === 'function') {
+        try { onMeta({ persona: identity, voiceProfile: profile || null, historyDepth }); } catch { /* UI metadata must not block generation */ }
+      }
 
-    if (mode === 'continue' && !instruction) {
-      return { error: 'Continue Draft needs at least a few words in the composer.' };
-    }
-    if (!instruction && !history) {
-      return { error: 'There is not enough conversation context to suggest a reply yet.' };
-    }
+      const instruction = clean(direction, 6000);
+      const previous = clean(previousDraft, 6000);
+      const adjustmentText = clean(adjustment, 800);
 
-    const systemPrompt = `You draft exactly ONE unsent roleplay-chat reply written by the CURRENT USER PERSONA.
+      if (mode === 'continue' && !instruction) {
+        return { error: 'Continue Draft needs at least a few words in the composer.' };
+      }
+      if (!instruction && !history) {
+        return { error: 'There is not enough conversation context to suggest a reply yet.' };
+      }
+
+      const systemPrompt = `You draft exactly ONE unsent roleplay-chat reply written by the CURRENT USER PERSONA.
 
 Hard rules:
-- Output ONLY the Persona's draft reply. No preamble, labels, analysis, markdown fences, or <draft_reply> tags.
+- Output ONLY the Persona's draft reply. No preamble, labels, speaker prefixes, analysis, markdown fences, or <draft_reply> tags.
 - Never write, invent, or continue dialogue, actions, thoughts, narration, or reactions for any assistant Character or Narrator. The output ends with the Persona's turn.
+- Never output a new line prefixed with a Character name, "Character:", "Assistant:", "Narrator:", "System:", "User:", or "Persona:".
 - Follow the user's direction faithfully, but do not mechanically quote instruction text unless it belongs in the reply.
 - Preserve established facts and relationship dynamics from the recent chat.
 - Match the Persona's language, register, temperament, cadence, and POV. If a saved Voice Profile is present, use it as style guidance.
@@ -151,35 +234,53 @@ Hard rules:
 - For Continue Draft mode, keep the user's existing draft intent and naturally complete/refine it rather than replacing it with a different idea.
 - If direction is empty, infer one plausible, context-aware Persona reply without advancing the other Characters' turns.`;
 
-    const userPrompt = [
-      `ACTIVE PERSONA\nName: ${identity.name}\nSource: ${identity.source}`,
-      reference ? `PERSONA REFERENCE\n${reference.slice(0, 6000)}` : '',
-      profile?.prompt ? `SAVED VOICE PROFILE\n${profile.prompt.slice(0, 5000)}` : '',
-      history ? `RECENT CHAT\n${history}` : '',
-      `MODE\n${mode === 'continue' ? 'Continue Draft' : 'Idea / Direction → Reply'}`,
-      instruction ? `USER DIRECTION OR DRAFT\n${instruction}` : 'USER DIRECTION OR DRAFT\n[empty — suggest a fitting reply]',
-      previous ? `PREVIOUS GENERATED DRAFT\n${previous}` : '',
-      adjustmentText ? `REVISION REQUEST\n${adjustmentText}` : '',
-    ].filter(Boolean).join('\n\n---\n\n');
+      const userPrompt = [
+        `ACTIVE PERSONA\nName: ${identity.name}\nSource: ${identity.source}`,
+        reference ? `PERSONA REFERENCE\n${reference.slice(0, 6000)}` : '',
+        profile?.prompt ? `SAVED VOICE PROFILE\n${profile.prompt.slice(0, 5000)}` : '',
+        history ? `RECENT CHAT\n${history}` : '',
+        `MODE\n${mode === 'continue' ? 'Continue Draft' : 'Idea / Direction → Reply'}`,
+        instruction ? `USER DIRECTION OR DRAFT\n${instruction}` : 'USER DIRECTION OR DRAFT\n[empty — suggest a fitting reply]',
+        previous ? `PREVIOUS GENERATED DRAFT\n${previous}` : '',
+        adjustmentText ? `REVISION REQUEST\n${adjustmentText}` : '',
+      ].filter(Boolean).join('\n\n---\n\n');
 
-    const response = await ProviderService.runInference(systemPrompt, userPrompt, signal, {
-      chatId,
-      onProgress: typeof onProgress === 'function'
-        ? (partial) => onProgress(normalizeDraftReply(partial, identity.name))
-        : undefined,
-      onStreamStatus,
-    });
+      const response = await ProviderService.runInference(systemPrompt, userPrompt, signal, {
+        chatId,
+        onProgress: typeof onProgress === 'function'
+          ? (partial) => onProgress(normalizeDraftReply(partial, identity.name))
+          : undefined,
+        onStreamStatus,
+      });
 
-    if (response?.aborted || response?.error) return response;
-    const result = normalizeDraftReply(response?.result, identity.name);
-    if (!result) return { error: 'The provider completed Draft Reply but returned no usable Persona text.' };
+      if (signal?.aborted || response?.aborted) return { aborted: true };
+      if (response?.error) return response;
 
-    return {
-      result,
-      streamed: response?.streamed === true,
-      persona: identity,
-      voiceProfile: profile || null,
-      historyDepth,
-    };
+      const validation = validatePersonaOnlyDraft(
+        response?.result,
+        identity.name,
+        [...characterNames.values()],
+      );
+      if (!validation.ok) return { error: validation.error };
+
+      const finalPersona = await this.resolveActivePersonaIdentity(chatId, signal);
+      if (signal?.aborted) return { aborted: true };
+      if (!finalPersona.identity || finalPersona.identity.key !== identity.key) {
+        return {
+          error: 'The active Persona changed while Draft Reply was generating. The generated text was discarded instead of showing or inserting a reply for the wrong Persona.',
+        };
+      }
+
+      return {
+        result: validation.text,
+        streamed: response?.streamed === true,
+        persona: identity,
+        voiceProfile: profile || null,
+        historyDepth,
+      };
+    } catch (err) {
+      if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
+      return { error: `Draft Reply failed safely: ${err?.message || String(err)}` };
+    }
   }
 }
