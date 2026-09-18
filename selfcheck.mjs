@@ -304,7 +304,10 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(service, /draftReplyHistoryDepth/);
   assert.match(service, /validatePersonaOnlyDraft/);
   assert.match(service, /resolveActivePersonaIdentity/);
+  assert.match(service, /expectedPersonaFingerprint/);
+  assert.match(service, /personaSourceFingerprint/);
   assert.match(service, /active Persona changed while Draft Reply was generating/i);
+  assert.match(service, /Persona card changed while Draft Reply was generating/i);
   assert.match(session, /controller\.abort/);
   assert.match(session, /setChatComposerValue\(current\.result\)/);
   assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
@@ -312,8 +315,14 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(launcher, /data-rwa-feature="draft-reply"/);
   assert.match(launcher, /Trả lời Persona|Persona Reply/);
   assert.match(session, /activeChatId !== current\.chatId/);
-  assert.match(session, /expectedPersonaKey: current\.persona\?\.key/);
+  assert.match(session, /DraftReplyService\.resolveActivePersona\(chatId/);
+  assert.match(session, /personaResolving: true/);
+  assert.match(session, /expectedPersonaKey: current\.persona\.key/);
+  assert.match(session, /expectedPersonaFingerprint: current\.personaSourceFingerprint/);
   assert.match(session, /resolved\.identity\.key !== current\.persona\.key/);
+  assert.match(session, /resolved\.sourceFingerprint !== current\.personaSourceFingerprint/);
+  assert.match(modal, /Resolving Persona/);
+  assert.match(modal, /disabled=\{isPersonaResolving \|\| !state\.persona\?\.key\}/);
   assert.match(modal, /Insert into composer/);
   assert.match(modal, /Another version/);
   assert.match(modal, /Shorter/);
