@@ -69,6 +69,22 @@ function clampMarinaraTimeout(value) {
   return Math.max(5000, Math.min(600000, parsed));
 }
 
+function makeStreamingTimeoutError(timeoutMs) {
+  if (typeof DOMException !== 'undefined') {
+    return new DOMException(`Request timed out after ${timeoutMs}ms`, 'TimeoutError');
+  }
+  const error = new Error(`Request timed out after ${timeoutMs}ms`);
+  error.name = 'TimeoutError';
+  return error;
+}
+
+function makeStreamingAbortError() {
+  if (typeof DOMException !== 'undefined') return new DOMException('The operation was aborted.', 'AbortError');
+  const error = new Error('The operation was aborted.');
+  error.name = 'AbortError';
+  return error;
+}
+
 function fastRewriteParameters(enabled) {
   return enabled
     ? { reasoningEffort: null, enabledParameters: { reasoningEffort: true } }
@@ -93,6 +109,8 @@ async function requestMarinaraRawStream({
   let streamAborted = false;
   let reader = null;
   let explicitAbortSent = false;
+  let timeoutId = null;
+  const requestController = new AbortController();
   let lastProgress = '';
   let lastProgressAt = 0;
   const startedAt = Date.now();
@@ -117,8 +135,21 @@ async function requestMarinaraRawStream({
     }, 5000).catch(() => {});
   };
 
-  const onExternalAbort = () => requestExplicitAbort();
+  const onExternalAbort = () => {
+    if (!requestController.signal.aborted) {
+      requestController.abort(signal?.reason || makeStreamingAbortError());
+    }
+    requestExplicitAbort();
+  };
   signal?.addEventListener?.('abort', onExternalAbort, { once: true });
+  if (signal?.aborted) onExternalAbort();
+
+  if (timeout > 0) {
+    timeoutId = globalThis.setTimeout?.(() => {
+      if (!requestController.signal.aborted) requestController.abort(makeStreamingTimeoutError(timeout));
+      requestExplicitAbort();
+    }, timeout) ?? null;
+  }
 
   const applyEvent = (event) => {
     if (!event || typeof event !== 'object') return;
@@ -174,9 +205,9 @@ async function requestMarinaraRawStream({
         streaming: true,
         ...(parameters ? { parameters } : {}),
       }),
-      signal,
+      signal: requestController.signal,
       cache: 'no-store',
-    }, timeout);
+    }, 0);
 
     if (!response.ok) {
       const payload = await readProviderPayload(response);
@@ -238,11 +269,22 @@ async function requestMarinaraRawStream({
       firstTokenMs: firstTokenAt ? firstTokenAt - startedAt : null,
     };
   } catch (err) {
-    if (signal?.aborted || MarinaraHost.isAbortError(err)) {
-      requestExplicitAbort();
+    requestExplicitAbort();
+    if (signal?.aborted) {
       return { aborted: true, runId: runId || undefined, streamed: true };
     }
-    requestExplicitAbort();
+    const abortReason = requestController.signal.aborted ? requestController.signal.reason : null;
+    if (abortReason?.name === 'TimeoutError') {
+      return {
+        ...normalizeProviderFailure(abortReason, 'Marinara streaming request timed out.'),
+        partialResult: partial || undefined,
+        runId: runId || undefined,
+        streamed: true,
+      };
+    }
+    if (MarinaraHost.isAbortError(err) || abortReason?.name === 'AbortError') {
+      return { aborted: true, runId: runId || undefined, streamed: true };
+    }
     return {
       ...normalizeProviderFailure(err, 'Marinara streaming request failed.'),
       partialResult: partial || undefined,
@@ -251,6 +293,7 @@ async function requestMarinaraRawStream({
     };
   } finally {
     signal?.removeEventListener?.('abort', onExternalAbort);
+    if (timeoutId !== null) globalThis.clearTimeout?.(timeoutId);
     try { reader?.releaseLock?.(); } catch { /* noop */ }
   }
 }
