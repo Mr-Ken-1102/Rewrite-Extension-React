@@ -222,8 +222,11 @@ export const RWA_SETTINGS_CSS = `
   white-space: nowrap;
 }
 
-.rwas-nav-about {
+.rwas-nav-credits {
   margin-top: auto;
+}
+.rwas-nav-about {
+  margin-top: 0;
 }
 
 .rwas-workspace {
@@ -414,6 +417,7 @@ export const RWA_SETTINGS_CSS = `
   }
 
   .rwas-nav-copy small { display: none; }
+  .rwas-nav-credits,
   .rwas-nav-about { display: inline-flex; margin-top: 0; margin-left: 4px; }
   .rwas-page-head { min-height: 88px; padding: 14px 16px 12px; gap: 12px; }
   .rwas-page-title { font-size: 18px; }
