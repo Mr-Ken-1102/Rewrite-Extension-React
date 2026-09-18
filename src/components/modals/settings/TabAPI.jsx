@@ -148,7 +148,8 @@ export const TabAPI = () => {
         controller.signal,
         {
           chatId: activeChatId,
-          requestTimeoutMs: Math.max(90000, Number(config.requestTimeoutMs) || 45000),
+          requestTimeoutMs: Math.max(5000, Number(config.requestTimeoutMs) || 45000),
+          marinaraTimeoutMs: Math.max(5000, Number(config.requestTimeoutMs) || 45000),
         },
       );
       if (controller.signal.aborted) return;
