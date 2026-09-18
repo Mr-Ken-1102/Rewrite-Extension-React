@@ -46,7 +46,7 @@ export const RWA_DRAFT_REPLY_CSS = `
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--rwa2-border, rgba(255,255,255,.08));
-  border-radius: 12px;
+  border-radius: 13px;
   background: var(--rwa2-bg, #111217);
   color: var(--rwa2-text-2, rgba(255,255,255,.74));
   box-shadow: 0 18px 48px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.03);
@@ -104,7 +104,7 @@ export const RWA_DRAFT_REPLY_CSS = `
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--rwa-draft-gap);
 }
 .rwa-draft-persona-chip {
   min-width: 0;
@@ -151,7 +151,7 @@ export const RWA_DRAFT_REPLY_CSS = `
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: auto;
-  padding: 10px var(--rwa-draft-gutter) 11px;
+  padding: 11px var(--rwa-draft-gutter);
 }
 .rwa-draft-compose {
   width: 100%;
@@ -166,7 +166,7 @@ export const RWA_DRAFT_REPLY_CSS = `
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--rwa-draft-gap);
   margin: 0;
 }
 .rwa-draft-guidance-question,
@@ -197,6 +197,7 @@ export const RWA_DRAFT_REPLY_CSS = `
   margin: 0;
 }
 .rwa-draft-mode {
+  height: 30px;
   min-height: 30px;
   border: 1px solid var(--rwa2-border, rgba(255,255,255,.08));
   border-radius: 8px;
@@ -229,8 +230,8 @@ export const RWA_DRAFT_REPLY_CSS = `
 .rwa-draft-success-note {
   margin-top: 0;
   color: var(--rwa2-subtle, rgba(255,255,255,.36));
-  font-size: 9.5px;
-  line-height: 1.45;
+  font-size: 9.6px;
+  line-height: 1.5;
 }
 .rwa-draft-generation { display: grid; gap: 9px; }
 .rwa-draft-loading-copy {
@@ -291,13 +292,13 @@ export const RWA_DRAFT_REPLY_CSS = `
 }
 .rwa-draft-footer .rwa-btn {
   min-width: 0;
-  min-height: 28px;
-  height: 28px;
+  min-height: 30px;
+  height: 30px;
   margin: 0;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   font-size: 11.2px !important;
-  font-weight: 680 !important;
+  font-weight: 700 !important;
   letter-spacing: .005em;
 }
 .rwa-draft-footer-btn { flex: 1 1 0; }
@@ -320,7 +321,7 @@ export const RWA_DRAFT_REPLY_CSS = `
     max-height: calc(100vh - 16px);
   }
   .rwa-draft-persona-chip { max-width: min(46vw, 230px); }
-  .rwa-draft-body { padding: 10px var(--rwa-draft-gutter) 11px; }
+  .rwa-draft-body { padding: 11px var(--rwa-draft-gutter); }
   .rwa-draft-secondary-actions { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 `;
