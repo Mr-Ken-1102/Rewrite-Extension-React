@@ -8,6 +8,7 @@ export function useAutoProfileGeneration({
   selection,
   config,
   identity,
+  targetMessage,
   profile,
   isProcessing,
   showToast,
@@ -27,7 +28,11 @@ export function useAutoProfileGeneration({
     const runKey = `${cid}\u0000${identityKey}`;
     const lastValidated = validatedRef.current.get(runKey) || 0;
     const needsValidation = !profileRef.current || (now - lastValidated >= PROFILE_REVALIDATE_MS);
-    if (!needsValidation) return undefined;
+    if (!needsValidation) {
+      const remaining = Math.max(1, PROFILE_REVALIDATE_MS - (now - lastValidated));
+      const timer = window.setTimeout(() => setRetryTick((value) => value + 1), remaining);
+      return () => window.clearTimeout(timer);
+    }
 
     const attempts = attemptsRef.current;
     const previous = attempts.get(runKey);
@@ -50,6 +55,7 @@ export function useAutoProfileGeneration({
     attempts.set(runKey, { state: 'running', at: now });
     APIService.generateAutoProfile(cid, controller.signal, {
       messageId: selection?.mid,
+      targetMessage,
       expectedIdentityKey: identityKey,
       preferredCharacterIds: config.charCardIds,
     }).then((result) => {
@@ -62,6 +68,7 @@ export function useAutoProfileGeneration({
       if (result?.profile) {
         attempts.delete(runKey);
         validatedRef.current.set(runKey, Date.now());
+        setRetryTick((value) => value + 1);
         if (!result.reused) {
           const prefix = result.identity?.kind === 'persona' ? 'Persona' : 'Character';
           const label = result.profile.identityName || result.identity?.name || result.profile.name;
@@ -93,5 +100,6 @@ export function useAutoProfileGeneration({
     selection?.cid,
     selection?.mid,
     showToast,
+    targetMessage,
   ]);
 }
