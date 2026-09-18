@@ -542,7 +542,8 @@ ok('history context never crosses Marinara conversation-start boundaries', () =>
 
 ok('Character context uses authoritative assistant identity with explicit fallback only when needed', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /const authoritativeSender = role === 'assistant'[\s\S]*savedSel\?\.detectedCharacterId/s);
+  assert.match(context, /const authoritativeCharacterId = role === 'assistant'[\s\S]*domIdentity\?\.id \|\| info\.message\?\.characterId/s);
+  assert.match(context, /const authoritativeSender = authoritativeCharacterId[\s\S]*normalizeIdList\(authoritativeCharacterId\)/s);
   assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
   assert.match(context, /wantsCharacter && characterIds\.length > 0/);
 });
