@@ -73,13 +73,28 @@ export const RWA_DRAFT_REPLY_CSS = `
   touch-action: none;
 }
 .rwa-draft-header:active { cursor: grabbing; }
+.rwa-draft-brand {
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 1px;
+}
+.rwa-draft-brand-eyebrow {
+  color: var(--rwa2-subtle, rgba(255,255,255,.36));
+  font-size: 7.5px;
+  line-height: 1;
+  font-weight: 780;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 .rwa-draft-title {
   min-width: 0;
   color: var(--rwa2-brand, #d19a45);
-  font-size: 12px;
+  font-size: 11.5px;
   line-height: 1;
   font-weight: 760;
-  letter-spacing: .04em;
+  letter-spacing: .035em;
   white-space: nowrap;
 }
 .rwa-draft-header-right {
@@ -136,16 +151,35 @@ export const RWA_DRAFT_REPLY_CSS = `
   scrollbar-gutter: stable;
   padding: 11px 14px 12px;
 }
-.rwa-draft-profile-note {
+.rwa-draft-guidance-row {
   min-width: 0;
-  margin: 0 0 8px;
-  color: var(--rwa2-subtle, rgba(255,255,255,.36));
-  font-size: 9.5px;
-  line-height: 1.2;
-  text-align: right;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 7px;
+}
+.rwa-draft-guidance-question,
+.rwa-draft-guidance-source {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.rwa-draft-guidance-question {
+  flex: 0 1 auto;
+  color: var(--rwa2-brand, #d19a45);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 760;
+}
+.rwa-draft-guidance-source {
+  flex: 1 1 auto;
+  color: var(--rwa2-subtle, rgba(255,255,255,.36));
+  font-size: 9.5px;
+  line-height: 1;
+  text-align: right;
 }
 .rwa-draft-mode-row {
   display: grid;
@@ -252,7 +286,9 @@ export const RWA_DRAFT_REPLY_CSS = `
   margin: 0;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
-  font-size: 10px !important;
+  font-size: 11.2px !important;
+  font-weight: 680 !important;
+  letter-spacing: .005em;
 }
 .rwa-draft-footer-btn { flex: 1 1 0; }
 .rwa-draft-footer-full { flex: 1 1 100%; }
@@ -261,7 +297,7 @@ export const RWA_DRAFT_REPLY_CSS = `
   min-width: 0;
   flex: 1 1 auto;
   color: var(--rwa2-subtle, rgba(255,255,255,.36));
-  font-size: 9.5px;
+  font-size: 10.2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
