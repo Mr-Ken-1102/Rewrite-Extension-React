@@ -493,6 +493,92 @@ await ok('Draft Reply discards a result if the active Persona changes during gen
   }
 });
 
+await ok('Draft Reply discards a stale draft when the same active Persona card changes during generation', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    let personaReads = 0;
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/persona-card-race') return {
+        id: 'persona-card-race',
+        personaId: 'p-same',
+        personaCharacterId: null,
+        characterIds: [],
+      };
+      if (path === '/characters/personas/p-same') {
+        personaReads += 1;
+        return {
+          id: 'p-same',
+          data: {
+            name: 'Same Persona',
+            description: personaReads === 1 ? 'old Persona style' : 'changed Persona style',
+          },
+        };
+      }
+      if (path === '/chats/persona-card-race/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: 'Reply based on old Persona data.', streamed: false });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'persona-card-race',
+      direction: 'reply',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /Persona card changed while Draft Reply was generating/i);
+    assert.equal(result.result, undefined);
+    assert.equal(personaReads, 2);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply rejects a session fingerprint that no longer matches the active Persona before inference', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/persona-fingerprint-lock') return {
+        id: 'persona-fingerprint-lock',
+        personaId: 'p-lock',
+        personaCharacterId: null,
+        characterIds: [],
+      };
+      if (path === '/characters/personas/p-lock') return {
+        id: 'p-lock',
+        data: { name: 'Locked Persona', description: 'current style' },
+      };
+      if (path === '/chats/persona-fingerprint-lock/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    let inferenceCalls = 0;
+    h.provider.ProviderService.runInference = async () => {
+      inferenceCalls += 1;
+      return { result: 'must not run' };
+    };
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'persona-fingerprint-lock',
+      direction: 'reply',
+      mode: 'idea',
+      expectedPersonaKey: 'persona:persona:p-lock',
+      expectedPersonaFingerprint: 'fnv1a32:deadbeef:1',
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /Persona card changed after this Draft Reply session started/i);
+    assert.equal(inferenceCalls, 0);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 await ok('Draft Reply resolves character-backed active Personas with a distinct Persona identity key', async () => {
   const h = await loadApiHarness();
   try {
