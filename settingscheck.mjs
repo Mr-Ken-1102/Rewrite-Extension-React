@@ -13,6 +13,7 @@ const profiles = read('./src/components/modals/settings/TabProfiles.jsx');
 const language = read('./src/components/modals/settings/TabLanguage.jsx');
 const api = read('./src/components/modals/settings/TabAPI.jsx');
 const schema = read('./src/store/persistence/schema.js');
+const popupContext = read('./src/components/popup/ContextPanel.jsx');
 
 assert.match(modal, /className="rwa-win rwas-settings"/);
 assert.match(modal, /rwas-shell/);
@@ -109,8 +110,19 @@ assert.match(api, /Local Network/);
 assert.match(api, /NGUỒN MODEL/);
 assert.match(api, /Fast rewrite/);
 assert.match(api, /Viết lại nhanh/);
+assert.match(api, /Follow current chat \(default\)/);
+assert.match(api, /Use a specific Marinara connection/);
 assert.match(api, /Normal Marinara rewrites do not use a client-side deadline/);
+assert.match(popupContext, /Fast Rewrite/);
+assert.match(popupContext, /Viết lại nhanh/);
+assert.match(popupContext, /FAST_REWRITE_HELP/);
+assert.match(popupContext, /updateConfig\(\{ fastRewrite: value \}\)/);
+assert.match(schema, /cols:\s*4/);
+assert.match(schema, /rows:\s*4/);
+assert.match(schema, /historyDepth:\s*1/);
+assert.match(schema, /contextDepth:\s*1/);
 assert.match(schema, /fastRewrite:\s*true/);
 assert.match(schema, /fastRewrite:\s*cleanBoolean/);
+assert.match(schema, /marinaraRouting:\s*'chat'/);
 
 console.log('settingscheck: isolated bilingual settings shell/semantics/information-architecture contract passed');
