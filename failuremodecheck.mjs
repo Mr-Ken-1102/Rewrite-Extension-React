@@ -118,11 +118,13 @@ export const MarinaraHost = {
   contextSource = replaceImport(contextSource, '../prompt/promptService.js', '../prompt/promptService.mjs');
   await writeFile(join(dir, 'context', 'contextService.mjs'), contextSource);
 
+  await copyFile('./src/services/providers/marinaraRawStream.js', join(dir, 'providers', 'marinaraRawStream.mjs'));
   let providerSource = await readFile('./src/services/providers/providerService.js', 'utf8');
   providerSource = replaceImport(providerSource, '../../store/usePersistentStore', '../mockStore.mjs');
   providerSource = replaceImport(providerSource, '../marinaraHost', '../mockHost.mjs');
   providerSource = replaceImport(providerSource, '../debugLogService', '../mockDebug.mjs');
   providerSource = replaceImport(providerSource, '../policies/providerPolicy.js', '../policies/providerPolicy.mjs');
+  providerSource = replaceImport(providerSource, './marinaraRawStream.js', './marinaraRawStream.mjs');
   await writeFile(join(dir, 'providers', 'providerService.mjs'), providerSource);
 
   let source = await readFile('./src/services/apiService.js', 'utf8');
