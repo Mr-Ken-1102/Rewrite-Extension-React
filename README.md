@@ -90,4 +90,4 @@ Quality and compatibility tooling is grouped under `tools/quality/`; build orche
 - `tools/build/build-extension.mjs` — verified installable JSON build orchestration.
 - `.github/workflows/ci.yml` — clean-install CI gate.
 
-See `COMPATIBILITY.md`, `SECURITY-PRIVACY.md`, and `CHANGELOG.md` for details.
+See `COMPATIBILITY.md`, `SECURITY-PRIVACY.md`, and `CHANGELOG.md` for release details. Repository organization is documented in `docs/REPOSITORY-STRUCTURE.md`; historical audit reports are indexed in `docs/audits/README.md`.
