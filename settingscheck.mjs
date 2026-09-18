@@ -67,10 +67,15 @@ assert.match(css, /backdrop-filter:\s*none/);
 assert.match(css, /:focus-visible/);
 assert.match(css, /prefers-reduced-motion/);
 assert.doesNotMatch(css, /transition:\s*all/);
-assert.match(css, /\.rwas-nav-copy strong\s*\{[\s\S]*font-size:\s*12\.5px/);
+assert.match(css, /\.rwas-settings\s*\{[\s\S]*font-family:\s*system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif/);
+assert.match(css, /\.rwas-window-title\s*\{[\s\S]*font-size:\s*17px;[\s\S]*font-weight:\s*730;[\s\S]*letter-spacing:\s*-\.012em/);
+assert.match(css, /\.rwas-nav-copy strong\s*\{[\s\S]*font-size:\s*12\.5px;[\s\S]*font-weight:\s*690/);
 assert.match(css, /\.rwas-nav-copy small\s*\{[\s\S]*font-size:\s*11px/);
+assert.match(css, /\.rwas-page-title\s*\{[\s\S]*font-size:\s*20px;[\s\S]*font-weight:\s*740/);
 assert.match(css, /\.rwas-page-description\s*\{[\s\S]*font-size:\s*12px/);
-assert.match(css, /\.rwas-body \.rwa-prev\s*\{\s*font-size:\s*11\.5px !important/);
+assert.match(css, /\.rwas-body \.rwa-prev\s*\{\s*font-size:\s*11\.5px !important;\s*\}/);
+assert.match(css, /\.rwas-body \.rwa-setting-toggle-row small\s*\{\s*font-size:\s*11px;\s*\}/);
+assert.match(css, /\.rwas-body \.rwa-connection-note\s*\{\s*font-size:\s*11\.5px;\s*\}/);
 
 assert.match(main, /import \{ RWA_SETTINGS_CSS \} from '\.\/styles-settings\.js';/);
 assert.match(main, /RWA_PERFORMANCE_CSS\}\\n\$\{RWA_POPUP_CSS\}\\n\$\{RWA_SETTINGS_CSS\}/);
