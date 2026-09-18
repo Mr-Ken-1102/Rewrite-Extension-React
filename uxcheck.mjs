@@ -119,8 +119,8 @@ ok('Marinara inference resolves the current chat connection before fallback', ()
 
 ok('Marinara empty output retries once with reasoning disabled and emits a distinct error code', () => {
   const source = read('./src/services/providers/providerService.js');
-  assert.match(source, /const requestRaw = \(parameters\) => MarinaraHost\.apiFetch/);
-  assert.match(source, /requestRaw\(\{ reasoningEffort: null \}\)/);
+  assert.match(source, /const requestRaw = \(parameters = initialParameters\) => requestMarinaraRawStream/);
+  assert.match(source, /reasoningEffort: null, enabledParameters: \{ reasoningEffort: true \}/);
   assert.match(source, /inference\.empty_response/);
   assert.match(source, /RWA_PROVIDER_EMPTY_RESPONSE/);
   assert.match(source, /retried once with reasoning disabled/i);
@@ -128,13 +128,18 @@ ok('Marinara empty output retries once with reasoning disabled and emits a disti
 
 ok('rewrite and auto-profile inference carry chat identity to the provider', () => {
   const source = read('./src/services/apiService.js');
-  assert.match(source, /\{ chatId: savedSel\?\.cid \|\| '' \}/);
+  assert.match(source, /chatId: savedSel\?\.cid \|\| ''/);
+  assert.match(source, /onProgress:/);
   assert.match(source, /\{ chatId \}/);
 });
 
-ok('Marinara timeout protects non-streaming cold-model requests', () => {
+ok('Marinara streaming has no hidden 90-second floor and supports an explicit no-deadline mode', () => {
   const source = read('./src/services/providers/providerService.js');
-  assert.match(source, /mode === 'marinara' \? Math\.max\(90000, configuredTimeout\)/);
+  const schema = read('./src/store/persistence/schema.js');
+  assert.match(source, /const marinaraTimeout = clampMarinaraTimeout\(config\.marinaraTimeoutMs\)/);
+  assert.match(source, /mode === 'marinara'[\s\S]*\? marinaraTimeout/);
+  assert.doesNotMatch(source, /Math\.max\(90000/);
+  assert.match(schema, /marinaraTimeoutMs:\s*0/);
 });
 
 ok('settings expose current-chat connection without duplicate model selection', () => {
@@ -241,10 +246,13 @@ ok('lint policy rejects warnings instead of treating them as clean', () => {
   assert.match(pkg.scripts.lint, /--max-warnings=0/);
 });
 
-ok('diagnostics match current-chat Marinara connection behavior', () => {
+ok('diagnostics match current-chat Marinara connection and real cancel behavior', () => {
   const source = read('./src/components/modals/ErrorModal.jsx');
-  assert.match(source, /follows the current chat connection automatically/i);
-  assert.doesNotMatch(source, /select a configured Marinara connection/);
+  const provider = read('./src/services/providers/providerService.js');
+  assert.match(source, /reads the current chat connectionId/i);
+  assert.match(source, /runId abort request/i);
+  assert.match(provider, /generateRawAbort/);
+  assert.match(provider, /requestExplicitAbort/);
 });
 
 console.log(`\nuxcheck: ${passed}/${passed} assertions passed`);
