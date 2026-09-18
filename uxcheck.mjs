@@ -108,13 +108,15 @@ ok('extension teardown clears host, Marinara handle and drag state', () => {
   assert.match(source, /setMarinara\(null\)/);
 });
 
-ok('Marinara inference resolves the current chat connection before fallback', () => {
+ok('Marinara routing makes chat-following and fixed connection selection explicit', () => {
   const source = read('./src/services/providers/providerService.js');
-  const chatLookup = source.indexOf('chatConnectionId');
-  const fallbackLookup = source.indexOf('const fallbackId');
-  assert.ok(chatLookup >= 0 && fallbackLookup > chatLookup);
+  const settings = read('./src/components/modals/settings/TabAPI.jsx');
+  assert.match(source, /config\.marinaraRouting === 'fixed' \? 'fixed' : 'chat'/);
+  assert.match(source, /source: 'fixed'/);
   assert.match(source, /ENDPOINTS\.chats/);
   assert.match(source, /current chat references a Marinara connection that is no longer available/i);
+  assert.match(settings, /Follow current chat \(default\)/);
+  assert.match(settings, /Use a specific Marinara connection/);
 });
 
 ok('Marinara streaming preserves empty-output recovery without duplicating fast rewrites', () => {
@@ -122,7 +124,7 @@ ok('Marinara streaming preserves empty-output recovery without duplicating fast 
   assert.match(source, /const requestRaw = async \(parameters = null\) =>/);
   assert.match(source, /streaming:\s*true/);
   assert.match(source, /runId,/);
-  assert.match(source, /readRawStream\(response, signal, override\.onProgress\)/);
+  assert.match(source, /readRawStream\(response, signal, override\.onProgress, override\.onStreamStatus\)/);
   assert.match(source, /requestRaw\(\{ reasoningEffort: null \}\)/);
   assert.match(source, /if \(!content\.trim\(\) && !fastRewrite\)/);
   assert.match(source, /inference\.empty_response/);
@@ -133,6 +135,7 @@ ok('rewrite and auto-profile inference carry chat identity to the provider', () 
   const source = read('./src/services/apiService.js');
   assert.match(source, /chatId: savedSel\?\.cid \|\| ''/);
   assert.match(source, /onProgress: hooks\?\.onProgress/);
+  assert.match(source, /onStreamStatus: hooks\?\.onStreamStatus/);
   assert.match(source, /\{ chatId \}/);
 });
 
