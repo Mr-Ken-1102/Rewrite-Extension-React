@@ -58,7 +58,7 @@ const SETTINGS_SECTIONS = [
   {
     id: 'data',
     label: 'Data & Debug',
-    labelVi: 'Dữ liệu & Debug',
+    labelVi: 'Dữ liệu & chẩn đoán',
     meta: 'Storage & diagnostics',
     metaVi: 'Lưu trữ & chẩn đoán',
     description: 'Export portable data, inspect diagnostics, and manage local extension state.',
