@@ -185,7 +185,8 @@ ok('Marinara v2.4.4 raw-generation payload stays schema-compatible', () => {
   assert.match(provider, /generateRaw:\s*['"]\/generate\/raw['"]/);
   assert.match(provider, /connectionId,/);
   assert.match(provider, /messages:\s*\[/);
-  assert.match(provider, /streaming:\s*false/);
+  assert.match(provider, /streaming:\s*true/);
+  assert.match(provider, /generateRawAbort:\s*['"]\/generate\/raw\/abort['"]/);
   assert.doesNotMatch(provider, /max_tokens\s*:/);
 });
 
@@ -591,9 +592,11 @@ ok('release pipeline runs dependency-free preflights before package-dependent bu
   assert.doesNotMatch(ci, /npm ci --ignore-scripts/);
 });
 
-ok('RC6-equivalent store schema is v5 with privacy-minimal Part 2 defaults', () => {
+ok('store schema is v6 with privacy-minimal defaults and explicit streaming controls', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
-  assert.match(schema, /export const STORE_VERSION = 5/);
+  assert.match(schema, /export const STORE_VERSION = 6/);
+  assert.match(schema, /fastRewrite:\s*false/);
+  assert.match(schema, /marinaraTimeoutMs:\s*0/);
   assert.match(schema, /autoProfileEnabled:\s*false/);
   assert.match(schema, /debugEnabled:\s*false/);
   assert.match(schema, /speakerAware:\s*false/);
