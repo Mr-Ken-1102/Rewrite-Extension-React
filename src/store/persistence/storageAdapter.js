@@ -2,7 +2,7 @@ import { MarinaraHost } from '../../services/marinaraHost';
 
 export const STORAGE_KEY = 'rwa-premium-storage';
 export const LEGACY_BACKUP_KEY = 'rwa-premium-storage-legacy-backup-v3';
-export const STORE_VERSION = 5;
+export const STORE_VERSION = 6;
 
 // Legacy decoder used ONLY to migrate installs created by the old build.
 // The old LZW format was ambiguous for Unicode, so the original compressed
