@@ -500,7 +500,17 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(dragHook, /delete panel\.dataset\.rwaDragging/);
   assert.match(dom, /resolveMarinaraChatComposer/);
   assert.match(dom, /resolveMarinaraChatComposerAnchor/);
-  assert.match(launcher, /Trả lời Persona|Persona Reply/);
+  assert.match(launcher, /Trả lời theo Persona|Persona Reply/);
+  const rewriteSection = readFileSync('./src/components/popup/RewriteSection.jsx', 'utf8');
+  const popupFooter = readFileSync('./src/components/popup/PopupFooter.jsx', 'utf8');
+  const localizationGuide = readFileSync('./docs/LOCALIZATION-VI.md', 'utf8');
+  assert.match(rewriteSection, /Thiết lập sẵn/);
+  assert.doesNotMatch(rewriteSection, /Chọn kiểu viết/);
+  assert.match(popupFooter, /Yêu cầu tùy chỉnh/);
+  assert.match(modal, /Soạn trả lời/);
+  assert.match(modal, /Hồ sơ giọng/);
+  assert.match(localizationGuide, /Style preset \/ preset \| Thiết lập sẵn/);
+  assert.match(localizationGuide, /Persona Reply \| Trả lời theo Persona/);
   assert.match(session, /chatMode/);
   assert.match(session, /MutationObserver/);
   assert.match(session, /activeAnchor\?\.mode !== current\.chatMode/);
