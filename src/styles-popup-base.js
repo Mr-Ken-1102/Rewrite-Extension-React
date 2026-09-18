@@ -70,7 +70,7 @@ export const RWA_POPUP_BASE_CSS = `
   font-size: 12px;
   line-height: 1;
   font-weight: 760;
-  letter-spacing: .018em;
+  letter-spacing: .055em;
 }
 .rwa2-version {
   display: inline-flex;
@@ -126,7 +126,7 @@ export const RWA_POPUP_BASE_CSS = `
   color: var(--rwa2-muted);
   font-size: 9.5px;
   line-height: 1;
-  font-weight: 760;
+  font-weight: 800;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -164,7 +164,7 @@ export const RWA_POPUP_BASE_CSS = `
   background: var(--rwa2-brand-soft) !important;
   color: var(--rwa2-brand) !important;
   font-size: 10.5px !important;
-  font-weight: 680 !important;
+  font-weight: 600 !important;
 }
 
 .rwa2-multi-notice {
@@ -239,7 +239,8 @@ export const RWA_POPUP_BASE_CSS = `
   text-align: left;
   font-size: 11.5px;
   line-height: 1.15;
-  font-weight: 630;
+  font-weight: 650;
+  letter-spacing: .005em;
 }
 
 .rwa2-actionbar {
@@ -260,7 +261,7 @@ export const RWA_POPUP_BASE_CSS = `
   background: var(--rwa2-surface) !important;
   color: var(--rwa2-text-2) !important;
   font-size: 10.5px !important;
-  font-weight: 640 !important;
+  font-weight: 600 !important;
   transition: background-color .10s ease, border-color .10s ease, color .10s ease, opacity .10s ease !important;
 }
 .rwa2-popup .rwa2-action:hover:not(:disabled) {
