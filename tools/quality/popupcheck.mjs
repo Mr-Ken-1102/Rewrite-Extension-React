@@ -154,10 +154,10 @@ ok('Fast Rewrite is visible without changing rewrite semantics', () => {
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   const base = read('./src/styles-popup-base.js');
   const responsive = read('./src/styles-popup-responsive.js');
-  assert.match(main, /fastRewrite=\{config\.fastRewrite !== false\}/);
+  assert.match(main, /fastRewrite=\{config\.connMode === 'marinara' && config\.fastRewrite !== false\}/);
   assert.match(rewrite, /rwa2-fast-strip/);
-  assert.match(rewrite, /Reasoning bypass · SSE live/);
-  assert.match(rewrite, /Bỏ qua reasoning · SSE trực tiếp/);
+  assert.match(rewrite, /Fast path · SSE live/);
+  assert.match(rewrite, /Đường nhanh · SSE trực tiếp/);
   assert.match(base, /@keyframes rwa2-fast-sweep/);
   assert.match(base, /\.rwa2-fast-rail/);
   assert.match(responsive, /\.rwa2-fast-rail > span/);
