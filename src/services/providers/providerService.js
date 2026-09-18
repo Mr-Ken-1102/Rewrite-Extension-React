@@ -8,11 +8,13 @@ import {
   validateProviderHttpUrl,
   withProviderNetworkHints,
 } from '../policies/providerPolicy.js';
+import { consumeRawSseText } from './marinaraRawStream.js';
 
 const ENDPOINTS = {
   tracker: '/sidecar/tracker',
   connections: '/connections',
   generateRaw: '/generate/raw',
+  generateRawAbort: '/generate/raw/abort',
   chats: '/chats',
 };
 
@@ -47,6 +49,209 @@ async function queryLocalNetworkPermission(addressSpace) {
     return status?.state || 'unknown';
   } catch {
     return 'unsupported';
+  }
+}
+
+async function readProviderPayload(response) {
+  const text = await response?.text?.().catch(() => '');
+  if (!text) return null;
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+function clampRequestTimeout(value, fallback = 45000) {
+  const parsed = Number(value);
+  return Math.max(5000, Math.min(180000, Number.isFinite(parsed) && parsed > 0 ? parsed : fallback));
+}
+
+function clampMarinaraTimeout(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return Math.max(5000, Math.min(600000, parsed));
+}
+
+function fastRewriteParameters(enabled) {
+  return enabled
+    ? { reasoningEffort: null, enabledParameters: { reasoningEffort: true } }
+    : null;
+}
+
+async function requestMarinaraRawStream({
+  connectionId,
+  systemPrompt,
+  userPrompt,
+  signal,
+  timeout,
+  parameters,
+  onProgress,
+}) {
+  const endpoint = `/api${ENDPOINTS.generateRaw}`;
+  let runId = '';
+  let partial = '';
+  let finalContent = '';
+  let streamError = '';
+  let streamDone = false;
+  let streamAborted = false;
+  let reader = null;
+  let explicitAbortSent = false;
+  let lastProgress = '';
+  let lastProgressAt = 0;
+  const startedAt = Date.now();
+  let firstTokenAt = 0;
+
+  const reportProgress = (force = false) => {
+    if (typeof onProgress !== 'function' || partial === lastProgress) return;
+    const now = Date.now();
+    if (!force && now - lastProgressAt < 50) return;
+    lastProgressAt = now;
+    lastProgress = partial;
+    try { onProgress(partial); } catch { /* UI progress must never break inference */ }
+  };
+
+  const requestExplicitAbort = () => {
+    if (!runId || explicitAbortSent) return;
+    explicitAbortSent = true;
+    debugLogService.add('inference.abort_request', { mode: 'marinara', runId });
+    void MarinaraHost.apiFetch(ENDPOINTS.generateRawAbort, {
+      method: 'POST',
+      body: JSON.stringify({ runId, connectionId }),
+    }, 5000).catch(() => {});
+  };
+
+  const onExternalAbort = () => requestExplicitAbort();
+  signal?.addEventListener?.('abort', onExternalAbort, { once: true });
+
+  const applyEvent = (event) => {
+    if (!event || typeof event !== 'object') return;
+    if (event.type === 'raw_started') {
+      runId = String(event.data?.runId || '').trim();
+      if (signal?.aborted) requestExplicitAbort();
+      return;
+    }
+    if (event.type === 'token' && typeof event.data === 'string') {
+      if (!firstTokenAt && event.data) {
+        firstTokenAt = Date.now();
+        debugLogService.add('inference.first_token', {
+          mode: 'marinara',
+          ms: firstTokenAt - startedAt,
+          runId: runId || null,
+        });
+      }
+      partial += event.data;
+      reportProgress(false);
+      return;
+    }
+    if (event.type === 'result' && typeof event.data?.content === 'string') {
+      finalContent = event.data.content;
+      partial = finalContent || partial;
+      reportProgress(true);
+      return;
+    }
+    if (event.type === 'error') {
+      streamError = typeof event.data === 'string' ? event.data : JSON.stringify(event.data || 'Raw generation failed');
+      return;
+    }
+    if (event.type === 'aborted') {
+      streamAborted = true;
+      return;
+    }
+    if (event.type === 'done') streamDone = true;
+  };
+
+  try {
+    const response = await MarinaraHost.fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-marinara-csrf': '1',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify({
+        connectionId,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        streaming: true,
+        ...(parameters ? { parameters } : {}),
+      }),
+      signal,
+      cache: 'no-store',
+    }, timeout);
+
+    if (!response.ok) {
+      const payload = await readProviderPayload(response);
+      return {
+        ...normalizeProviderFailure(payload?.error || payload || `HTTP ${response.status} from Marinara raw generation.`),
+        partialResult: partial || undefined,
+      };
+    }
+
+    if (!response.body?.getReader) {
+      return {
+        error: 'This browser cannot read Marinara streaming responses. Update the browser or disable the extension until a compatible runtime is available.',
+        errorCode: 'RWA_PROVIDER_STREAM_UNAVAILABLE',
+      };
+    }
+
+    reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let rest = '';
+
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      const parsed = consumeRawSseText(rest, decoder.decode(next.value, { stream: true }));
+      rest = parsed.rest;
+      for (const event of parsed.events) applyEvent(event);
+      if (streamDone || streamAborted || streamError) {
+        if (streamDone || streamAborted) break;
+      }
+    }
+
+    const tail = consumeRawSseText(rest, decoder.decode(), true);
+    for (const event of tail.events) applyEvent(event);
+    reportProgress(true);
+
+    if (streamAborted || signal?.aborted) return { aborted: true, runId: runId || undefined, streamed: true };
+    if (streamError) {
+      return {
+        ...normalizeProviderFailure(streamError, 'Marinara streaming generation failed.'),
+        partialResult: partial || undefined,
+        runId: runId || undefined,
+        streamed: true,
+      };
+    }
+    if (!streamDone) {
+      return {
+        error: 'The Marinara streaming response ended before a completion event. Any received text is preserved below for recovery.',
+        errorCode: 'RWA_PROVIDER_STREAM_INCOMPLETE',
+        partialResult: partial || undefined,
+        runId: runId || undefined,
+        streamed: true,
+      };
+    }
+
+    return {
+      result: finalContent || partial,
+      runId: runId || undefined,
+      streamed: true,
+      firstTokenMs: firstTokenAt ? firstTokenAt - startedAt : null,
+    };
+  } catch (err) {
+    if (signal?.aborted || MarinaraHost.isAbortError(err)) {
+      requestExplicitAbort();
+      return { aborted: true, runId: runId || undefined, streamed: true };
+    }
+    requestExplicitAbort();
+    return {
+      ...normalizeProviderFailure(err, 'Marinara streaming request failed.'),
+      partialResult: partial || undefined,
+      runId: runId || undefined,
+      streamed: true,
+    };
+  } finally {
+    signal?.removeEventListener?.('abort', onExternalAbort);
+    try { reader?.releaseLock?.(); } catch { /* noop */ }
   }
 }
 
@@ -117,15 +322,21 @@ export class ProviderService {
   static async runInference(systemPrompt, userPrompt, signal, override = {}) {
     const config = { ...usePersistentStore.getState().config, ...override };
     const mode = ['marinara', 'sidecar', 'direct', 'extender'].includes(config.connMode) ? config.connMode : 'marinara';
-    const configuredTimeout = Math.max(5000, Math.min(180000, Number(config.requestTimeoutMs) || 45000));
+    const configuredTimeout = clampRequestTimeout(config.requestTimeoutMs);
     const directLocalNetwork = mode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl);
-    const marinaraTimeout = mode === 'marinara' ? Math.max(90000, configuredTimeout) : configuredTimeout;
-    const timeout = directLocalNetwork ? Math.max(120000, configuredTimeout) : marinaraTimeout;
+    const marinaraTimeout = clampMarinaraTimeout(config.marinaraTimeoutMs);
+    const timeout = mode === 'marinara'
+      ? marinaraTimeout
+      : directLocalNetwork
+        ? Math.max(120000, configuredTimeout)
+        : configuredTimeout;
     debugLogService.add('inference.request', {
       mode,
       systemChars: systemPrompt.length,
       userChars: userPrompt.length,
-      timeoutMs: timeout,
+      timeoutMs: timeout || null,
+      streaming: mode === 'marinara' || undefined,
+      fastRewrite: mode === 'marinara' ? config.fastRewrite === true : undefined,
       localNetwork: directLocalNetwork || undefined,
     });
 
@@ -133,26 +344,28 @@ export class ProviderService {
       const resolved = await this.resolveMarinaraConnection(config, signal, override.chatId);
       if (resolved.error || !resolved.connectionId) return { error: resolved.error || 'No Marinara connection is available.' };
       const connectionId = resolved.connectionId;
-      debugLogService.add('inference.connection', { mode, source: resolved.source, chatId: resolved.chatId || null });
+      debugLogService.add('inference.connection', {
+        mode,
+        source: resolved.source,
+        chatId: resolved.chatId || null,
+        connectionId,
+      });
 
-      const requestRaw = (parameters) => MarinaraHost.apiFetch(ENDPOINTS.generateRaw, {
-        method: 'POST',
-        body: JSON.stringify({
-          connectionId,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          streaming: false,
-          ...(parameters ? { parameters } : {}),
-        }),
+      const progress = typeof override.onProgress === 'function' ? override.onProgress : null;
+      const initialParameters = fastRewriteParameters(config.fastRewrite === true);
+      const requestRaw = (parameters = initialParameters) => requestMarinaraRawStream({
+        connectionId,
+        systemPrompt,
+        userPrompt,
         signal,
-      }, timeout);
+        timeout,
+        parameters,
+        onProgress: progress,
+      });
 
       const result = await requestRaw();
-      if (!result) return { error: 'Marinara returned an unreadable response.' };
-      if (result.aborted === true) return { aborted: true };
-      if (result.error) return normalizeProviderFailure(result.error);
+      if (result?.aborted === true) return result;
+      if (result?.error) return result;
 
       let content = extractMarinaraContent(result);
       if (!content.trim()) {
@@ -163,10 +376,9 @@ export class ProviderService {
           retry: 'reasoning-disabled',
         });
 
-        const retry = await requestRaw({ reasoningEffort: null });
-        if (!retry) return { error: 'Marinara returned an unreadable response while retrying an empty generation.' };
-        if (retry.aborted === true) return { aborted: true };
-        if (retry.error) return normalizeProviderFailure(retry.error);
+        const retry = await requestRaw({ reasoningEffort: null, enabledParameters: { reasoningEffort: true } });
+        if (retry?.aborted === true) return retry;
+        if (retry?.error) return retry;
         content = extractMarinaraContent(retry);
 
         if (!content.trim()) {
@@ -176,14 +388,27 @@ export class ProviderService {
             connectionId,
           });
           return {
-            error: 'Marinara completed the request but returned no usable text. Rewrite Assistant retried once with reasoning disabled and still received an empty answer. Check the active chat model/output-token settings, or disable reasoning for this connection.',
+            error: 'Marinara completed the request but returned no usable text. Rewrite Assistant retried once with reasoning disabled and still received an empty answer. Check the active chat model/output-token settings.',
             errorCode: 'RWA_PROVIDER_EMPTY_RESPONSE',
           };
         }
+        debugLogService.add('inference.response', {
+          mode,
+          resultChars: content.length,
+          streamed: retry.streamed === true,
+          firstTokenMs: retry.firstTokenMs ?? null,
+          retry: 'reasoning-disabled',
+        });
+        return { ...retry, result: content };
       }
 
-      debugLogService.add('inference.response', { mode, resultChars: content.length });
-      return { result: content };
+      debugLogService.add('inference.response', {
+        mode,
+        resultChars: content.length,
+        streamed: result.streamed === true,
+        firstTokenMs: result.firstTokenMs ?? null,
+      });
+      return { ...result, result: content };
     }
 
     if (mode === 'sidecar') {
