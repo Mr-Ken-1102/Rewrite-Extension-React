@@ -297,15 +297,17 @@ export class ContextService {
       : '';
     const authoritativeSender = role === 'assistant' ? normalizeIdList(info.message?.characterId) : [];
     const characterIds = explicitCharacterIds.length ? explicitCharacterIds : authoritativeSender;
-    const character = wantsCharacter && (explicitCharacterIds.length > 0 || role === 'assistant')
-      ? await this.fetchCharCard(savedSel.cid, signal, characterIds) : '';
-    const persona = wantsPersona && role === 'user'
-      ? await this.fetchUserPersona(savedSel.cid, signal, getMessagePersonaSnapshot(info.message)) : '';
-    const lore = wantsLore ? await this.fetchLorebookContext(savedSel.cid, signal) : '';
     const surrounding = wantsSurrounding ? extractSurroundingContext(savedSel, config.localContextWords) : '';
-    const memory = wantsMemory
-      ? await this.fetchExtenderMemory(savedSel.cid, signal, explicitCharacterIds.length ? explicitCharacterIds : authoritativeSender) : '';
     const speaker = wantsSpeaker ? this.speakerNote(role) : '';
+    const [character, persona, lore, memory] = await Promise.all([
+      wantsCharacter && (explicitCharacterIds.length > 0 || role === 'assistant')
+        ? this.fetchCharCard(savedSel.cid, signal, characterIds) : Promise.resolve(''),
+      wantsPersona && role === 'user'
+        ? this.fetchUserPersona(savedSel.cid, signal, getMessagePersonaSnapshot(info.message)) : Promise.resolve(''),
+      wantsLore ? this.fetchLorebookContext(savedSel.cid, signal) : Promise.resolve(''),
+      wantsMemory
+        ? this.fetchExtenderMemory(savedSel.cid, signal, explicitCharacterIds.length ? explicitCharacterIds : authoritativeSender) : Promise.resolve(''),
+    ]);
     return { role, character, persona, lore, surrounding, history, memory, speaker, messageInfo: info };
   }
 
