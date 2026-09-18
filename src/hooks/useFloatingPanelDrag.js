@@ -37,6 +37,7 @@ export function useFloatingPanelDrag({ panelRef, onPositionChange, allowInteract
     try { captureTarget?.setPointerCapture?.(pointerId); } catch { /* best effort */ }
 
     setDragging(true);
+    panel.dataset.rwaDragging = 'true';
     panel.style.willChange = 'transform';
     captureTarget.style.cursor = 'grabbing';
 
@@ -79,17 +80,26 @@ export function useFloatingPanelDrag({ panelRef, onPositionChange, allowInteract
         }
       } catch { /* best effort */ }
 
-      panel.style.transform = '';
       panel.style.willChange = '';
       captureTarget.style.cursor = '';
 
       if (commit && panel.isConnected && moved) {
-        onPositionChange?.({ left: Math.round(latest.left), top: Math.round(latest.top) });
+        const committed = { left: Math.round(latest.left), top: Math.round(latest.top) };
+        // Commit the final DOM position before removing the transient transform.
+        // This avoids a one-frame snap back to the old React left/top while the
+        // state update is still being scheduled.
+        panel.style.left = `${committed.left}px`;
+        panel.style.top = `${committed.top}px`;
+        panel.style.transform = '';
+        delete panel.dataset.rwaDragging;
+        onPositionChange?.(committed);
         releaseTimerRef.current = window.setTimeout(() => {
           releaseTimerRef.current = 0;
           useRuntimeStore.getState().setDragging(false);
         }, 64);
       } else {
+        panel.style.transform = '';
+        delete panel.dataset.rwaDragging;
         useRuntimeStore.getState().setDragging(false);
       }
       cleanupRef.current = null;
