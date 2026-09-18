@@ -1,5 +1,6 @@
 import { usePersistentStore } from '../../../store/usePersistentStore';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
+import { Button } from '../../ui/Button';
 
 const ConfigRow = ({ label, children }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
@@ -82,6 +83,39 @@ export const TabUI = () => {
           <option value="below" style={{ background: '#12121a' }}>{text('Always below highlight', 'Luôn ở dưới vùng chọn')}</option>
         </select>
       </ConfigRow>
+
+      <div className="rwa-lbl" style={{ marginTop: '26px' }}>{text('Persona Reply launcher', 'Nút Trả lời Persona')}</div>
+
+      <ConfigRow label={text('Launcher positioning:', 'Vị trí nút trả lời nhanh:')}>
+        <select
+          className="rwa-inp"
+          value={config.draftReplyLauncherPlacement || 'auto'}
+          onChange={(event) => updateConfig({ draftReplyLauncherPlacement: event.target.value })}
+          aria-label={text('Persona Reply launcher positioning', 'Vị trí nút Trả lời Persona')}
+          style={{ width: 'auto', margin: '0', padding: '6px 12px', fontSize: '12px', background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff' }}
+        >
+          <option value="auto" style={{ background: '#12121a' }}>{text('Auto — follow composer', 'Tự động — bám ô nhập')}</option>
+          <option value="remember" style={{ background: '#12121a' }}>{text('Remember dragged position', 'Ghi nhớ vị trí đã kéo')}</option>
+        </select>
+      </ConfigRow>
+
+      <ConfigRow label={text('Reset saved launcher position:', 'Đặt lại vị trí nút đã lưu:')}>
+        <Button
+          glow={false}
+          disabled={!Object.keys(config.draftReplyLauncherPositions || {}).length}
+          onClick={() => updateConfig({ draftReplyLauncherPositions: {} })}
+          style={{ minWidth: '132px' }}
+        >
+          {text('Reset position', 'Đặt lại vị trí')}
+        </Button>
+      </ConfigRow>
+
+      <div style={{ marginTop: '-8px', color: 'rgba(255,255,255,.45)', fontSize: '11px', lineHeight: 1.5 }}>
+        {text(
+          'Auto keeps the launcher attached to the active composer. Remember lets you drag it; each Marinara chat mode keeps its own saved position.',
+          'Tự động giữ nút bám theo ô nhập hiện tại. Ghi nhớ cho phép kéo nút; mỗi chế độ chat Marinara lưu vị trí riêng.',
+        )}
+      </div>
     </>
   );
 };
