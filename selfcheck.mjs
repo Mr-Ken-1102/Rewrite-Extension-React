@@ -8,6 +8,12 @@ import { normalizeRewriteResult } from './src/services/prompt/promptService.js';
 import { DOMUtils } from './src/utils/domUtils.js';
 import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from './src/services/autoProfilePolicy.js';
 import { createExecutionCoordinator } from './src/controllers/rewriteExecution.js';
+import { sanitizeAutoProfiles } from './src/store/persistence/schema.js';
+import {
+  getVoiceProfile,
+  makeVoiceIdentityKey,
+  voiceIdentityFromMessage,
+} from './src/services/voiceProfileIdentity.js';
 import { createExtensionManifest } from './extension-manifest.mjs';
 import {
   assembleLedgerText,
@@ -45,6 +51,32 @@ ok('history is scoped by chat + message', () => {
   assert.equal(makeHistoryKey('chat-a', '7'), 'chat-a::7');
   assert.notEqual(makeHistoryKey('chat-a', '7'), makeHistoryKey('chat-b', '7'));
 });
+
+ok('Voice Profile identity keys distinguish Characters, Personas, and character-backed Personas', () => {
+  assert.equal(makeVoiceIdentityKey({ kind: 'character', id: 'same' }), 'character:same');
+  assert.equal(makeVoiceIdentityKey({ kind: 'persona', source: 'persona', id: 'same' }), 'persona:persona:same');
+  assert.equal(makeVoiceIdentityKey({ kind: 'persona', source: 'character', id: 'same' }), 'persona:character:same');
+
+  const char = voiceIdentityFromMessage({ role: 'assistant', characterId: 'char-2', characterName: 'Sami 2.0' });
+  const persona = voiceIdentityFromMessage({
+    role: 'user',
+    extra: { personaSnapshot: { personaId: 'persona-7', name: 'Detective Ken', source: 'persona' } },
+  });
+  assert.equal(char.key, 'character:char-2');
+  assert.equal(char.name, 'Sami 2.0');
+  assert.equal(persona.key, 'persona:persona:persona-7');
+  assert.equal(persona.name, 'Detective Ken');
+});
+
+ok('v5 chat-wide auto profiles migrate to quarantined legacy buckets instead of matching a random identity', () => {
+  const migrated = sanitizeAutoProfiles({
+    'chat-old': { id: 'auto-chat-old', name: 'Old Voice', prompt: 'old prompt', order: -1, auto: true },
+  });
+  assert.ok(migrated['chat-old']?.legacy);
+  assert.equal(migrated['chat-old'].legacy.legacy, true);
+  assert.equal(getVoiceProfile(migrated, 'chat-old', 'character:any'), null);
+});
+
 
 ok('rewrite result normalization removes leaked protocol delimiters only at output boundaries', () => {
   assert.equal(normalizeRewriteResult('<rewrite_this>\nHello world\n</rewrite_this>'), 'Hello world');
@@ -641,10 +673,13 @@ ok('auto-profile policy yields to manual rewrites and enforces a 60-second failu
   assert.equal(shouldStartAutoProfile({ enabled: true, hasProfile: false, isProcessing: false, attempt: { state: 'failed', at: 50_000 }, now: 100_000 }), false);
   assert.equal(autoProfileBackoffRemaining({ state: 'failed', at: 50_000 }, 100_000), 10_000);
   assert.equal(shouldStartAutoProfile({ enabled: true, hasProfile: false, isProcessing: false, attempt: { state: 'failed', at: 40_000 }, now: 100_000 }), true);
-  const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
+  const app = readFileSync('./src/App.jsx', 'utf8');
+  const coordinator = readFileSync('./src/hooks/useAutoVoiceProfileCoordinator.js', 'utf8');
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
-  assert.match(popup, /isProcessing = useRuntimeStore/);
-  assert.match(popup, /useAutoProfileGeneration/);
+  assert.match(app, /useAutoVoiceProfileCoordinator/);
+  assert.match(coordinator, /isProcessing = useRuntimeStore/);
+  assert.match(coordinator, /voiceIdentityFromMessage/);
+  assert.match(coordinator, /useAutoProfileGeneration/);
   assert.match(hook, /shouldStartAutoProfile/);
   assert.match(hook, /autoProfileBackoffRemaining/);
 });
