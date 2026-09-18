@@ -8,7 +8,7 @@ Rewrite Assistant is a client-side Personal Extension cross-checked against **Ma
 - Personal Extension runtime: `client`
 - Required capability: `full_page_access`
 - Node for development/build: `^20.19.0 || >=22.12.0`
-- Package version: `3.0.0`
+- Package version: `3.0.2`
 
 `full_page_access` is intentionally required because the extension maps rendered selections back to stored message content and integrates with Marinara's page APIs. Only install code you trust and review the permission warning shown by Marinara.
 
@@ -28,7 +28,7 @@ No telemetry, remote scripts, cookies, `eval`, or `new Function` are used by thi
 
 ## Reference parity status
 
-The React product remains the authority for its UX and safety model; `Marinara-Rewrite` is a behavior reference, not a codebase transplanted wholesale. RC6 contains the verified Part 1 foundation plus Part 2 context/management parity.
+The React product remains the authority for its UX and safety model; `Marinara-Rewrite` is a behavior reference, not a codebase transplanted wholesale. v3.0.2 contains the verified Part 1 foundation, Part 2 context/management parity, and the identity/Draft Reply hardening certified against Marinara Engine v2.4.4 and v2.4.6.
 
 Part 1 adds explicit context priority and pre-inference drop notices, one-shot source exclusions, captured-snapshot surrounding prose, safe trim-before-send, Preview Copy, Custom Prompt → Profile, profile search/hide, concise instructions, and popup pinning.
 
@@ -42,6 +42,14 @@ Part 2 adds:
 - chat-specific auto-profiles, **OFF by default**, with explicit/manual generation;
 - selective portable export/import that deliberately excludes provider-routing fields; and
 - bounded session-only debug logs that store metadata rather than prompt/reply bodies.
+
+v3.0.2 identity and Draft Reply hardening adds:
+
+- exact selected-message Character identity targeting in group chats, with identity-scoped Character/Persona Voice Profiles and source-fingerprint revalidation;
+- active-Persona Draft Reply with Idea → Reply, Continue Draft, alternatives, shorter/longer, streaming, real cancellation, preview, copy, and explicit composer insertion;
+- Persona identity + source-fingerprint session locking before generation, after generation, and again before insertion, so chat/Persona/card changes fail closed;
+- conservative hidden-from-AI and conversation-boundary handling for Draft Reply history, plus post-generation rejection of obvious extra Character/Narrator/speaker turns; and
+- release security gates that reject moderate-or-higher advisories across the full locked dependency tree.
 
 Persisted profiles/custom prompts/auto-profiles are now bounded by UTF-8 byte budgets so Unicode-heavy data stays below Marinara's 1,000,000-byte private-storage quota. Direct API credentials are intentionally **not** persisted; credentialed remote providers should use Marinara Connections.
 
@@ -71,12 +79,15 @@ npm run bundle
 
 ## Verification included in the repository
 
-- `sourcecheck.mjs` — dependency-free lockfile/import/runtime-syntax/high-risk-pattern gate.
-- `manifestcheck.mjs` / `extension-manifest.mjs` — dependency-free Marinara v2.4.4–v2.4.6 installable-manifest factory and preflight validator.
-- `selfcheck.mjs` — regression invariants for selection mapping, privacy defaults, persistence, provider limits, modal/storage lifecycle, and destructive-write guards.
-- `failuremodecheck.mjs` — executable mocks for provider trust, abort/timeout behavior, HTTP/CSRF handling, storage migration, and destructive-write races.
-- `propertycheck.mjs` — deterministic property/fuzz coverage for span mapping, context fingerprints, Unicode/grapheme-safe Ledger splitting/assembly/subdivision, capacity bounds, and merged-marker integrity.
-- `engine-compatcheck.mjs` — checks the extension's assumptions directly against a Marinara Engine source tree, including 2.4.6 character-backed user identity.
+Quality and compatibility tooling is grouped under `tools/quality/`; build orchestration lives under `tools/build/`. Historical audits are archived by date under `docs/audits/` so the repository root stays focused on product source, configuration, and current release documentation.
+
+- `tools/quality/sourcecheck.mjs` — dependency-free lockfile/import/runtime-syntax/high-risk-pattern gate.
+- `tools/quality/manifestcheck.mjs` / `extension-manifest.mjs` — dependency-free Marinara v2.4.4–v2.4.6 installable-manifest factory and preflight validator.
+- `tools/quality/selfcheck.mjs` — regression invariants for selection mapping, privacy defaults, persistence, provider limits, modal/storage lifecycle, and destructive-write guards.
+- `tools/quality/failuremodecheck.mjs` — executable mocks for provider trust, abort/timeout behavior, HTTP/CSRF handling, storage migration, and destructive-write races.
+- `tools/quality/propertycheck.mjs` — deterministic property/fuzz coverage for span mapping, context fingerprints, Unicode/grapheme-safe Ledger splitting/assembly/subdivision, capacity bounds, and merged-marker integrity.
+- `tools/quality/engine-compatcheck.mjs` — checks the extension's assumptions directly against a Marinara Engine source tree, including 2.4.6 character-backed user identity.
+- `tools/build/build-extension.mjs` — verified installable JSON build orchestration.
 - `.github/workflows/ci.yml` — clean-install CI gate.
 
-See `COMPATIBILITY.md`, `SECURITY-PRIVACY.md`, and `CHANGELOG.md` for details.
+See `COMPATIBILITY.md`, `SECURITY-PRIVACY.md`, and `CHANGELOG.md` for release details. Repository organization is documented in `docs/REPOSITORY-STRUCTURE.md`; historical audit reports are indexed in `docs/audits/README.md`.

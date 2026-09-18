@@ -1,4 +1,4 @@
-import { createExtensionManifest, validateExtensionManifest } from './extension-manifest.mjs';
+import { createExtensionManifest, validateExtensionManifest } from '../../extension-manifest.mjs';
 
 const sentinelJs = '"use strict";void 0;';
 const manifest = createExtensionManifest(sentinelJs);

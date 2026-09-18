@@ -1,22 +1,22 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { mapRenderedSpanToRaw, spanIsBalanced, ctxFingerprint, fingerprintOk } from './src/services/spanMapper.js';
-import { computeWordDiffSync, DIFF_TOKEN_CAP } from './src/services/diffWorkerService.js';
-import { makeHistoryKey } from './src/utils/historyKey.js';
-import { unwrapMatchingOuterQuotes } from './src/utils/textSanitizers.js';
-import { normalizeRewriteResult } from './src/services/prompt/promptService.js';
-import { DOMUtils } from './src/utils/domUtils.js';
-import { readMessageDomIdentity } from './src/utils/messageDomIdentity.js';
-import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from './src/services/autoProfilePolicy.js';
-import { createExecutionCoordinator } from './src/controllers/rewriteExecution.js';
-import { sanitizeAutoProfiles } from './src/store/persistence/schema.js';
+import { mapRenderedSpanToRaw, spanIsBalanced, ctxFingerprint, fingerprintOk } from '../../src/services/spanMapper.js';
+import { computeWordDiffSync, DIFF_TOKEN_CAP } from '../../src/services/diffWorkerService.js';
+import { makeHistoryKey } from '../../src/utils/historyKey.js';
+import { unwrapMatchingOuterQuotes } from '../../src/utils/textSanitizers.js';
+import { normalizeRewriteResult } from '../../src/services/prompt/promptService.js';
+import { DOMUtils } from '../../src/utils/domUtils.js';
+import { readMessageDomIdentity } from '../../src/utils/messageDomIdentity.js';
+import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from '../../src/services/autoProfilePolicy.js';
+import { createExecutionCoordinator } from '../../src/controllers/rewriteExecution.js';
+import { sanitizeAutoProfiles } from '../../src/store/persistence/schema.js';
 import {
   getVoiceProfile,
   makeVoiceIdentityKey,
   resolveVoiceIdentity,
   voiceIdentityFromMessage,
-} from './src/services/voiceProfileIdentity.js';
-import { createExtensionManifest } from './extension-manifest.mjs';
+} from '../../src/services/voiceProfileIdentity.js';
+import { createExtensionManifest } from '../../extension-manifest.mjs';
 import {
   assembleLedgerText,
   buildMergedPayload,
@@ -29,13 +29,13 @@ import {
   splitTextToLedgerSlices,
   stripMessageSelectionEdgeWhitespace,
   subdivideLedgerSlice,
-} from './src/services/advancedRewriteService.js';
+} from '../../src/services/advancedRewriteService.js';
 import {
   buildHistoryContext,
   getMessagePersonaSnapshot,
   isMessageHiddenFromRewriteContext,
   isRewriteContextStartBoundary,
-} from './src/utils/messageContext.js';
+} from '../../src/utils/messageContext.js';
 
 let passed = 0;
 function ok(name, fn) {
@@ -733,17 +733,17 @@ ok('auto profiles persist but session debug and undo history do not', () => {
 });
 
 ok('release pipeline runs dependency-free preflights before package-dependent build steps', () => {
-  const build = readFileSync('./build-extension.mjs', 'utf8');
-  const sourceIndex = build.indexOf("await import('./sourcecheck.mjs')");
-  const manifestIndex = build.indexOf("await import('./manifestcheck.mjs')");
+  const build = readFileSync('./tools/build/build-extension.mjs', 'utf8');
+  const sourceIndex = build.indexOf("await import('../quality/sourcecheck.mjs')");
+  const manifestIndex = build.indexOf("await import('../quality/manifestcheck.mjs')");
   const viteIndex = build.indexOf("await import('vite')");
   assert.ok(sourceIndex >= 0 && manifestIndex > sourceIndex && viteIndex > manifestIndex);
 
   const ci = readFileSync('./.github/workflows/ci.yml', 'utf8');
-  const ciSource = ci.indexOf('node sourcecheck.mjs');
-  const ciSelf = ci.indexOf('node selfcheck.mjs');
-  const ciFailure = ci.indexOf('node failuremodecheck.mjs');
-  const ciManifest = ci.indexOf('node manifestcheck.mjs');
+  const ciSource = ci.indexOf('node tools/quality/sourcecheck.mjs');
+  const ciSelf = ci.indexOf('node tools/quality/selfcheck.mjs');
+  const ciFailure = ci.indexOf('node tools/quality/failuremodecheck.mjs');
+  const ciManifest = ci.indexOf('node tools/quality/manifestcheck.mjs');
   const ciInstall = ci.indexOf('run: npm ci');
   assert.ok(ciSource >= 0 && ciSelf > ciSource && ciFailure > ciSelf && ciManifest > ciFailure && ciInstall > ciManifest);
   assert.doesNotMatch(ci, /npm ci --ignore-scripts/);
@@ -837,9 +837,9 @@ ok('CI keeps Node 24 security, pinned Engine, real artifact validation, and uplo
   const ci = readFileSync('./.github/workflows/ci.yml', 'utf8');
   assert.match(ci, /node-version: '24'/);
   assert.match(ci, /npm audit --omit=dev --audit-level=high/);
-  assert.match(ci, /npm audit --audit-level=critical/);
+  assert.match(ci, /npm audit --audit-level=moderate/);
   assert.match(ci, /ref: 1a299369ac7025028c3ce1b80cc59f47b7b0691b/);
-  assert.match(ci, /node engine-compatcheck\.mjs vendor\/marinara-engine/);
+  assert.match(ci, /node tools\/quality\/engine-compatcheck\.mjs vendor\/marinara-engine/);
   assert.match(ci, /Verify real installable artifact/);
   assert.match(ci, /actions\/upload-artifact@v4/);
 });
@@ -1206,10 +1206,10 @@ ok('native editor targeting scans every wrapper for the exact message id', () =>
 ok('property fuzzing is a first-class dependency-free CI gate', () => {
   const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
   const ci = readFileSync('./.github/workflows/ci.yml', 'utf8');
-  assert.match(pkg.scripts.test, /propertycheck\.mjs/);
-  assert.equal(pkg.scripts['test:properties'], 'node propertycheck.mjs');
+  assert.match(pkg.scripts.test, /tools\/quality\/propertycheck\.mjs/);
+  assert.equal(pkg.scripts['test:properties'], 'node tools/quality/propertycheck.mjs');
   assert.match(ci, /Dependency-free property\/fuzz gate/);
-  assert.match(ci, /node propertycheck\.mjs/);
+  assert.match(ci, /node tools\/quality\/propertycheck\.mjs/);
 });
 
 console.log(`\nselfcheck: ${passed}/${passed} assertions passed`);

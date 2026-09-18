@@ -22,6 +22,16 @@ The extension prefers `marinara.fetch()` so Personal Extension traffic is attrib
 
 Selected text and optional Character, Persona, history, and Lorebook context are wrapped in explicit data blocks. Reserved block tags appearing inside user/model context are neutralized before prompt composition. Context is dropped before selected text when a prompt budget is exceeded.
 
+## Draft Reply identity and privacy
+
+Draft Reply is preview-first and writes only for the active user Persona. The active Persona is resolved when the session opens and is bound to both an identity key and a source fingerprint. The same identity/source is revalidated after model generation and immediately before composer insertion. If the user changes chat, switches Persona, or edits the Persona card in between, the draft is rejected or kept out of the composer.
+
+Draft Reply never presses Send. Composer insertion only dispatches the normal input event after exact chat/Persona verification, leaving the final edit and send action to the user.
+
+Recent Draft Reply history excludes globally hidden messages and treats per-Character hidden metadata conservatively when there is no single Character audience. System/unsupported roles are not forwarded. Conversation-start boundaries stop backfilling older history. Historical user messages are attributed to a named Persona only when Marinara supplied a Persona snapshot; otherwise they remain labeled generically as User.
+
+Provider output is normalized and checked before preview/insert. Obvious extra Character, Narrator, Assistant, System, User, or additional speaker-labeled turns are rejected instead of being silently inserted as part of the Persona reply.
+
 ## Advanced editing and long-result recovery
 
 Multi-message edits are not treated as atomic. Sequential mode is the default; if an earlier message commits and a later message fails, the UI reports the exact partial state instead of implying rollback. Optional merged mode may generate several message rewrites in one request, but output is split only after all capture-bound markers survive exactly once and in order. Marker validation failure causes zero merged writes and falls back to the safer path.

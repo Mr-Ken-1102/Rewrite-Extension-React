@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.0.2 — Identity-safe Draft Reply and release certification
+
+### Exact Character / Voice Profile identity
+- Selected assistant messages now use authoritative Marinara DOM/message identity instead of stale manual Character fallbacks in group chats.
+- Character and Persona Voice Profiles remain identity-scoped and are reused only when their source fingerprints still match current card data.
+- Voice Profile generation rechecks abort state and re-fetches source evidence before persistence; stale or cancelled model results are discarded instead of saved.
+
+### Persona Draft Reply
+- Added active-Persona Draft Reply with Idea → Reply, Continue Draft, context-based suggestions, streaming, real cancellation, preview, alternatives, shorter/longer, copy, and explicit composer insertion.
+- Draft Reply resolves and locks the active Persona before generation using both identity key and source fingerprint, then revalidates after generation and again before insertion.
+- Character-backed Personas use a distinct `persona:character:<id>` identity namespace.
+- Recent history excludes hidden/system/unsupported context conservatively, respects conversation-start boundaries, and preserves historical Persona names only when Marinara supplied a snapshot.
+- Obvious extra Character/Narrator/speaker turns, malformed protocol output, and unusually large provider output are rejected before insertion.
+- Draft Reply never auto-sends and refuses insertion after chat, Persona, or Persona-card changes.
+
+### Release hardening
+- Refreshed vulnerable dev/build transitive dependencies without changing runtime dependencies.
+- Tightened CI so moderate-or-higher advisories anywhere in the locked dependency tree block release.
+- Full source/regression/failure/property/UX/build/installable-artifact and Marinara Engine v2.4.4/v2.4.6 compatibility gates remain release requirements.
+
 ## 3.0.1 — Marinara Engine v2.4.6 compatibility
 
 - Cross-checked the Personal Extension host, message routes, generation routes, DOM selectors, private storage, and edit event against Marinara Engine v2.4.6.
