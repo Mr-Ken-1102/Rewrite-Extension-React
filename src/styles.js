@@ -26,7 +26,7 @@ export const RWA_PREMIUM_CSS = `
 }
 
 /* Base Panels & Layouts */
-.rwa { position: fixed; background: var(--rwa-panel-bg); border: 1px solid var(--rwa-glass-border); border-radius: 16px; padding: 20px; box-shadow: var(--rwa-panel-shadow); z-index: 10000; display: flex; flex-direction: column; gap: 12px; min-width: 270px; width: max-content; max-width: min(90vw, 550px); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); font-family: system-ui, -apple-system, sans-serif; animation: rwa-premium-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+.rwa { position: fixed; background: var(--rwa-panel-bg); border: 1px solid var(--rwa-glass-border); border-radius: 16px; padding: 20px; box-shadow: var(--rwa-panel-shadow); z-index: 10000; display: flex; flex-direction: column; gap: 12px; min-width: 270px; width: max-content; max-width: min(90vw, 550px); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); font-family: var(--rwa-host-font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif); animation: rwa-premium-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 .rwa-topbar { display: none; }
 .rwa-body { padding: 24px; overflow-y: auto; flex: 1; height: 40vh; display: block; }
 
@@ -180,7 +180,7 @@ export const RWA_PREMIUM_CSS = `
 .rwa-err-hdr { background: rgba(255, 71, 87, 0.05); padding: 16px 24px; border-bottom: 1px solid rgba(255, 71, 87, 0.1); display: flex; align-items: center; gap: 12px; }
 .rwa-err-icon { color: var(--rwa-coral); font-size: 20px; text-shadow: 0 0 10px rgba(255, 71, 87, 0.4); }
 .rwa-err-title { color: var(--rwa-coral); font-weight: 700; font-size: 14px; }
-.rwa-err-msg { background: var(--rwa-input-bg); padding: 14px; border-radius: 10px; border-left: 3px solid var(--rwa-coral); font-family: monospace; }
+.rwa-err-msg { background: var(--rwa-input-bg); padding: 14px; border-radius: 10px; border-left: 3px solid var(--rwa-coral); font-family: inherit; }
 
 
 /* ========================================================================= */
