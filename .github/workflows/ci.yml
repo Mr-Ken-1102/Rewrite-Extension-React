@@ -110,7 +110,7 @@ jobs:
       - name: Upload verified installable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rewrite-assistant-v3.0.1-engine-2.4.6
+          name: rewrite-assistant-v3.0.2-engine-2.4.6
           path: |
             rewrite-assistant-react.json
             rewrite-assistant-react.json.sha256
