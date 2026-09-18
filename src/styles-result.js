@@ -221,6 +221,43 @@ export const RWA_RESULT_CSS = `
 .rwar-progress-active { color: #d19a45 !important; }
 .rwar-apply-report { border-color: rgba(209,154,69,.30) !important; }
 
+.rwar-stream-status {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 8px;
+  padding: 5px 8px;
+  border: 1px solid rgba(209,154,69,.22);
+  border-radius: 999px;
+  background: rgba(209,154,69,.06);
+  color: rgba(255,255,255,.72);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+}
+.rwar-stream-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d19a45;
+  box-shadow: 0 0 0 0 rgba(209,154,69,.35);
+  animation: rwar-stream-pulse 1.15s ease-out infinite;
+}
+@keyframes rwar-stream-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(209,154,69,.35); }
+  70% { box-shadow: 0 0 0 5px rgba(209,154,69,0); }
+  100% { box-shadow: 0 0 0 0 rgba(209,154,69,0); }
+}
+
+.rwar-streaming-section {
+  margin-bottom: 10px;
+}
+.rwar-streaming-result {
+  min-height: 96px !important;
+  max-height: 220px !important;
+}
+
 .rwar-writing {
   padding: 4px 0 12px;
 }
