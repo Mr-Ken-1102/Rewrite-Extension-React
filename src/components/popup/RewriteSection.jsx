@@ -40,7 +40,7 @@ export function RewriteSection({
           glow={false}
           className="rwa2-auto-profile"
           aria-label={autoIdentityLabel}
-          aria-description={`${autoProfile.name}: ${autoProfile.prompt}`}
+          aria-description={autoProfile.prompt}
           onMouseEnter={(event) => onTooltip(event, `${autoIdentityLabel} · ${autoProfile.name}: ${autoProfile.prompt}`)}
           onMouseLeave={onTooltipLeave}
           onFocus={(event) => onTooltip(event, `${autoIdentityLabel} · ${autoProfile.name}: ${autoProfile.prompt}`)}
