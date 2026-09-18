@@ -6,6 +6,7 @@ import {
   normalizeProviderFailure,
   withProviderNetworkHints,
 } from './src/services/policies/providerPolicy.js';
+import { consumeRawSseText } from './src/services/providers/marinaraRawStream.js';
 
 const read = (path) => readFileSync(path, 'utf8');
 let passed = 0;
@@ -36,11 +37,44 @@ ok('local provider address-space hints distinguish loopback from LAN', () => {
 });
 
 ok('provider failures distinguish timeout from browser/network failure', () => {
-  const timeout = normalizeProviderFailure(Object.assign(new Error('Request timed out after 45000ms'), { name: 'TimeoutError' }));
+  const timeout = normalizeProviderFailure(Object.assign(new Error('Request timed out after 45000ms'), { name: 'TimeoutError', code: 23 }));
   assert.equal(timeout.errorCode, 'RWA_PROVIDER_TIMEOUT');
+  assert.equal(timeout.error, 'Rewrite Assistant stopped waiting after 45000ms and aborted the active request.');
+  assert.doesNotMatch(timeout.error, /\|\s*23\s*\|/);
   const network = normalizeProviderFailure(new TypeError('Failed to fetch'));
   assert.equal(network.errorCode, 'RWA_PROVIDER_NETWORK');
   assert.match(network.error, /listen address|firewall|browser origin|local network access/i);
+});
+
+ok('Marinara raw SSE parser survives arbitrary chunk boundaries', () => {
+  let rest = '';
+  const events = [];
+  for (const chunk of [
+    'data: {"type":"raw_sta',
+    'rted","data":{"runId":"r1"}}\n\ndata: {"type":"token","data":"he',
+    'l"}\n\ndata: {"type":"token","data":"lo"}\n\n',
+    ': keepalive\n\ndata: {"type":"result","data":{"content":"hello"}}\n\ndata: {"type":"done","data":""}\n\n',
+  ]) {
+    const parsed = consumeRawSseText(rest, chunk);
+    rest = parsed.rest;
+    events.push(...parsed.events);
+  }
+  const flushed = consumeRawSseText(rest, '', true);
+  events.push(...flushed.events);
+  assert.equal(events[0].type, 'raw_started');
+  assert.equal(events.filter((event) => event.type === 'token').map((event) => event.data).join(''), 'hello');
+  assert.equal(events.find((event) => event.type === 'result').data.content, 'hello');
+  assert.equal(events.at(-1).type, 'done');
+});
+
+ok('Marinara mode streams raw generation, preserves partial recovery, and can abort by runId', () => {
+  const source = read('./src/services/providers/providerService.js');
+  assert.match(source, /streaming:\s*true/);
+  assert.match(source, /Accept:\s*'text\/event-stream'/);
+  assert.match(source, /generateRawAbort:\s*'\/generate\/raw\/abort'/);
+  assert.match(source, /partialResult:\s*partial \|\| undefined/);
+  assert.match(source, /requestExplicitAbort/);
+  assert.match(source, /connectionSource:\s*resolved\.source/);
 });
 
 ok('Direct loopback and LAN inference has a 120-second minimum safety window', () => {
@@ -78,6 +112,9 @@ ok('result modal uses an isolated balanced layout and no cursor-following glow p
   assert.match(modal, /bodyClassName="rwar-body"/);
   assert.match(modal, /rwar-actions-primary/);
   assert.match(modal, /rwar-actions-tools/);
+  assert.match(modal, /status === 'partial'/);
+  assert.match(modal, /Live output/);
+  assert.match(modal, /disabled=\{isApplying \|\| isPartial\}/);
   assert.doesNotMatch(modal, /handleGlowMouseMove|getBoundingClientRect/);
   assert.ok((modal.match(/glow=\{false\}/g) || []).length >= 6);
   assert.match(css, /\.rwar-actions\s*\{/);
