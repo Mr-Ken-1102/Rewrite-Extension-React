@@ -86,6 +86,18 @@ async function attributedFetch(input, init = {}, timeoutMs = 25000) {
   const fetchFn = host && typeof host.fetch === 'function' ? host.fetch.bind(host) : fallbackFetch;
   if (typeof fetchFn !== 'function') throw new Error('No fetch implementation is available.');
 
+  // Streaming responses must keep the caller's AbortSignal attached after
+  // fetch() resolves its headers. When there is no client-side deadline, pass
+  // the external signal through directly instead of detaching it in cleanup().
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    try {
+      return await fetchFn(input, init);
+    } catch (err) {
+      if (init.signal?.aborted) throwAbortReason(err, init.signal);
+      throw err;
+    }
+  }
+
   const { signal, cleanup } = combinedAbortSignal(init.signal, timeoutMs);
   try {
     return await fetchFn(input, { ...init, signal });
