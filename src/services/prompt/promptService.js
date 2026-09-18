@@ -51,13 +51,12 @@ export function normalizeRewriteResult(value) {
   let text = String(value ?? '').trim();
   if (!text) return '';
 
-  // Some providers occasionally echo the prompt delimiter despite the
-  // system instruction to return only the rewritten passage. Strip it only
-  // when it wraps the entire output, so legitimate interior angle-bracket
-  // content is never modified.
-  const wrapped = text.match(/^<\s*rewrite_this\s*>\s*([\s\S]*?)\s*<\s*\/\s*rewrite_this\s*>$/i);
-  if (wrapped) text = wrapped[1].trim();
-  return text;
+  // Some providers occasionally echo the reserved prompt delimiter despite
+  // the output contract. The selected source is escaped before prompting, so
+  // a boundary delimiter here is protocol leakage rather than user content.
+  text = text.replace(/^<\s*rewrite_this\s*>\s*/i, '');
+  text = text.replace(/\s*<\s*\/\s*rewrite_this\s*>$/i, '');
+  return text.trim();
 }
 
 export function estimateTokens(text) {
