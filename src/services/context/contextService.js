@@ -71,6 +71,41 @@ function capWords(value, maxWords = 400) {
   return words.slice(0, maxWords).join(' ') + (words.length > maxWords ? '…' : '');
 }
 
+function boundedVoiceField(parts, label, value, maxChars) {
+  const text = String(value || '').trim();
+  if (!text) return false;
+  parts.push(`${label}: ${text.slice(0, maxChars)}`);
+  return true;
+}
+
+function buildVoiceReference(entity, kind, snapshotName = '') {
+  const data = safeObject(entity?.data);
+  const extensions = safeObject(data.extensions);
+  const name = snapshotName || data.name || entity?.name || '';
+  const parts = [];
+  if (name) parts.push(`Name: ${String(name).slice(0, 160)}`);
+
+  let evidence = 0;
+  evidence += boundedVoiceField(parts, 'Personality', data.personality || entity?.personality, 900) ? 1 : 0;
+  evidence += boundedVoiceField(parts, 'Description', data.description || entity?.description, 1200) ? 1 : 0;
+  evidence += boundedVoiceField(parts, 'Backstory', extensions.backstory || data.backstory, 800) ? 1 : 0;
+  evidence += boundedVoiceField(parts, 'About me', extensions.aboutMe || data.aboutMe, 900) ? 1 : 0;
+  evidence += boundedVoiceField(parts, 'Scenario', data.scenario || entity?.scenario, 500) ? 1 : 0;
+
+  if (kind === 'character') {
+    evidence += boundedVoiceField(parts, 'First message', data.first_mes || data.firstMessage, 1400) ? 1 : 0;
+    evidence += boundedVoiceField(parts, 'Example dialogue', data.mes_example || data.exampleDialogue, 2200) ? 1 : 0;
+  } else {
+    // Persona cards normally leave these empty, but imported / character-like
+    // personas may carry them. They are direct voice evidence when present.
+    evidence += boundedVoiceField(parts, 'First message', data.first_mes || data.firstMessage, 900) ? 1 : 0;
+    evidence += boundedVoiceField(parts, 'Example dialogue', data.mes_example || data.exampleDialogue, 1400) ? 1 : 0;
+  }
+
+  // A name alone is not enough evidence to synthesize a trustworthy voice.
+  return evidence > 0 ? parts.join('\n') : '';
+}
+
 export class ContextService {
   static async fetchChat(cid, signal) {
     if (!cid) return null;
@@ -133,6 +168,34 @@ export class ContextService {
         return parts.join('\n');
       }).filter(Boolean);
       return blocks.join('\n\n');
+    } catch (err) {
+      if (MarinaraHost.isAbortError(err) || signal?.aborted) throw err;
+      return '';
+    }
+  }
+
+  static async fetchCharacterVoiceReference(characterId, signal) {
+    const id = String(characterId || '').trim();
+    if (!id) return '';
+    try {
+      const character = await MarinaraHost.apiFetch(`${ENDPOINTS.chars}/${encodeURIComponent(id)}`, { signal }, 15000);
+      return buildVoiceReference(character, 'character');
+    } catch (err) {
+      if (MarinaraHost.isAbortError(err) || signal?.aborted) throw err;
+      return '';
+    }
+  }
+
+  static async fetchPersonaVoiceReference(preferredSnapshot, signal) {
+    const snapshot = preferredSnapshot && typeof preferredSnapshot === 'object' ? preferredSnapshot : null;
+    const identityId = typeof snapshot?.personaId === 'string' ? snapshot.personaId.trim() : '';
+    if (!identityId) return '';
+
+    const source = snapshot?.source === 'character' ? 'character' : 'persona';
+    const endpoint = source === 'character' ? ENDPOINTS.chars : ENDPOINTS.personas;
+    try {
+      const identity = await MarinaraHost.apiFetch(`${endpoint}/${encodeURIComponent(identityId)}`, { signal }, 15000);
+      return buildVoiceReference(identity, source === 'character' ? 'character' : 'persona', snapshot?.name || '');
     } catch (err) {
       if (MarinaraHost.isAbortError(err) || signal?.aborted) throw err;
       return '';
