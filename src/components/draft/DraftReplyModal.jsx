@@ -37,12 +37,17 @@ export function DraftReplyModal({
   const isLoading = state.status === 'loading';
   const isSuccess = state.status === 'success';
   const isError = state.status === 'error';
+  const isPersonaResolving = state.personaResolving === true;
   const personaLabel = state.persona?.name
     ? 'Persona: ' + state.persona.name
-    : text('Persona will be resolved from the active chat', 'Persona sẽ được xác định từ chat hiện tại');
-  const profileLabel = state.voiceProfile?.name
-    ? 'Voice Profile: ' + state.voiceProfile.name
-    : text('Using current Persona card/style data', 'Đang dùng dữ liệu Persona hiện tại');
+    : isPersonaResolving
+      ? text('Resolving active Persona…', 'Đang xác định Persona hiện tại…')
+      : text('Active Persona unavailable', 'Không xác định được Persona hiện tại');
+  const profileLabel = isPersonaResolving
+    ? text('Checking Persona card and Voice Profile…', 'Đang kiểm tra Persona card và Voice Profile…')
+    : state.voiceProfile?.name
+      ? 'Voice Profile: ' + state.voiceProfile.name
+      : text('Using current Persona card/style data', 'Đang dùng dữ liệu Persona hiện tại');
 
   const streamText = state.streamStatus === 'connecting'
     ? text('SSE · connecting…', 'SSE · đang kết nối…')
@@ -55,6 +60,7 @@ export function DraftReplyModal({
           : '';
 
   const submit = () => {
+    if (isPersonaResolving || !state.persona?.key) return;
     onUpdateInput?.({ direction, mode });
     onGenerate?.({ direction, mode });
   };
@@ -92,7 +98,7 @@ export function DraftReplyModal({
                 type="button"
                 className={'rwa-draft-mode ' + (mode === value ? 'rwa-draft-mode-active' : '')}
                 aria-pressed={mode === value}
-                disabled={isLoading}
+                disabled={isLoading || isPersonaResolving}
                 onClick={() => {
                   setMode(value);
                   onUpdateInput?.({ mode: value });
@@ -154,10 +160,18 @@ export function DraftReplyModal({
           <div className="rwa-draft-error-title">{text('Draft Reply could not finish', 'Không thể hoàn tất Soạn câu trả lời')}</div>
           <div className="rwa-prev">{state.error}</div>
           <div className="rwa-draft-error-actions">
-            <Button glow={false} onClick={() => onUpdateInput?.({ status: 'editing', error: '' })}>
-              {text('Edit direction', 'Sửa chỉ dẫn')}
-            </Button>
-            <Button glow={false} variant="rwa-accept" onClick={submit}>{text('Try again', 'Thử lại')}</Button>
+            {state.personaResolutionFailed ? (
+              <Button glow={false} onClick={onClose} style={{ gridColumn: '1 / -1' }}>
+                {text('Close and choose a Persona', 'Đóng và chọn Persona')}
+              </Button>
+            ) : (
+              <>
+                <Button glow={false} onClick={() => onUpdateInput?.({ status: 'editing', error: '' })}>
+                  {text('Edit direction', 'Sửa chỉ dẫn')}
+                </Button>
+                <Button glow={false} variant="rwa-accept" onClick={submit}>{text('Try again', 'Thử lại')}</Button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -165,10 +179,12 @@ export function DraftReplyModal({
       {state.status === 'editing' && (
         <div className="rwa-draft-edit-actions">
           <Button glow={false} onClick={onClose}>{text('Cancel', 'Hủy')}</Button>
-          <Button glow={false} variant="rwa-accept" onClick={submit}>
-            {direction.trim()
-              ? text('✦ Draft reply', '✦ Soạn câu trả lời')
-              : text('✦ Suggest a reply', '✦ Gợi ý câu trả lời')}
+          <Button glow={false} variant="rwa-accept" onClick={submit} disabled={isPersonaResolving || !state.persona?.key}>
+            {isPersonaResolving
+              ? text('Resolving Persona…', 'Đang xác định Persona…')
+              : direction.trim()
+                ? text('✦ Draft reply', '✦ Soạn câu trả lời')
+                : text('✦ Suggest a reply', '✦ Gợi ý câu trả lời')}
           </Button>
         </div>
       )}

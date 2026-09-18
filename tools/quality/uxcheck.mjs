@@ -133,10 +133,11 @@ ok('Marinara streaming preserves empty-output recovery without duplicating fast 
 
 ok('rewrite and auto-profile inference carry chat identity to the provider', () => {
   const source = read('./src/services/apiService.js');
+  const voiceProfile = read('./src/services/voiceProfileService.js');
   assert.match(source, /chatId: savedSel\?\.cid \|\| ''/);
   assert.match(source, /onProgress: hooks\?\.onProgress/);
   assert.match(source, /onStreamStatus: hooks\?\.onStreamStatus/);
-  assert.match(source, /\{ chatId \}/);
+  assert.match(voiceProfile, /\{ chatId \}/);
 });
 
 ok('normal Marinara rewrites stream without a client deadline while explicit tests may stay bounded', () => {

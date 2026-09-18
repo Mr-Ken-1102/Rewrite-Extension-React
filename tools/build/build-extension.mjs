@@ -1,10 +1,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { createExtensionManifest, validateExtensionManifest } from './extension-manifest.mjs';
+import { createExtensionManifest, validateExtensionManifest } from '../../extension-manifest.mjs';
 
-await import('./sourcecheck.mjs');
-await import('./selfcheck.mjs');
-await import('./failuremodecheck.mjs');
-await import('./manifestcheck.mjs');
+await import('../quality/sourcecheck.mjs');
+await import('../quality/selfcheck.mjs');
+await import('../quality/failuremodecheck.mjs');
+await import('../quality/manifestcheck.mjs');
 const { build } = await import('vite');
 await build();
 

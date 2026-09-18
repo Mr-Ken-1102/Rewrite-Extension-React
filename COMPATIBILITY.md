@@ -2,7 +2,9 @@
 
 ## Certified baselines
 
-Rewrite Assistant v3.0.1 is cross-checked against **Marinara Engine v2.4.4 and v2.4.6**.
+Rewrite Assistant v3.0.2 is cross-checked against **Marinara Engine v2.4.4 and v2.4.6**.
+
+v3.0.2 additionally certifies exact selected-message Character targeting, identity-scoped Voice Profiles, and active-Persona Draft Reply against the same Engine contracts. Draft Reply uses Marinara chat/Persona metadata and the existing composer hook; it adds no automatic send API or new destructive message route.
 
 The v2.4.6 audit additionally covers character-backed user identity (`chat.personaCharacterId`) and historical `personaSnapshot.source` metadata. Rewrite Assistant resolves `source: "character"` through the Character endpoint while retaining the v2.4.4 legacy interpretation for snapshots that do not carry a source field.
 
@@ -28,8 +30,8 @@ Run:
 ```bash
 npm run compat:engine -- /absolute/path/to/Marinara-Engine-main
 # Optional explicit expected version during an Engine upgrade audit:
-node engine-compatcheck.mjs /absolute/path/to/Marinara-Engine-2.4.4 2.4.4
-node engine-compatcheck.mjs /absolute/path/to/Marinara-Engine-2.4.6 2.4.6
+node tools/quality/engine-compatcheck.mjs /absolute/path/to/Marinara-Engine-2.4.4 2.4.4
+node tools/quality/engine-compatcheck.mjs /absolute/path/to/Marinara-Engine-2.4.6 2.4.6
 ```
 
 Do not assume a future Marinara release is compatible merely because the manifest still installs. The checker accepts an explicit expected-version argument for upgrade audits, but passing it is only a contract preflight: a new Engine release still requires source-diff review plus the full test/build/live matrix before the compatibility baseline is changed.

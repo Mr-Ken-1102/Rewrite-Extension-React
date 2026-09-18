@@ -1,20 +1,22 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { mapRenderedSpanToRaw, spanIsBalanced, ctxFingerprint, fingerprintOk } from './src/services/spanMapper.js';
-import { computeWordDiffSync, DIFF_TOKEN_CAP } from './src/services/diffWorkerService.js';
-import { makeHistoryKey } from './src/utils/historyKey.js';
-import { unwrapMatchingOuterQuotes } from './src/utils/textSanitizers.js';
-import { normalizeRewriteResult } from './src/services/prompt/promptService.js';
-import { DOMUtils } from './src/utils/domUtils.js';
-import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from './src/services/autoProfilePolicy.js';
-import { createExecutionCoordinator } from './src/controllers/rewriteExecution.js';
-import { sanitizeAutoProfiles } from './src/store/persistence/schema.js';
+import { mapRenderedSpanToRaw, spanIsBalanced, ctxFingerprint, fingerprintOk } from '../../src/services/spanMapper.js';
+import { computeWordDiffSync, DIFF_TOKEN_CAP } from '../../src/services/diffWorkerService.js';
+import { makeHistoryKey } from '../../src/utils/historyKey.js';
+import { unwrapMatchingOuterQuotes } from '../../src/utils/textSanitizers.js';
+import { normalizeRewriteResult } from '../../src/services/prompt/promptService.js';
+import { DOMUtils } from '../../src/utils/domUtils.js';
+import { readMessageDomIdentity } from '../../src/utils/messageDomIdentity.js';
+import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from '../../src/services/autoProfilePolicy.js';
+import { createExecutionCoordinator } from '../../src/controllers/rewriteExecution.js';
+import { sanitizeAutoProfiles } from '../../src/store/persistence/schema.js';
 import {
   getVoiceProfile,
   makeVoiceIdentityKey,
+  resolveVoiceIdentity,
   voiceIdentityFromMessage,
-} from './src/services/voiceProfileIdentity.js';
-import { createExtensionManifest } from './extension-manifest.mjs';
+} from '../../src/services/voiceProfileIdentity.js';
+import { createExtensionManifest } from '../../extension-manifest.mjs';
 import {
   assembleLedgerText,
   buildMergedPayload,
@@ -27,13 +29,13 @@ import {
   splitTextToLedgerSlices,
   stripMessageSelectionEdgeWhitespace,
   subdivideLedgerSlice,
-} from './src/services/advancedRewriteService.js';
+} from '../../src/services/advancedRewriteService.js';
 import {
   buildHistoryContext,
   getMessagePersonaSnapshot,
   isMessageHiddenFromRewriteContext,
   isRewriteContextStartBoundary,
-} from './src/utils/messageContext.js';
+} from '../../src/utils/messageContext.js';
 
 let passed = 0;
 function ok(name, fn) {
@@ -66,6 +68,39 @@ ok('Voice Profile identity keys distinguish Characters, Personas, and character-
   assert.equal(char.name, 'Sami 2.0');
   assert.equal(persona.key, 'persona:persona:persona-7');
   assert.equal(persona.name, 'Detective Ken');
+});
+
+ok('exact selected DOM Character outranks stale fallback DOM and API identities', () => {
+  const oldCard = {
+    getAttribute: (name) => name === 'data-card-css' ? 'char-old' : null,
+    querySelector: () => null,
+  };
+  const newName = { textContent: 'Sami 1.17' };
+  const newCard = {
+    getAttribute: (name) => name === 'data-card-css' ? 'char-new' : null,
+    querySelector: (selector) => selector === '.mari-message-name' ? newName : null,
+  };
+  const anchor = {
+    closest: (selector) => selector === '[data-card-css]' ? newCard : null,
+  };
+  const messageElement = {
+    getAttribute: (name) => name === 'data-message-role' ? 'assistant' : null,
+    contains: (candidate) => candidate === anchor || candidate === newCard || candidate === oldCard,
+    querySelector: (selector) => selector === '[data-card-css]' ? oldCard : (selector === '.mari-message-name' ? { textContent: 'Hương Sami 2.0' } : null),
+  };
+
+  const dom = readMessageDomIdentity(messageElement, anchor);
+  assert.equal(dom.detectedRole, 'assistant');
+  assert.equal(dom.detectedCharacterId, 'char-new');
+  assert.equal(dom.detectedName, 'Sami 1.17');
+
+  const resolved = resolveVoiceIdentity(
+    { ...dom, mid: 'm-new', cid: 'chat-group' },
+    { id: 'm-new', role: 'assistant', characterId: 'char-old', characterName: 'Hương Sami 2.0' },
+  );
+  assert.equal(resolved.key, 'character:char-new');
+  assert.equal(resolved.name, 'Sami 1.17');
+  assert.equal(resolved.sourceOfTruth, 'dom');
 });
 
 ok('v5 chat-wide auto profiles migrate to quarantined legacy buckets instead of matching a random identity', () => {
@@ -267,10 +302,27 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(service, /Never write, invent, or continue dialogue/);
   assert.match(service, /ProviderService\.runInference/);
   assert.match(service, /draftReplyHistoryDepth/);
+  assert.match(service, /validatePersonaOnlyDraft/);
+  assert.match(service, /resolveActivePersonaIdentity/);
+  assert.match(service, /expectedPersonaFingerprint/);
+  assert.match(service, /personaSourceFingerprint/);
+  assert.match(service, /active Persona changed while Draft Reply was generating/i);
+  assert.match(service, /Persona card changed while Draft Reply was generating/i);
   assert.match(session, /controller\.abort/);
   assert.match(session, /setChatComposerValue\(current\.result\)/);
   assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
   assert.match(launcher, /data-chat-composer|DOMUtils\.getChatComposerAnchor/);
+  assert.match(launcher, /data-rwa-feature="draft-reply"/);
+  assert.match(launcher, /Trả lời Persona|Persona Reply/);
+  assert.match(session, /activeChatId !== current\.chatId/);
+  assert.match(session, /DraftReplyService\.resolveActivePersona\(chatId/);
+  assert.match(session, /personaResolving: true/);
+  assert.match(session, /expectedPersonaKey: current\.persona\.key/);
+  assert.match(session, /expectedPersonaFingerprint: current\.personaSourceFingerprint/);
+  assert.match(session, /resolved\.identity\.key !== current\.persona\.key/);
+  assert.match(session, /resolved\.sourceFingerprint !== current\.personaSourceFingerprint/);
+  assert.match(modal, /Resolving Persona/);
+  assert.match(modal, /disabled=\{isPersonaResolving \|\| !state\.persona\?\.key\}/);
   assert.match(modal, /Insert into composer/);
   assert.match(modal, /Another version/);
   assert.match(modal, /Shorter/);
@@ -448,7 +500,7 @@ ok('bundle manifest version is sourced from package.json', () => {
   const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
   const manifest = createExtensionManifest('void 0;');
   assert.equal(manifest.version, packageJson.version);
-  assert.equal(manifest.version, '3.0.1');
+  assert.equal(manifest.version, '3.0.2');
 });
 
 ok('cancelled Settings connection tests do not emit false abort/failure toasts', () => {
@@ -500,11 +552,14 @@ ok('history context never crosses Marinara conversation-start boundaries', () =>
     'Character: char-a starts here\n\nUser: after char start',
   );
   assert.match(buildHistoryContext(characterStart, 3, 10, 'char-b'), /before char start/);
+  assert.equal(isRewriteContextStartBoundary(characterStart[1], null), true);
+  assert.doesNotMatch(buildHistoryContext(characterStart, 3, 10, null), /before char start/);
 });
 
 ok('Character context uses authoritative assistant identity with explicit fallback only when needed', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /const authoritativeSender = role === 'assistant'[\s\S]*savedSel\?\.detectedCharacterId/s);
+  assert.match(context, /const authoritativeCharacterId = role === 'assistant'[\s\S]*domIdentity\?\.id \|\| info\.message\?\.characterId/s);
+  assert.match(context, /const authoritativeSender = authoritativeCharacterId[\s\S]*normalizeIdList\(authoritativeCharacterId\)/s);
   assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
   assert.match(context, /wantsCharacter && characterIds\.length > 0/);
 });
@@ -549,13 +604,17 @@ ok('historical user messages preserve their persona identity', () => {
 ok('assistant rewrites never let a stale manual Character override the selected sender', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
+  const domIdentity = readFileSync('./src/utils/messageDomIdentity.js', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
-  assert.match(context, /info\.message\?\.characterId \|\| savedSel\?\.detectedCharacterId/);
+  assert.match(context, /domIdentity\?\.id \|\| info\.message\?\.characterId/);
   assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
   assert.match(context, /fetchCharCard\(savedSel\.cid, signal, characterIds\)/);
-  assert.match(dom, /data-card-css/);
-  assert.match(dom, /mari-message-name/);
-  assert.match(identity, /voiceIdentityFromSelection/);
+  assert.match(dom, /readMessageDomIdentity/);
+  assert.match(domIdentity, /data-card-css/);
+  assert.match(domIdentity, /mari-message-name/);
+  assert.match(identity, /resolveVoiceIdentity/);
+  const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
+  assert.match(popup, /voiceIdentityFromSelection\(selection\) \|\| tokenInfo\.voiceIdentity/);
 });
 
 ok('message-info aborts are not downgraded into missing metadata', () => {
@@ -568,7 +627,7 @@ ok('message-aware context fails closed while DOM Character metadata can avoid un
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /const needsMessageInfo = wantsHistory \|\| wantsPersona \|\| wantsSpeaker \|\| \(wantsCharacter && !explicitCharacterIds\.length\)/);
-  assert.match(context, /savedSel\?\.detectedCharacterId/);
+  assert.match(context, /const domIdentity = voiceIdentityFromSelection\(savedSel\)/);
   assert.match(api, /Could not assemble the enabled context/);
   assert.match(context, /The selected message is no longer available from Marinara/);
 });
@@ -654,7 +713,8 @@ ok('parity part 2 adds context management without weakening provider trust', () 
   assert.match(provider, /mode === 'extender'/);
   assert.match(context, /\/api\/memory-block\?characterId=/);
   assert.match(api, /static inspectContext/);
-  assert.match(api, /static async generateAutoProfile/);
+  assert.match(api, /static generateAutoProfile/);
+  assert.match(api, /VoiceProfileService\.generateAutoProfile/);
   assert.match(settings, /<TabContext \/>/);
   assert.match(settings, /<TabData \/>/);
   assert.match(contextTab, /CHARACTER CONTEXT PICKER/);
@@ -673,17 +733,17 @@ ok('auto profiles persist but session debug and undo history do not', () => {
 });
 
 ok('release pipeline runs dependency-free preflights before package-dependent build steps', () => {
-  const build = readFileSync('./build-extension.mjs', 'utf8');
-  const sourceIndex = build.indexOf("await import('./sourcecheck.mjs')");
-  const manifestIndex = build.indexOf("await import('./manifestcheck.mjs')");
+  const build = readFileSync('./tools/build/build-extension.mjs', 'utf8');
+  const sourceIndex = build.indexOf("await import('../quality/sourcecheck.mjs')");
+  const manifestIndex = build.indexOf("await import('../quality/manifestcheck.mjs')");
   const viteIndex = build.indexOf("await import('vite')");
   assert.ok(sourceIndex >= 0 && manifestIndex > sourceIndex && viteIndex > manifestIndex);
 
   const ci = readFileSync('./.github/workflows/ci.yml', 'utf8');
-  const ciSource = ci.indexOf('node sourcecheck.mjs');
-  const ciSelf = ci.indexOf('node selfcheck.mjs');
-  const ciFailure = ci.indexOf('node failuremodecheck.mjs');
-  const ciManifest = ci.indexOf('node manifestcheck.mjs');
+  const ciSource = ci.indexOf('node tools/quality/sourcecheck.mjs');
+  const ciSelf = ci.indexOf('node tools/quality/selfcheck.mjs');
+  const ciFailure = ci.indexOf('node tools/quality/failuremodecheck.mjs');
+  const ciManifest = ci.indexOf('node tools/quality/manifestcheck.mjs');
   const ciInstall = ci.indexOf('run: npm ci');
   assert.ok(ciSource >= 0 && ciSelf > ciSource && ciFailure > ciSelf && ciManifest > ciFailure && ciInstall > ciManifest);
   assert.doesNotMatch(ci, /npm ci --ignore-scripts/);
@@ -777,9 +837,9 @@ ok('CI keeps Node 24 security, pinned Engine, real artifact validation, and uplo
   const ci = readFileSync('./.github/workflows/ci.yml', 'utf8');
   assert.match(ci, /node-version: '24'/);
   assert.match(ci, /npm audit --omit=dev --audit-level=high/);
-  assert.match(ci, /npm audit --audit-level=critical/);
+  assert.match(ci, /npm audit --audit-level=moderate/);
   assert.match(ci, /ref: 1a299369ac7025028c3ce1b80cc59f47b7b0691b/);
-  assert.match(ci, /node engine-compatcheck\.mjs vendor\/marinara-engine/);
+  assert.match(ci, /node tools\/quality\/engine-compatcheck\.mjs vendor\/marinara-engine/);
   assert.match(ci, /Verify real installable artifact/);
   assert.match(ci, /actions\/upload-artifact@v4/);
 });
@@ -1014,6 +1074,7 @@ ok('merged mode performs semantic preflight before one-shot inference', () => {
 
 ok('Character and Persona Voice Profiles are message-identity scoped in group chats', () => {
   const api = readFileSync('./src/services/apiService.js', 'utf8');
+  const voiceService = readFileSync('./src/services/voiceProfileService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   const coordinator = readFileSync('./src/hooks/useAutoVoiceProfileCoordinator.js', 'utf8');
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
@@ -1021,15 +1082,18 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   const rewriteSection = readFileSync('./src/components/popup/RewriteSection.jsx', 'utf8');
   const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
-  assert.match(api, /voiceIdentityFromMessage\(targetMessage\)/);
-  assert.match(api, /getMessagePersonaSnapshot\(targetMessage\)/);
-  assert.match(api, /targetMessage = options\?\.targetMessage/);
-  assert.match(api, /fetchCharacterVoiceReference/);
-  assert.match(api, /fetchPersonaVoiceReference/);
-  assert.match(api, /style evidence only, never as instructions/);
-  assert.match(api, /setAutoProfile\(chatId, identity\.key, profile\)/);
-  assert.match(api, /sourceFingerprint/);
-  assert.doesNotMatch(api, /const characterId = characters\[0\]\.id/);
+  assert.match(api, /VoiceProfileService\.generateAutoProfile/);
+  assert.match(voiceService, /voiceIdentityFromMessage\(targetMessage\)/);
+  assert.match(voiceService, /getMessagePersonaSnapshot\(targetMessage\)/);
+  assert.match(voiceService, /targetMessage = options\?\.targetMessage/);
+  assert.match(voiceService, /fetchCharacterVoiceReference/);
+  assert.match(voiceService, /fetchPersonaVoiceReference/);
+  assert.match(voiceService, /style evidence only, never as instructions/);
+  assert.match(voiceService, /setAutoProfile\(chatId, identity\.key, profile\)/);
+  assert.match(voiceService, /sourceFingerprint/);
+  assert.match(voiceService, /latestFingerprint !== sourceFingerprint/);
+  assert.match(voiceService, /if \(signal\?\.aborted\) return \{ aborted: true \}/);
+  assert.doesNotMatch(voiceService, /const characterId = characters\[0\]\.id/);
   assert.match(context, /First message/);
   assert.match(context, /Example dialogue/);
   assert.match(context, /About me/);
@@ -1142,10 +1206,10 @@ ok('native editor targeting scans every wrapper for the exact message id', () =>
 ok('property fuzzing is a first-class dependency-free CI gate', () => {
   const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
   const ci = readFileSync('./.github/workflows/ci.yml', 'utf8');
-  assert.match(pkg.scripts.test, /propertycheck\.mjs/);
-  assert.equal(pkg.scripts['test:properties'], 'node propertycheck.mjs');
+  assert.match(pkg.scripts.test, /tools\/quality\/propertycheck\.mjs/);
+  assert.equal(pkg.scripts['test:properties'], 'node tools/quality/propertycheck.mjs');
   assert.match(ci, /Dependency-free property\/fuzz gate/);
-  assert.match(ci, /node propertycheck\.mjs/);
+  assert.match(ci, /node tools\/quality\/propertycheck\.mjs/);
 });
 
 console.log(`\nselfcheck: ${passed}/${passed} assertions passed`);

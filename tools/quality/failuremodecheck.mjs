@@ -3,10 +3,10 @@ import { mkdtemp, readFile, rm, writeFile, copyFile, mkdir } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { deriveTrimmedSelection, extractSurroundingContext } from './src/utils/selectionContext.js';
-import { CONTEXT_DROP_ORDER, analyzeMergedMessageCompatibility, resolveAutoProfileCharacter } from './src/services/policies/contextPolicy.js';
-import { normalizeProviderFailure, validateProviderHttpUrl } from './src/services/policies/providerPolicy.js';
-import { createExecutionCoordinator } from './src/controllers/rewriteExecution.js';
+import { deriveTrimmedSelection, extractSurroundingContext } from '../../src/utils/selectionContext.js';
+import { CONTEXT_DROP_ORDER, analyzeMergedMessageCompatibility, resolveAutoProfileCharacter } from '../../src/services/policies/contextPolicy.js';
+import { normalizeProviderFailure, validateProviderHttpUrl } from '../../src/services/policies/providerPolicy.js';
+import { createExecutionCoordinator } from '../../src/controllers/rewriteExecution.js';
 import {
   assembleLedgerText,
   buildMergedPayload,
@@ -19,7 +19,7 @@ import {
   splitTextToLedgerSlices,
   stripMessageSelectionEdgeWhitespace,
   subdivideLedgerSlice,
-} from './src/services/advancedRewriteService.js';
+} from '../../src/services/advancedRewriteService.js';
 
 let passed = 0;
 async function ok(name, fn) {
@@ -133,23 +133,33 @@ export const MarinaraHost = {
   providerSource = replaceImport(providerSource, '../policies/providerPolicy.js', '../policies/providerPolicy.mjs');
   await writeFile(join(dir, 'providers', 'providerService.mjs'), providerSource);
 
+  let voiceProfileSource = await readFile('./src/services/voiceProfileService.js', 'utf8');
+  voiceProfileSource = replaceImport(voiceProfileSource, '../store/usePersistentStore', './mockStore.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './marinaraHost', './mockHost.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './debugLogService', './mockDebug.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './context/contextService.js', './context/contextService.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './providers/providerService.js', './providers/providerService.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './policies/contextPolicy.js', './policies/contextPolicy.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './policies/providerPolicy.js', './policies/providerPolicy.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, '../utils/messageContext.js', './messageContext.mjs');
+  voiceProfileSource = replaceImport(voiceProfileSource, './voiceProfileIdentity.js', './voiceProfileIdentity.mjs');
+  await writeFile(join(dir, 'voiceProfileService.mjs'), voiceProfileSource);
+
   let source = await readFile('./src/services/apiService.js', 'utf8');
   source = replaceImport(source, '../store/usePersistentStore', './mockStore.mjs');
   source = replaceImport(source, './marinaraHost', './mockHost.mjs');
-  source = replaceImport(source, './debugLogService', './mockDebug.mjs');
   source = replaceImport(source, './context/contextService.js', './context/contextService.mjs');
   source = replaceImport(source, './providers/providerService.js', './providers/providerService.mjs');
   source = replaceImport(source, './prompt/promptService.js', './prompt/promptService.mjs');
-  source = replaceImport(source, './policies/contextPolicy.js', './policies/contextPolicy.mjs');
-  source = replaceImport(source, '../utils/messageContext.js', './messageContext.mjs');
-  source = replaceImport(source, './voiceProfileIdentity.js', './voiceProfileIdentity.mjs');
   source = replaceImport(source, './policies/providerPolicy.js', './policies/providerPolicy.mjs');
+  source = replaceImport(source, './voiceProfileService.js', './voiceProfileService.mjs');
   await writeFile(join(dir, 'apiService.mjs'), source);
 
   let draftSource = await readFile('./src/services/draftReplyService.js', 'utf8');
   draftSource = replaceImport(draftSource, '../store/usePersistentStore', './mockStore.mjs');
   draftSource = replaceImport(draftSource, './context/contextService.js', './context/contextService.mjs');
   draftSource = replaceImport(draftSource, './providers/providerService.js', './providers/providerService.mjs');
+  draftSource = replaceImport(draftSource, './marinaraHost', './mockHost.mjs');
   draftSource = replaceImport(draftSource, './voiceProfileIdentity.js', './voiceProfileIdentity.mjs');
   draftSource = replaceImport(draftSource, '../utils/messageContext.js', './messageContext.mjs');
   await writeFile(join(dir, 'draftReplyService.mjs'), draftSource);
@@ -166,7 +176,7 @@ export const MarinaraHost = {
 }
 
 
-await ok('selected assistant Character outranks a stale manual Character fallback', async () => {
+await ok('selected assistant Character outranks stale manual and API Character metadata', async () => {
   const h = await loadApiHarness();
   try {
     h.store.control.state.config = {
@@ -174,7 +184,7 @@ await ok('selected assistant Character outranks a stale manual Character fallbac
       injectUser: false,
       injectLorebook: false,
       localContextEnabled: false,
-      contextDepth: 0,
+      contextDepth: 1,
       speakerAware: false,
       useExtenderMemory: false,
       freeMode: false,
@@ -183,11 +193,17 @@ await ok('selected assistant Character outranks a stale manual Character fallbac
     const requested = [];
     h.host.control.apiHandler = async (path) => {
       requested.push(path);
+      if (path === '/chats/chat-group/messages') {
+        return [
+          { id: 'm-prev', role: 'assistant', characterId: 'char-old', content: 'older message', extra: {} },
+          { id: 'm-new', role: 'assistant', characterId: 'char-old', content: 'selected text', extra: {} },
+        ];
+      }
       if (path === '/characters/char-new') {
         return { id: 'char-new', data: { name: 'Sami 1.17', personality: 'new sender voice' } };
       }
       if (path === '/characters/char-old') {
-        throw new Error('stale manual Character must not be fetched');
+        throw new Error('stale manual/API Character must not be fetched');
       }
       throw new Error(`unexpected API call: ${path}`);
     };
@@ -202,7 +218,7 @@ await ok('selected assistant Character outranks a stale manual Character fallbac
     }, new AbortController().signal);
 
     assert.match(context.character, /Name: Sami 1\.17/);
-    assert.deepEqual(requested, ['/characters/char-new']);
+    assert.deepEqual(requested, ['/chats/chat-group/messages', '/characters/char-new']);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
@@ -301,6 +317,300 @@ await ok('Draft Reply writes only the active Persona and preserves named multi-c
     assert.equal(captured.override.chatId, 'chat-draft');
     assert.equal(result.result, 'Em hiểu rồi, để em thử nói theo cách của mình nhé.');
     assert.equal(meta.at(-1).persona.name, 'Current Ken');
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply keeps the real active Persona name even when the card has no voice evidence', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/name-only') return { id: 'name-only', personaId: 'p-name', personaCharacterId: null, characterIds: [] };
+      if (path === '/characters/personas/p-name') return { id: 'p-name', data: { name: 'Named Persona' } };
+      if (path === '/chats/name-only/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    let captured = null;
+    h.provider.ProviderService.runInference = async (systemPrompt, userPrompt) => {
+      captured = { systemPrompt, userPrompt };
+      return { result: 'Được thôi.', streamed: false };
+    };
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'name-only',
+      direction: 'trả lời ngắn',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.equal(result.persona.name, 'Named Persona');
+    assert.equal(result.persona.key, 'persona:persona:p-name');
+    assert.equal(result.voiceProfile, null);
+    assert.match(captured.userPrompt, /ACTIVE PERSONA\nName: Named Persona/);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply history excludes system/private context, stops at any scoped boundary, and never relabels unknown historical user as the active Persona', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 20 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/history-safe') return {
+        id: 'history-safe',
+        personaId: 'p-current',
+        personaCharacterId: null,
+        characterIds: ['char-a'],
+      };
+      if (path === '/characters/personas/p-current') return {
+        id: 'p-current',
+        data: { name: 'Current Persona', description: 'Current persona body.' },
+      };
+      if (path === '/characters/char-a') return { id: 'char-a', data: { name: 'Alice', personality: 'calm' } };
+      if (path === '/chats/history-safe/messages') return [
+        { id: 'before', role: 'user', content: 'BEFORE BOUNDARY', extra: {} },
+        {
+          id: 'boundary',
+          role: 'assistant',
+          characterId: 'char-a',
+          content: 'boundary line',
+          extra: { conversationStartForCharacterIds: ['char-a'] },
+        },
+        { id: 'system', role: 'system', content: 'SYSTEM SECRET', extra: {} },
+        { id: 'legacy-user', role: 'user', content: 'legacy user line', extra: {} },
+        {
+          id: 'selective-hidden',
+          role: 'assistant',
+          characterId: 'char-a',
+          content: 'SELECTIVE HIDDEN',
+          extra: { hiddenFromAICharacterIds: ['char-other'] },
+        },
+        { id: 'latest', role: 'assistant', characterId: 'char-a', content: 'latest line', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    let prompt = '';
+    h.provider.ProviderService.runInference = async (_system, userPrompt) => {
+      prompt = userPrompt;
+      return { result: 'Persona reply.', streamed: false };
+    };
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'history-safe',
+      direction: '',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.equal(result.persona.name, 'Current Persona');
+    assert.match(prompt, /Alice: boundary line/);
+    assert.match(prompt, /User: legacy user line/);
+    assert.match(prompt, /Alice: latest line/);
+    assert.doesNotMatch(prompt, /Current Persona: legacy user line/);
+    assert.doesNotMatch(prompt, /BEFORE BOUNDARY/);
+    assert.doesNotMatch(prompt, /SYSTEM SECRET/);
+    assert.doesNotMatch(prompt, /SELECTIVE HIDDEN/);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply rejects a provider result that adds a Character or extra speaker turn', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/cross-speaker') return {
+        id: 'cross-speaker',
+        personaId: 'p',
+        personaCharacterId: null,
+        characterIds: ['char-sami'],
+      };
+      if (path === '/characters/personas/p') return { id: 'p', data: { name: 'Ken', description: 'warm' } };
+      if (path === '/characters/char-sami') return { id: 'char-sami', data: { name: 'Sami 1.17', personality: 'playful' } };
+      if (path === '/chats/cross-speaker/messages') return [
+        { id: 'a', role: 'assistant', characterId: 'char-sami', content: 'Nói gì đó đi.', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({
+      result: 'Em gật đầu.\nSami 1.17: Anh hiểu rồi.',
+      streamed: false,
+    });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'cross-speaker',
+      direction: 'trả lời nhẹ nhàng',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /extra speaker|Character\/Narrator/i);
+    assert.equal(result.result, undefined);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply discards a result if the active Persona changes during generation', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    let chatReads = 0;
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/persona-switch') {
+        chatReads += 1;
+        return chatReads <= 2
+          ? { id: 'persona-switch', personaId: 'p-one', personaCharacterId: null, characterIds: [] }
+          : { id: 'persona-switch', personaId: 'p-two', personaCharacterId: null, characterIds: [] };
+      }
+      if (path === '/characters/personas/p-one') return { id: 'p-one', data: { name: 'Persona One', description: 'one' } };
+      if (path === '/chats/persona-switch/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: 'Reply for Persona One.', streamed: false });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'persona-switch',
+      direction: 'reply',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /active Persona changed while Draft Reply was generating/i);
+    assert.equal(result.result, undefined);
+    assert.equal(chatReads, 3);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply discards a stale draft when the same active Persona card changes during generation', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    let personaReads = 0;
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/persona-card-race') return {
+        id: 'persona-card-race',
+        personaId: 'p-same',
+        personaCharacterId: null,
+        characterIds: [],
+      };
+      if (path === '/characters/personas/p-same') {
+        personaReads += 1;
+        return {
+          id: 'p-same',
+          data: {
+            name: 'Same Persona',
+            description: personaReads === 1 ? 'old Persona style' : 'changed Persona style',
+          },
+        };
+      }
+      if (path === '/chats/persona-card-race/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: 'Reply based on old Persona data.', streamed: false });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'persona-card-race',
+      direction: 'reply',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /Persona card changed while Draft Reply was generating/i);
+    assert.equal(result.result, undefined);
+    assert.equal(personaReads, 2);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply rejects a session fingerprint that no longer matches the active Persona before inference', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/persona-fingerprint-lock') return {
+        id: 'persona-fingerprint-lock',
+        personaId: 'p-lock',
+        personaCharacterId: null,
+        characterIds: [],
+      };
+      if (path === '/characters/personas/p-lock') return {
+        id: 'p-lock',
+        data: { name: 'Locked Persona', description: 'current style' },
+      };
+      if (path === '/chats/persona-fingerprint-lock/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    let inferenceCalls = 0;
+    h.provider.ProviderService.runInference = async () => {
+      inferenceCalls += 1;
+      return { result: 'must not run' };
+    };
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'persona-fingerprint-lock',
+      direction: 'reply',
+      mode: 'idea',
+      expectedPersonaKey: 'persona:persona:p-lock',
+      expectedPersonaFingerprint: 'fnv1a32:deadbeef:1',
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /Persona card changed after this Draft Reply session started/i);
+    assert.equal(inferenceCalls, 0);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply resolves character-backed active Personas with a distinct Persona identity key', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/char-persona') return {
+        id: 'char-persona',
+        personaId: null,
+        personaCharacterId: 'char-user',
+        characterIds: [],
+      };
+      if (path === '/characters/char-user') return {
+        id: 'char-user',
+        data: { name: 'Character Persona', description: 'character-backed persona voice' },
+      };
+      if (path === '/chats/char-persona/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: 'Character-backed Persona reply.', streamed: false });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'char-persona',
+      direction: 'reply',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.equal(result.persona.source, 'character');
+    assert.equal(result.persona.name, 'Character Persona');
+    assert.equal(result.persona.key, 'persona:character:char-user');
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
@@ -1309,7 +1619,7 @@ await ok('auto Voice Profile generation reuses the already-resolved message snap
       }
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async () => ({ result: '{"name":"Fast Voice","prompt":"Use a direct cadence."}' });
+    h.provider.ProviderService.runInference = async () => ({ result: '{"name":"Fast Voice","prompt":"Use a direct cadence."}' });
     const targetMessage = { id: 'm-fast', role: 'assistant', characterId: 'char-fast', characterName: 'Fast', content: 'x' };
     const result = await h.api.APIService.generateAutoProfile('chat-fast', new AbortController().signal, {
       messageId: 'm-fast',
@@ -1317,7 +1627,71 @@ await ok('auto Voice Profile generation reuses the already-resolved message snap
       expectedIdentityKey: 'character:char-fast',
     });
     assert.equal(result.profile.identityKey, 'character:char-fast');
-    assert.deepEqual(h.host.control.calls.map((call) => call.path), ['/characters/char-fast']);
+    assert.deepEqual(h.host.control.calls.map((call) => call.path), ['/characters/char-fast', '/characters/char-fast']);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Voice Profile generation discards a source that changes while inference is running', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', maxPromptChars: 32000, requestTimeoutMs: 45000 };
+    let reads = 0;
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/characters/char-race') {
+        reads += 1;
+        return {
+          id: 'char-race',
+          data: {
+            name: 'Race',
+            personality: reads === 1 ? 'calm version' : 'changed version',
+            mes_example: reads === 1 ? 'old example' : 'new example',
+          },
+        };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: '{"name":"Race Voice","prompt":"Use the old source."}' });
+
+    const result = await h.api.APIService.generateAutoProfile('race-chat', new AbortController().signal, {
+      messageId: 'm-race',
+      targetMessage: { id: 'm-race', role: 'assistant', characterId: 'char-race', characterName: 'Race', content: 'x' },
+      expectedIdentityKey: 'character:char-race',
+    });
+
+    assert.match(result.error, /source changed while/i);
+    assert.equal(h.store.control.autoProfileWrites.length, 0);
+    assert.equal(reads, 2);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Voice Profile generation never saves after cancellation even if inference returns anyway', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', maxPromptChars: 32000, requestTimeoutMs: 45000 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/characters/char-abort') {
+        return { id: 'char-abort', data: { name: 'Abort', personality: 'steady', mes_example: 'example' } };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    const controller = new AbortController();
+    h.provider.ProviderService.runInference = async () => {
+      controller.abort();
+      return { result: '{"name":"Abort Voice","prompt":"Should never persist."}' };
+    };
+
+    const result = await h.api.APIService.generateAutoProfile('abort-chat', controller.signal, {
+      messageId: 'm-abort',
+      targetMessage: { id: 'm-abort', role: 'assistant', characterId: 'char-abort', characterName: 'Abort', content: 'x' },
+      expectedIdentityKey: 'character:char-abort',
+    });
+
+    assert.equal(result.aborted, true);
+    assert.equal(h.store.control.autoProfileWrites.length, 0);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
@@ -1332,7 +1706,7 @@ await ok('manual voice-profile generation remains fail-closed and writes an iden
       if (path === '/characters/char-9') return { id: 'char-9', name: 'Aster', data: { name: 'Aster', personality: 'precise and dry' } };
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async () => ({ result: '{"name":"Aster Voice","prompt":"Rewrite in Aster’s precise, dry voice."}' });
+    h.provider.ProviderService.runInference = async () => ({ result: '{"name":"Aster Voice","prompt":"Rewrite in Aster’s precise, dry voice."}' });
     const result = await h.api.APIService.generateAutoProfile('chat-9', new AbortController().signal);
     assert.equal(result.profile.name, 'Aster Voice');
     assert.equal(result.profile.auto, true);
@@ -1360,7 +1734,7 @@ await ok('group-chat Character voice profiles are keyed to the exact selected me
       if (path === '/characters/char-b') return { id: 'char-b', data: { name: 'Bianca', personality: 'playful' } };
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async (_system, user) => user.includes('Alice')
+    h.provider.ProviderService.runInference = async (_system, user) => user.includes('Alice')
       ? { result: '{"name":"Alice Voice","prompt":"Write with Alice cadence."}' }
       : { result: '{"name":"Bianca Voice","prompt":"Write with Bianca cadence."}' };
 
@@ -1400,7 +1774,7 @@ await ok('Persona voice profiles follow the historical Persona snapshot on each 
       if (path === '/characters/personas/p-detective') return { id: 'p-detective', data: { name: 'Detective Ken', description: 'terse investigative diction' } };
       throw new Error(`unexpected API call: ${path}`);
     };
-    h.api.APIService.runInference = async (_system, user) => user.includes('Detective Ken')
+    h.provider.ProviderService.runInference = async (_system, user) => user.includes('Detective Ken')
       ? { result: '{"name":"Detective Voice","prompt":"Use terse investigative diction."}' }
       : { result: '{"name":"Calm Voice","prompt":"Use quiet reflective diction."}' };
 
@@ -1433,7 +1807,7 @@ await ok('voice-profile source fingerprint reuses unchanged profiles and regener
       throw new Error(`unexpected API call: ${path}`);
     };
     let inferenceCalls = 0;
-    h.api.APIService.runInference = async () => {
+    h.provider.ProviderService.runInference = async () => {
       inferenceCalls += 1;
       return { result: `{"name":"FP Voice","prompt":"Voice revision ${inferenceCalls}."}` };
     };

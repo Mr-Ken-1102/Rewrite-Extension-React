@@ -1,22 +1,22 @@
 {
   "name": "rewrite-assistant-react-marinara",
   "private": true,
-  "version": "3.0.1",
+  "version": "3.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node selfcheck.mjs && node failuremodecheck.mjs && node propertycheck.mjs",
+    "test": "node tools/quality/selfcheck.mjs && node tools/quality/failuremodecheck.mjs && node tools/quality/propertycheck.mjs",
     "lint": "eslint . --max-warnings=0",
     "check": "npm run verify:source && npm run verify:manifest && npm run test && npm run lint && npm run build",
-    "bundle": "node build-extension.mjs",
+    "bundle": "node tools/build/build-extension.mjs",
     "preview": "vite preview",
-    "compat:engine": "node engine-compatcheck.mjs",
-    "verify:source": "node sourcecheck.mjs",
-    "test:regression": "node selfcheck.mjs",
-    "test:failure-modes": "node failuremodecheck.mjs",
-    "verify:manifest": "node manifestcheck.mjs",
-    "test:properties": "node propertycheck.mjs"
+    "compat:engine": "node tools/quality/engine-compatcheck.mjs",
+    "verify:source": "node tools/quality/sourcecheck.mjs",
+    "test:regression": "node tools/quality/selfcheck.mjs",
+    "test:failure-modes": "node tools/quality/failuremodecheck.mjs",
+    "verify:manifest": "node tools/quality/manifestcheck.mjs",
+    "test:properties": "node tools/quality/propertycheck.mjs"
   },
   "dependencies": {
     "react": "19.2.7",
