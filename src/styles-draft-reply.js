@@ -22,6 +22,8 @@ export const RWA_DRAFT_REPLY_CSS = `
   transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
 }
 .rwa-draft-launcher-icon { font-size: 14px; line-height: 1; }
+.rwa-draft-launcher-draggable { cursor: grab; touch-action: none; user-select: none; }
+.rwa-draft-launcher-draggable:active { cursor: grabbing; }
 .rwa-draft-launcher:hover, .rwa-draft-launcher:focus-visible {
   transform: translateY(-1px);
   border-color: var(--rwa-primary);
