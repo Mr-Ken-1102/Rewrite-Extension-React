@@ -14,13 +14,14 @@ function isUsable(element) {
   return true;
 }
 
-export function useDialogFocusTrap(dialogRef, onClose) {
+export function useDialogFocusTrap(dialogRef, onClose, enabled = true) {
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
   useEffect(() => {
+    if (!enabled) return undefined;
     const dialog = dialogRef.current;
     if (!dialog) return undefined;
 
@@ -71,5 +72,5 @@ export function useDialogFocusTrap(dialogRef, onClose) {
         requestAnimationFrame(() => previous.focus({ preventScroll: true }));
       }
     };
-  }, [dialogRef]);
+  }, [dialogRef, enabled]);
 }
