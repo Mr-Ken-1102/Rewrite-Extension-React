@@ -312,6 +312,214 @@ await ok('Draft Reply writes only the active Persona and preserves named multi-c
   }
 });
 
+await ok('Draft Reply keeps the real active Persona name even when the card has no voice evidence', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/name-only') return { id: 'name-only', personaId: 'p-name', personaCharacterId: null, characterIds: [] };
+      if (path === '/characters/personas/p-name') return { id: 'p-name', data: { name: 'Named Persona' } };
+      if (path === '/chats/name-only/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    let captured = null;
+    h.provider.ProviderService.runInference = async (systemPrompt, userPrompt) => {
+      captured = { systemPrompt, userPrompt };
+      return { result: 'Được thôi.', streamed: false };
+    };
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'name-only',
+      direction: 'trả lời ngắn',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.equal(result.persona.name, 'Named Persona');
+    assert.equal(result.persona.key, 'persona:persona:p-name');
+    assert.equal(result.voiceProfile, null);
+    assert.match(captured.userPrompt, /ACTIVE PERSONA\nName: Named Persona/);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply history excludes system/private context, stops at any scoped boundary, and never relabels unknown historical user as the active Persona', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 20 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/history-safe') return {
+        id: 'history-safe',
+        personaId: 'p-current',
+        personaCharacterId: null,
+        characterIds: ['char-a'],
+      };
+      if (path === '/characters/personas/p-current') return {
+        id: 'p-current',
+        data: { name: 'Current Persona', description: 'Current persona body.' },
+      };
+      if (path === '/characters/char-a') return { id: 'char-a', data: { name: 'Alice', personality: 'calm' } };
+      if (path === '/chats/history-safe/messages') return [
+        { id: 'before', role: 'user', content: 'BEFORE BOUNDARY', extra: {} },
+        {
+          id: 'boundary',
+          role: 'assistant',
+          characterId: 'char-a',
+          content: 'boundary line',
+          extra: { conversationStartForCharacterIds: ['char-a'] },
+        },
+        { id: 'system', role: 'system', content: 'SYSTEM SECRET', extra: {} },
+        { id: 'legacy-user', role: 'user', content: 'legacy user line', extra: {} },
+        {
+          id: 'selective-hidden',
+          role: 'assistant',
+          characterId: 'char-a',
+          content: 'SELECTIVE HIDDEN',
+          extra: { hiddenFromAICharacterIds: ['char-other'] },
+        },
+        { id: 'latest', role: 'assistant', characterId: 'char-a', content: 'latest line', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    let prompt = '';
+    h.provider.ProviderService.runInference = async (_system, userPrompt) => {
+      prompt = userPrompt;
+      return { result: 'Persona reply.', streamed: false };
+    };
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'history-safe',
+      direction: '',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.equal(result.persona.name, 'Current Persona');
+    assert.match(prompt, /Alice: boundary line/);
+    assert.match(prompt, /User: legacy user line/);
+    assert.match(prompt, /Alice: latest line/);
+    assert.doesNotMatch(prompt, /Current Persona: legacy user line/);
+    assert.doesNotMatch(prompt, /BEFORE BOUNDARY/);
+    assert.doesNotMatch(prompt, /SYSTEM SECRET/);
+    assert.doesNotMatch(prompt, /SELECTIVE HIDDEN/);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply rejects a provider result that adds a Character or extra speaker turn', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/cross-speaker') return {
+        id: 'cross-speaker',
+        personaId: 'p',
+        personaCharacterId: null,
+        characterIds: ['char-sami'],
+      };
+      if (path === '/characters/personas/p') return { id: 'p', data: { name: 'Ken', description: 'warm' } };
+      if (path === '/characters/char-sami') return { id: 'char-sami', data: { name: 'Sami 1.17', personality: 'playful' } };
+      if (path === '/chats/cross-speaker/messages') return [
+        { id: 'a', role: 'assistant', characterId: 'char-sami', content: 'Nói gì đó đi.', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({
+      result: 'Em gật đầu.\nSami 1.17: Anh hiểu rồi.',
+      streamed: false,
+    });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'cross-speaker',
+      direction: 'trả lời nhẹ nhàng',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /extra speaker|Character\/Narrator/i);
+    assert.equal(result.result, undefined);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply discards a result if the active Persona changes during generation', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    let chatReads = 0;
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/persona-switch') {
+        chatReads += 1;
+        return chatReads <= 2
+          ? { id: 'persona-switch', personaId: 'p-one', personaCharacterId: null, characterIds: [] }
+          : { id: 'persona-switch', personaId: 'p-two', personaCharacterId: null, characterIds: [] };
+      }
+      if (path === '/characters/personas/p-one') return { id: 'p-one', data: { name: 'Persona One', description: 'one' } };
+      if (path === '/chats/persona-switch/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: 'Reply for Persona One.', streamed: false });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'persona-switch',
+      direction: 'reply',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /active Persona changed while Draft Reply was generating/i);
+    assert.equal(result.result, undefined);
+    assert.equal(chatReads, 3);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply resolves character-backed active Personas with a distinct Persona identity key', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/char-persona') return {
+        id: 'char-persona',
+        personaId: null,
+        personaCharacterId: 'char-user',
+        characterIds: [],
+      };
+      if (path === '/characters/char-user') return {
+        id: 'char-user',
+        data: { name: 'Character Persona', description: 'character-backed persona voice' },
+      };
+      if (path === '/chats/char-persona/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: 'Character-backed Persona reply.', streamed: false });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'char-persona',
+      direction: 'reply',
+      mode: 'idea',
+      signal: new AbortController().signal,
+    });
+
+    assert.equal(result.persona.source, 'character');
+    assert.equal(result.persona.name, 'Character Persona');
+    assert.equal(result.persona.key, 'persona:character:char-user');
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 await ok('Draft Reply refuses Continue mode without a user draft instead of inventing intent', async () => {
   const h = await loadApiHarness();
   try {
