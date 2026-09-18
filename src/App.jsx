@@ -94,6 +94,8 @@ export default function App() {
           profile={processState.profile}
           selection={processState.selection}
           progress={processState.progress}
+          partialResult={processState.partialResult}
+          streamed={processState.streamed === true}
           pieces={processState.pieces}
           applyReport={processState.applyReport}
           onAccept={handleAcceptPreview}
