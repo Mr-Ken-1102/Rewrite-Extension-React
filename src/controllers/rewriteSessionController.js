@@ -80,6 +80,8 @@ export function createRewriteSessionController({
       profile,
       selection,
       progress: meta.progress || null,
+      streamStatus: config.connMode === 'marinara' ? 'connecting' : null,
+      streamChars: 0,
       ...meta,
     };
     setState(loadingState);
@@ -91,7 +93,19 @@ export function createRewriteSessionController({
         onContextTrim: contextTrimHook,
         onProgress: (partialResult) => {
           if (!executions.isCurrent(execution)) return;
-          setState({ ...loadingState, status: 'loading', partialResult, streamed: true });
+          setState((current) => current && current.status === 'loading'
+            ? { ...current, partialResult, streamed: true, streamChars: partialResult.length }
+            : current);
+        },
+        onStreamStatus: (info) => {
+          if (!executions.isCurrent(execution)) return;
+          setState((current) => current && current.status === 'loading'
+            ? {
+              ...current,
+              streamStatus: info?.status || current.streamStatus,
+              streamChars: Number.isFinite(Number(info?.chars)) ? Number(info.chars) : current.streamChars,
+            }
+            : current);
         },
       });
       if (!executions.isCurrent(execution)) return;
@@ -168,6 +182,8 @@ export function createRewriteSessionController({
       segments,
       merged,
       progress: `Merged rewrite — ${segments.length} message spans. Apply is disabled unless every nonce marker survives exactly and in order.`,
+      streamStatus: config.connMode === 'marinara' ? 'connecting' : null,
+      streamChars: 0,
     };
     setState(loadingState);
     const execution = executions.begin(executionMeta('merged', parentSelection, segments));
@@ -189,7 +205,19 @@ export function createRewriteSessionController({
         onContextTrim: contextTrimHook,
         onProgress: (partialResult) => {
           if (!executions.isCurrent(execution)) return;
-          setState({ ...loadingState, status: 'loading', partialResult, streamed: true });
+          setState((current) => current && current.status === 'loading'
+            ? { ...current, partialResult, streamed: true, streamChars: partialResult.length }
+            : current);
+        },
+        onStreamStatus: (info) => {
+          if (!executions.isCurrent(execution)) return;
+          setState((current) => current && current.status === 'loading'
+            ? {
+              ...current,
+              streamStatus: info?.status || current.streamStatus,
+              streamChars: Number.isFinite(Number(info?.chars)) ? Number(info.chars) : current.streamChars,
+            }
+            : current);
         },
       });
       if (!executions.isCurrent(execution)) return;
