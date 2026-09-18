@@ -1,4 +1,5 @@
 import { ctxFingerprint } from '../services/spanMapper.js';
+import { readMessageDomIdentity } from './messageDomIdentity.js';
 
 function escapeSelectorValue(value) {
   const str = String(value ?? '');
@@ -8,6 +9,23 @@ function escapeSelectorValue(value) {
 
 function normalized(value) {
   return String(value ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
+function elementForNode(node) {
+  if (!node) return null;
+  if (node.nodeType === 1) return node;
+  return node.parentElement || null;
+}
+
+function rangeAnchorWithin(range, messageElement) {
+  if (!range || !messageElement) return null;
+  const candidates = [elementForNode(range.startContainer), elementForNode(range.endContainer)].filter(Boolean);
+  for (const candidate of candidates) {
+    try {
+      if (candidate === messageElement || messageElement.contains?.(candidate)) return candidate;
+    } catch { /* ignore malformed DOM nodes */ }
+  }
+  return null;
 }
 
 let selectionCaptureSeq = 0;
@@ -57,27 +75,25 @@ export const DOMUtils = {
     return this.messageElementsForMid(mid)[0] || null;
   },
 
-  renderedTextForMid(mid) {
-    if (!mid) return '';
-    const esc = escapeSelectorValue(mid);
-    const segs = document.querySelectorAll(`[data-message-id="${esc}"]`);
+  renderedTextForElement(messageElement) {
+    if (!messageElement) return '';
+    const contents = messageElement.querySelectorAll?.('.mari-message-content') || [];
     let out = '';
-    for (const seg of segs) {
-      const contents = seg.querySelectorAll('.mari-message-content');
-      if (contents.length) contents.forEach((node) => { out += node.textContent || ''; });
-      else out += seg.textContent || '';
-    }
+    if (contents.length) contents.forEach((node) => { out += node.textContent || ''; });
+    else out += messageElement.textContent || '';
     return normalized(out);
   },
 
-  selectionTextInMessage(range, mid) {
-    const esc = escapeSelectorValue(mid);
-    const segs = document.querySelectorAll(`[data-message-id="${esc}"]`);
-    if (!segs.length) return normalized(range.toString());
-    const contents = [];
-    segs.forEach((seg) => seg.querySelectorAll('.mari-message-content').forEach((node) => contents.push(node)));
-    const startEl = contents[0] || segs[0];
-    const endEl = contents[contents.length - 1] || segs[segs.length - 1];
+  renderedTextForMid(mid) {
+    if (!mid) return '';
+    return this.messageElementsForMid(mid).map((element) => this.renderedTextForElement(element)).join('');
+  },
+
+  selectionTextInElement(range, messageElement) {
+    if (!messageElement) return normalized(range?.toString?.() || '');
+    const contents = [...(messageElement.querySelectorAll?.('.mari-message-content') || [])];
+    const startEl = contents[0] || messageElement;
+    const endEl = contents[contents.length - 1] || messageElement;
     try {
       const bound = document.createRange();
       bound.setStartBefore(startEl);
@@ -91,18 +107,21 @@ export const DOMUtils = {
       }
       return normalized(clamped.toString());
     } catch {
-      return normalized(range.toString());
+      return normalized(range?.toString?.() || '');
     }
   },
 
-  selectionOccurrence(range, mid, selectedText) {
+  selectionTextInMessage(range, mid) {
+    const messageElement = this.messageElementForMid(mid);
+    return messageElement ? this.selectionTextInElement(range, messageElement) : normalized(range?.toString?.() || '');
+  },
+
+  selectionOccurrenceInElement(range, messageElement, selectedText) {
     try {
       const needle = normalized(selectedText);
-      if (!needle.trim()) return 0;
-      const esc = escapeSelectorValue(mid);
-      const contents = document.querySelectorAll(`[data-message-id="${esc}"] .mari-message-content`);
-      const startEl = contents[0] || document.querySelector(`[data-message-id="${esc}"]`);
-      if (!startEl) return 0;
+      if (!needle.trim() || !messageElement) return 0;
+      const contents = messageElement.querySelectorAll?.('.mari-message-content') || [];
+      const startEl = contents[0] || messageElement;
       const pre = document.createRange();
       pre.setStartBefore(startEl);
       pre.setEnd(range.startContainer, range.startOffset);
@@ -119,6 +138,10 @@ export const DOMUtils = {
     }
   },
 
+  selectionOccurrence(range, mid, selectedText) {
+    return this.selectionOccurrenceInElement(range, this.messageElementForMid(mid), selectedText);
+  },
+
   collectSelectionSegments(range) {
     if (!range) return [];
     const ordered = [];
@@ -131,19 +154,17 @@ export const DOMUtils = {
       const mid = element.getAttribute('data-message-id');
       if (!mid || seen.has(mid)) continue;
       seen.add(mid);
-      ordered.push(mid);
+      ordered.push({ mid, element });
     }
 
     const segments = [];
-    for (const mid of ordered) {
-      const text = this.selectionTextInMessage(range, mid);
+    for (const { mid, element: messageEl } of ordered) {
+      const text = this.selectionTextInElement(range, messageEl);
       if (!text || text.trim().length < 2) continue;
-      const renderedFull = this.renderedTextForMid(mid);
-      const occ = this.selectionOccurrence(range, mid, text);
-      const messageEl = this.messageElementForMid(mid);
-      const detectedRole = messageEl?.getAttribute?.('data-message-role') || null;
-      const detectedCharacterId = messageEl?.getAttribute?.('data-card-css') || messageEl?.querySelector?.('[data-card-css]')?.getAttribute?.('data-card-css') || null;
-      const detectedName = messageEl?.querySelector?.('.mari-message-name')?.textContent?.trim?.() || null;
+      const renderedFull = this.renderedTextForElement(messageEl);
+      const occ = this.selectionOccurrenceInElement(range, messageEl, text);
+      const anchorElement = rangeAnchorWithin(range, messageEl);
+      const { detectedRole, detectedCharacterId, detectedName } = readMessageDomIdentity(messageEl, anchorElement);
       segments.push({
         source: 'message',
         mid,
@@ -179,6 +200,7 @@ export const DOMUtils = {
       const mid = active.dataset.rwaMid || parentMsg?.getAttribute('data-message-id') || parentMsg?.getAttribute('mesid') || parentMsg?.id || lastClickedMid;
       if (!mid) return null;
       active.dataset.rwaMid = mid;
+      const { detectedRole, detectedCharacterId, detectedName } = readMessageDomIdentity(parentMsg, active);
       return {
         source: 'textarea',
         text,
@@ -188,9 +210,9 @@ export const DOMUtils = {
         end,
         el: active,
         originalValue: active.value,
-        detectedRole: parentMsg?.getAttribute?.('data-message-role') || null,
-        detectedCharacterId: parentMsg?.getAttribute?.('data-card-css') || null,
-        detectedName: parentMsg?.querySelector?.('.mari-message-name')?.textContent?.trim?.() || null,
+        detectedRole,
+        detectedCharacterId,
+        detectedName,
         captureId: nextSelectionCaptureId(),
       };
     }

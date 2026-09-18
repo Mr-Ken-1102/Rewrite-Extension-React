@@ -125,7 +125,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   }), [contextExclusions, selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
-  const voiceIdentity = tokenInfo.voiceIdentity || voiceIdentityFromSelection(selection) || null;
+  const voiceIdentity = voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null;
   const autoProfile = voiceIdentity?.key && autoProfileBucket
     ? autoProfileBucket[voiceIdentity.key] || null
     : null;

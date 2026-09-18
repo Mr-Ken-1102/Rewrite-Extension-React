@@ -172,7 +172,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
           <div className="rwas-brand">
             <div className="rwas-brand-line">
               <span className="rwas-product">Rewrite Assistant</span>
-              <span className="rwas-version">V3</span>
+              <span className="rwas-version">V3.0.2</span>
             </div>
             <div className="rwas-window-title">{vi ? 'Cài đặt' : 'Settings'}</div>
           </div>
@@ -220,7 +220,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
                 <span className="rwas-nav-icon"><NavGlyph type="about" /></span>
                 <span className="rwas-nav-copy">
                   <strong>{vi ? 'Giới thiệu' : 'About'}</strong>
-                  <small>Version 3.0.1</small>
+                  <small>Version 3.0.2</small>
                 </span>
               </button>
             </div>
@@ -263,7 +263,7 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
                       <div>
                         <h3 className="rwa-about-title">Rewrite Assistant V3</h3>
                         <p className="rwa-about-subtitle">
-                          Version 3.0.1<br/>
+                          Version 3.0.2<br/>
                           {vi ? 'Phát triển bởi' : 'Developed by'} <strong>Mr.Kiều.1102</strong>
                         </p>
                         <p className="rwa-about-thanks-to">

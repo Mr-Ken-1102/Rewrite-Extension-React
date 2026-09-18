@@ -6,7 +6,7 @@ import { extractSurroundingContext } from '../../utils/selectionContext.js';
 import { analyzeMergedMessageCompatibility } from '../policies/contextPolicy.js';
 import { validateProviderHttpUrl } from '../policies/providerPolicy.js';
 import { estimateTokens } from '../prompt/promptService.js';
-import { voiceIdentityFromMessage } from '../voiceProfileIdentity.js';
+import { resolveVoiceIdentity, voiceIdentityFromSelection } from '../voiceProfileIdentity.js';
 
 const ENDPOINTS = {
   chats: '/chats',
@@ -376,16 +376,30 @@ export class ContextService {
       }
     }
 
+    const domIdentity = voiceIdentityFromSelection(savedSel);
     const role = info.message?.role || savedSel.detectedRole || null;
-    const history = wantsHistory
-      ? this.buildHistoryContext(info.messages, info.index, config.contextDepth, info.message?.characterId || null)
+    const authoritativeCharacterId = role === 'assistant'
+      ? (domIdentity?.id || info.message?.characterId || '')
       : '';
-    const authoritativeSender = role === 'assistant'
-      ? normalizeIdList(info.message?.characterId || savedSel?.detectedCharacterId)
+    const history = wantsHistory
+      ? this.buildHistoryContext(info.messages, info.index, config.contextDepth, authoritativeCharacterId || null)
+      : '';
+    const authoritativeSender = authoritativeCharacterId
+      ? normalizeIdList(authoritativeCharacterId)
       : [];
-    // When rewriting an assistant message, the message's own Character is the
-    // authoritative identity. Manual Character selections remain a fallback
-    // for user/narrator text or legacy messages that lack sender metadata.
+    if (domIdentity?.id && info.message?.characterId && String(domIdentity.id) !== String(info.message.characterId)) {
+      debugLogService.add('identity.dom_api_mismatch', {
+        chatId: savedSel?.cid || null,
+        messageId: savedSel?.mid || null,
+        domCharacterId: domIdentity.id,
+        apiCharacterId: String(info.message.characterId),
+        chosen: 'dom',
+      });
+    }
+    // The exact rendered Character selected by the user is authoritative.
+    // Marinara API metadata remains the fallback when no DOM Character id was
+    // captured. Manual Character selections are only a final fallback for
+    // user/narrator/legacy text without an authoritative sender.
     const characterIds = authoritativeSender.length ? authoritativeSender : explicitCharacterIds;
     const surrounding = wantsSurrounding ? extractSurroundingContext(savedSel, config.localContextWords) : '';
     const speaker = wantsSpeaker ? this.speakerNote(role) : '';
@@ -445,7 +459,11 @@ export class ContextService {
         signal,
         messageInfo?.message ? { messageInfo } : {},
       );
-      const voiceIdentity = voiceIdentityFromMessage(messageInfo?.message || context.messageInfo?.message || null);
+      let voiceIdentity = resolveVoiceIdentity(savedSel, messageInfo?.message || context.messageInfo?.message || null);
+      if (voiceIdentity?.kind === 'character' && !voiceIdentity.name) {
+        const resolvedName = extractIdentityNames(context.character)[0] || '';
+        if (resolvedName) voiceIdentity = { ...voiceIdentity, name: resolvedName };
+      }
       const parts = {
         selection: estimateTokens(savedSel.text),
         character: estimateTokens(context.character),

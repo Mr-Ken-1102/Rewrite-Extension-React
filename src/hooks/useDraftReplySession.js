@@ -57,6 +57,17 @@ export function useDraftReplySession() {
     const current = draftState;
     if (!current?.chatId) return;
 
+    const activeChatId = DOMUtils.getChatId();
+    if (!activeChatId || activeChatId !== current.chatId) {
+      showToast('The active chat changed. Reopen Draft Reply in the current chat before generating.', 'warn');
+      setDraftState(null);
+      return;
+    }
+    if (!DOMUtils.getChatComposer()) {
+      showToast('Draft Reply cannot find the active Marinara composer. Reopen the chat and try again.', 'warn');
+      return;
+    }
+
     abortCurrent();
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -145,7 +156,7 @@ export function useDraftReplySession() {
       if (controllerRef.current === controller) controllerRef.current = null;
       useRuntimeStore.getState().unregisterController(controller);
     }
-  }, [abortCurrent, draftState]);
+  }, [abortCurrent, draftState, showToast]);
 
   const cancelGeneration = useCallback(() => {
     abortCurrent();

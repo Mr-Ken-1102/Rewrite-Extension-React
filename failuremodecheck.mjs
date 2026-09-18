@@ -166,7 +166,7 @@ export const MarinaraHost = {
 }
 
 
-await ok('selected assistant Character outranks a stale manual Character fallback', async () => {
+await ok('selected assistant Character outranks stale manual and API Character metadata', async () => {
   const h = await loadApiHarness();
   try {
     h.store.control.state.config = {
@@ -174,7 +174,7 @@ await ok('selected assistant Character outranks a stale manual Character fallbac
       injectUser: false,
       injectLorebook: false,
       localContextEnabled: false,
-      contextDepth: 0,
+      contextDepth: 1,
       speakerAware: false,
       useExtenderMemory: false,
       freeMode: false,
@@ -183,11 +183,17 @@ await ok('selected assistant Character outranks a stale manual Character fallbac
     const requested = [];
     h.host.control.apiHandler = async (path) => {
       requested.push(path);
+      if (path === '/chats/chat-group/messages') {
+        return [
+          { id: 'm-prev', role: 'assistant', characterId: 'char-old', content: 'older message', extra: {} },
+          { id: 'm-new', role: 'assistant', characterId: 'char-old', content: 'selected text', extra: {} },
+        ];
+      }
       if (path === '/characters/char-new') {
         return { id: 'char-new', data: { name: 'Sami 1.17', personality: 'new sender voice' } };
       }
       if (path === '/characters/char-old') {
-        throw new Error('stale manual Character must not be fetched');
+        throw new Error('stale manual/API Character must not be fetched');
       }
       throw new Error(`unexpected API call: ${path}`);
     };
@@ -202,7 +208,7 @@ await ok('selected assistant Character outranks a stale manual Character fallbac
     }, new AbortController().signal);
 
     assert.match(context.character, /Name: Sami 1\.17/);
-    assert.deepEqual(requested, ['/characters/char-new']);
+    assert.deepEqual(requested, ['/chats/chat-group/messages', '/characters/char-new']);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }

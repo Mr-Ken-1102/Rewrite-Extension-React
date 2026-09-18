@@ -6,12 +6,14 @@ import { makeHistoryKey } from './src/utils/historyKey.js';
 import { unwrapMatchingOuterQuotes } from './src/utils/textSanitizers.js';
 import { normalizeRewriteResult } from './src/services/prompt/promptService.js';
 import { DOMUtils } from './src/utils/domUtils.js';
+import { readMessageDomIdentity } from './src/utils/messageDomIdentity.js';
 import { AUTO_PROFILE_FAILURE_BACKOFF_MS, autoProfileBackoffRemaining, shouldStartAutoProfile } from './src/services/autoProfilePolicy.js';
 import { createExecutionCoordinator } from './src/controllers/rewriteExecution.js';
 import { sanitizeAutoProfiles } from './src/store/persistence/schema.js';
 import {
   getVoiceProfile,
   makeVoiceIdentityKey,
+  resolveVoiceIdentity,
   voiceIdentityFromMessage,
 } from './src/services/voiceProfileIdentity.js';
 import { createExtensionManifest } from './extension-manifest.mjs';
@@ -66,6 +68,39 @@ ok('Voice Profile identity keys distinguish Characters, Personas, and character-
   assert.equal(char.name, 'Sami 2.0');
   assert.equal(persona.key, 'persona:persona:persona-7');
   assert.equal(persona.name, 'Detective Ken');
+});
+
+ok('exact selected DOM Character outranks stale fallback DOM and API identities', () => {
+  const oldCard = {
+    getAttribute: (name) => name === 'data-card-css' ? 'char-old' : null,
+    querySelector: () => null,
+  };
+  const newName = { textContent: 'Sami 1.17' };
+  const newCard = {
+    getAttribute: (name) => name === 'data-card-css' ? 'char-new' : null,
+    querySelector: (selector) => selector === '.mari-message-name' ? newName : null,
+  };
+  const anchor = {
+    closest: (selector) => selector === '[data-card-css]' ? newCard : null,
+  };
+  const messageElement = {
+    getAttribute: (name) => name === 'data-message-role' ? 'assistant' : null,
+    contains: (candidate) => candidate === anchor || candidate === newCard || candidate === oldCard,
+    querySelector: (selector) => selector === '[data-card-css]' ? oldCard : (selector === '.mari-message-name' ? { textContent: 'Hương Sami 2.0' } : null),
+  };
+
+  const dom = readMessageDomIdentity(messageElement, anchor);
+  assert.equal(dom.detectedRole, 'assistant');
+  assert.equal(dom.detectedCharacterId, 'char-new');
+  assert.equal(dom.detectedName, 'Sami 1.17');
+
+  const resolved = resolveVoiceIdentity(
+    { ...dom, mid: 'm-new', cid: 'chat-group' },
+    { id: 'm-new', role: 'assistant', characterId: 'char-old', characterName: 'Hương Sami 2.0' },
+  );
+  assert.equal(resolved.key, 'character:char-new');
+  assert.equal(resolved.name, 'Sami 1.17');
+  assert.equal(resolved.sourceOfTruth, 'dom');
 });
 
 ok('v5 chat-wide auto profiles migrate to quarantined legacy buckets instead of matching a random identity', () => {
@@ -271,6 +306,9 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(session, /setChatComposerValue\(current\.result\)/);
   assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
   assert.match(launcher, /data-chat-composer|DOMUtils\.getChatComposerAnchor/);
+  assert.match(launcher, /data-rwa-feature="draft-reply"/);
+  assert.match(launcher, /Trả lời Persona|Persona Reply/);
+  assert.match(session, /activeChatId !== current\.chatId/);
   assert.match(modal, /Insert into composer/);
   assert.match(modal, /Another version/);
   assert.match(modal, /Shorter/);
@@ -448,7 +486,7 @@ ok('bundle manifest version is sourced from package.json', () => {
   const packageJson = JSON.parse(readFileSync('./package.json', 'utf8'));
   const manifest = createExtensionManifest('void 0;');
   assert.equal(manifest.version, packageJson.version);
-  assert.equal(manifest.version, '3.0.1');
+  assert.equal(manifest.version, '3.0.2');
 });
 
 ok('cancelled Settings connection tests do not emit false abort/failure toasts', () => {
@@ -504,7 +542,8 @@ ok('history context never crosses Marinara conversation-start boundaries', () =>
 
 ok('Character context uses authoritative assistant identity with explicit fallback only when needed', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /const authoritativeSender = role === 'assistant'[\s\S]*savedSel\?\.detectedCharacterId/s);
+  assert.match(context, /const authoritativeCharacterId = role === 'assistant'[\s\S]*domIdentity\?\.id \|\| info\.message\?\.characterId/s);
+  assert.match(context, /const authoritativeSender = authoritativeCharacterId[\s\S]*normalizeIdList\(authoritativeCharacterId\)/s);
   assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
   assert.match(context, /wantsCharacter && characterIds\.length > 0/);
 });
@@ -549,13 +588,17 @@ ok('historical user messages preserve their persona identity', () => {
 ok('assistant rewrites never let a stale manual Character override the selected sender', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
+  const domIdentity = readFileSync('./src/utils/messageDomIdentity.js', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
-  assert.match(context, /info\.message\?\.characterId \|\| savedSel\?\.detectedCharacterId/);
+  assert.match(context, /domIdentity\?\.id \|\| info\.message\?\.characterId/);
   assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
   assert.match(context, /fetchCharCard\(savedSel\.cid, signal, characterIds\)/);
-  assert.match(dom, /data-card-css/);
-  assert.match(dom, /mari-message-name/);
-  assert.match(identity, /voiceIdentityFromSelection/);
+  assert.match(dom, /readMessageDomIdentity/);
+  assert.match(domIdentity, /data-card-css/);
+  assert.match(domIdentity, /mari-message-name/);
+  assert.match(identity, /resolveVoiceIdentity/);
+  const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
+  assert.match(popup, /voiceIdentityFromSelection\(selection\) \|\| tokenInfo\.voiceIdentity/);
 });
 
 ok('message-info aborts are not downgraded into missing metadata', () => {
@@ -568,7 +611,7 @@ ok('message-aware context fails closed while DOM Character metadata can avoid un
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /const needsMessageInfo = wantsHistory \|\| wantsPersona \|\| wantsSpeaker \|\| \(wantsCharacter && !explicitCharacterIds\.length\)/);
-  assert.match(context, /savedSel\?\.detectedCharacterId/);
+  assert.match(context, /const domIdentity = voiceIdentityFromSelection\(savedSel\)/);
   assert.match(api, /Could not assemble the enabled context/);
   assert.match(context, /The selected message is no longer available from Marinara/);
 });
