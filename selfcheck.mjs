@@ -1002,6 +1002,8 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(hook, /targetMessage,/);
   assert.match(hook, /expectedIdentityKey: identityKey/);
   assert.match(hook, /PROFILE_REVALIDATE_MS/);
+  assert.match(hook, /PROFILE_REVALIDATE_MS - \(now - lastValidated\)/);
+  assert.match(hook, /setRetryTick\(\(value\) => value \+ 1\)/);
   assert.match(popup, /autoProfileBucket\[voiceIdentity\.key\]/);
   assert.match(rewriteSection, /identityKind === 'persona'/);
   assert.match(contextTab, /Automatic Character \/ Persona voice profiles/);
