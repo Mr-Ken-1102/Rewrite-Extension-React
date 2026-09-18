@@ -559,12 +559,12 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(draftStyles, /--rwa-draft-gutter:\s*12px/);
   assert.match(draftStyles, /--rwa-draft-gap:\s*8px/);
   assert.match(draftStyles, /\.rwa-draft-header\s*\{[\s\S]*padding:\s*0 var\(--rwa-draft-gutter\)/s);
-  assert.match(draftStyles, /\.rwa-draft-body\s*\{[\s\S]*padding:\s*10px var\(--rwa-draft-gutter\) 11px/s);
+  assert.match(draftStyles, /\.rwa-draft-body\s*\{[\s\S]*padding:\s*11px var\(--rwa-draft-gutter\)/s);
   assert.match(draftStyles, /\.rwa-draft-footer\s*\{[\s\S]*padding:\s*0 var\(--rwa-draft-gutter\)/s);
   assert.match(draftStyles, /\.rwa-draft-compose\s*\{[\s\S]*gap:\s*var\(--rwa-draft-gap\)/s);
   assert.match(draftStyles, /\.rwa-draft-mode-row\s*\{[\s\S]*gap:\s*var\(--rwa-draft-gap\)/s);
   assert.match(draftStyles, /scrollbar-gutter:\s*auto/);
-  assert.match(draftStyles, /\.rwa-draft-footer \.rwa-btn\s*\{[\s\S]*font-size:\s*11\.2px/s);
+  assert.match(draftStyles, /\.rwa-draft-footer \.rwa-btn\s*\{[\s\S]*height:\s*30px;[\s\S]*font-size:\s*11\.2px/s);
   assert.match(draftStyles, /var\(--rwa2-bg/);
   assert.match(modal, /Insert into composer/);
   assert.match(modal, /Another/);
