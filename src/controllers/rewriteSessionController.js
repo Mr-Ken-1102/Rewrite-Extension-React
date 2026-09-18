@@ -317,7 +317,8 @@ export function createRewriteSessionController({
     if (prepared) {
       setState((current) => current ? {
         ...current,
-        applyReport: 'Native editor prepared. Rewrite Assistant has not saved it; review and press Marinara Save manually.',
+        nativeEditorPrepared: true,
+        applyReport: 'Native editor prepared. The rewrite is already staged there; Rewrite Assistant has not saved it. Review it and press Marinara Save manually.',
       } : current);
     }
   };
@@ -325,7 +326,13 @@ export function createRewriteSessionController({
   return Object.freeze({
     getState,
     handleRewrite,
-    accept: (resultText, selection) => applyController.accept(state, resultText, selection),
+    accept: (resultText, selection) => {
+      if (state?.nativeEditorPrepared) {
+        showToast('The rewrite is already staged in Marinara’s native editor. Review it there and press Marinara Save; Accept is disabled to avoid applying the same rewrite twice.', 'warn');
+        return false;
+      }
+      return applyController.accept(state, resultText, selection);
+    },
     replaceAll: (resultText, selection) => applyController.accept({ ...state, kind: 'single' }, resultText, selection),
     manualSave: handleManualSave,
     retry: handleRetry,
