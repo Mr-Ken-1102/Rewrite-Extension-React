@@ -96,6 +96,7 @@ export class APIService {
     try {
       response = await this.runInference(`${rewriteSystemPrompt(config)}${suffix}`, promptInfo.prompt, signal, {
         chatId: savedSel?.cid || '',
+        rewriteRequest: true,
         onProgress: hooks?.onProgress,
         onStreamStatus: hooks?.onStreamStatus,
       });
