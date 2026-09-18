@@ -96,7 +96,7 @@ export const AIArchitectModal = ({ onClose, onDone }) => {
   };
 
   return (
-    <Modal title="✨ AI Prompt Architect" onClose={handleClose} width="640px">
+    <Modal title="✨ AI Prompt Architect" onClose={handleClose} width="640px" animate={false}>
       <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', lineHeight: '1.55' }}>
         Describe the rewrite tone or editing behavior. The architect uses the same model connection configured in API &amp; LLM.
       </div>
