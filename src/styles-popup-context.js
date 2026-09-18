@@ -114,33 +114,54 @@ export const RWA_POPUP_CONTEXT_CSS = `
   text-overflow: ellipsis;
 }
 
-.rwa2-free-mode-row {
-  min-height: 24px;
+.rwa2-source-mode-grid {
+  min-height: 28px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+  align-items: center;
+  margin-top: 3px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255,255,255,.045);
+}
+.rwa2-source-mode-item {
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 3px;
-  padding-bottom: 3px;
-  border-bottom: 1px solid rgba(255,255,255,.045);
+  gap: 5px;
 }
-.rwa2-free-note { display: none; }
+.rwa2-source-mode-item > label {
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+.rwa2-source-mode-item > label > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rwa2-mode-info {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+  border-color: rgba(255,255,255,.06);
+}
 .rwa2-source-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 2px 12px;
   margin-top: 2px;
 }
-.rwa2-source-grid > label,
-.rwa2-free-mode-row > label {
+.rwa2-source-grid > label {
   min-width: 0;
   min-height: 24px;
   justify-content: space-between;
   flex-direction: row-reverse;
   gap: 6px !important;
 }
-.rwa2-source-grid > label > span,
-.rwa2-free-mode-row > label > span {
+.rwa2-source-grid > label > span {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
