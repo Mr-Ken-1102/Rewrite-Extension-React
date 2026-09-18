@@ -44,6 +44,8 @@ export const DEFAULT_CONFIG = {
   autoProfileEnabled: false,
   draftReplyEnabled: true,
   draftReplyHistoryDepth: 8,
+  draftReplyLauncherPlacement: 'auto',
+  draftReplyLauncherPositions: {},
   debugEnabled: false,
   mergeMultiMsg: false,
   charCardIds: [],
@@ -75,6 +77,25 @@ function cleanString(value, fallback, maxLength) {
 
 function cleanBoolean(value, fallback) {
   return typeof value === 'boolean' ? value : fallback;
+}
+
+const DRAFT_REPLY_CHAT_MODES = ['roleplay', 'conversation', 'game'];
+
+function sanitizeDraftReplyLauncherPositions(value) {
+  const input = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const out = {};
+  for (const mode of DRAFT_REPLY_CHAT_MODES) {
+    const position = input[mode];
+    if (!position || typeof position !== 'object' || Array.isArray(position)) continue;
+    const left = Number(position.left);
+    const top = Number(position.top);
+    if (!Number.isFinite(left) || !Number.isFinite(top)) continue;
+    out[mode] = {
+      left: clampNumber(left, 0, 100000, 0),
+      top: clampNumber(top, 0, 100000, 0),
+    };
+  }
+  return out;
 }
 
 export function sanitizeConfig(value, legacyVersion = STORE_VERSION) {
@@ -117,6 +138,10 @@ export function sanitizeConfig(value, legacyVersion = STORE_VERSION) {
     autoProfileEnabled: cleanBoolean(input.autoProfileEnabled, DEFAULT_CONFIG.autoProfileEnabled),
     draftReplyEnabled: cleanBoolean(input.draftReplyEnabled, DEFAULT_CONFIG.draftReplyEnabled),
     draftReplyHistoryDepth: Math.trunc(clampNumber(input.draftReplyHistoryDepth, 1, 30, DEFAULT_CONFIG.draftReplyHistoryDepth)),
+    draftReplyLauncherPlacement: ['auto', 'remember'].includes(input.draftReplyLauncherPlacement)
+      ? input.draftReplyLauncherPlacement
+      : DEFAULT_CONFIG.draftReplyLauncherPlacement,
+    draftReplyLauncherPositions: sanitizeDraftReplyLauncherPositions(input.draftReplyLauncherPositions),
     debugEnabled: cleanBoolean(input.debugEnabled, DEFAULT_CONFIG.debugEnabled),
     mergeMultiMsg: cleanBoolean(input.mergeMultiMsg, DEFAULT_CONFIG.mergeMultiMsg),
     charCardIds: Array.isArray(input.charCardIds) ? [...new Set(input.charCardIds.filter((id) => typeof id === 'string').map((id) => id.trim()).filter(Boolean))].slice(0, 8) : DEFAULT_CONFIG.charCardIds,
