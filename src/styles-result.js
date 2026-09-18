@@ -11,8 +11,17 @@ export const RWA_RESULT_CSS = `
 }
 
 .rwar-window .rwa-hdr {
-  min-height: 54px !important;
-  padding: 11px 16px !important;
+  box-sizing: border-box !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 7px 14px !important;
+}
+
+.rwar-window .rwa-btn-close {
+  width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 !important;
 }
 
 .rwar-window .rwa-title {
@@ -163,38 +172,39 @@ export const RWA_RESULT_CSS = `
 }
 
 .rwar-actions {
+  min-height: 46px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 14px;
-  padding-top: 12px;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 8px;
   border-top: 1px solid rgba(255,255,255,.055);
 }
 
 .rwar-actions-primary,
 .rwar-actions-tools {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
+  display: contents;
 }
-
-.rwar-actions-tools { margin-left: auto; }
 
 .rwar-actions .rwa-btn,
 .rwar-loading-actions .rwa-btn {
+  min-width: 0;
   min-height: 34px !important;
   height: 34px !important;
+  flex: 1 1 0;
   margin: 0 !important;
-  padding: 0 11px !important;
+  padding: 0 9px !important;
   border-radius: 8px !important;
   box-shadow: none !important;
-  font-size: 10.5px !important;
+  font-size: 10px !important;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.rwar-actions .rwar-accept { min-width: 96px; }
+.rwar-actions .rwar-accept { flex-grow: 1.08; }
+.rwar-actions .rwar-native-editor { flex-grow: 1.72; }
+.rwar-actions .rwar-rewrite-again { flex-grow: 1.34; }
 
 /* Replace All has broader scope than Accept, so it stays deliberately secondary.
    The legacy green treatment competed with the primary confirmation action. */
@@ -280,18 +290,16 @@ export const RWA_RESULT_CSS = `
 
 @media (max-width: 620px) {
   .rwar-body { padding: 14px !important; }
-  .rwar-actions { align-items: stretch; flex-direction: column; }
-  .rwar-actions-primary,
-  .rwar-actions-tools { width: 100%; }
-  .rwar-actions-primary .rwa-btn,
-  .rwar-actions-tools .rwa-btn { flex: 1 1 0; min-width: 0; }
-  .rwar-actions-tools { margin-left: 0; }
+  .rwar-actions { flex-wrap: wrap; }
+  .rwar-actions .rwa-btn { flex: 1 1 calc(33.333% - 5px); }
+  .rwar-actions .rwar-native-editor { flex-basis: calc(50% - 4px); }
+  .rwar-actions .rwar-accept { flex-basis: calc(50% - 4px); }
 }
 
 @media (max-width: 440px) {
-  .rwar-actions-primary,
-  .rwar-actions-tools { flex-wrap: wrap; }
-  .rwar-actions .rwa-btn { flex: 1 1 calc(50% - 4px); }
+  .rwar-actions .rwa-btn,
+  .rwar-actions .rwar-native-editor,
+  .rwar-actions .rwar-accept { flex: 1 1 calc(50% - 4px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
