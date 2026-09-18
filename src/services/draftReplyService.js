@@ -105,6 +105,7 @@ export class DraftReplyService {
     signal,
     onProgress,
     onStreamStatus,
+    onMeta,
   }) {
     if (!chatId) return { error: 'No active chat is available.' };
 
@@ -122,7 +123,11 @@ export class DraftReplyService {
     }
 
     const characterNames = new Map(characters.map((item) => [String(item.id), String(item.name || item.id)]));
-    const history = draftHistory(messages, characterNames, config.draftReplyHistoryDepth, identity.name);
+    const historyDepth = Math.max(1, Math.min(30, Math.trunc(Number(config.draftReplyHistoryDepth) || 8)));
+    const history = draftHistory(messages, characterNames, historyDepth, identity.name);
+    if (typeof onMeta === 'function') {
+      try { onMeta({ persona: identity, voiceProfile: profile || null, historyDepth }); } catch { /* UI metadata must not block generation */ }
+    }
     const instruction = clean(direction, 6000);
     const previous = clean(previousDraft, 6000);
     const adjustmentText = clean(adjustment, 800);
@@ -174,7 +179,7 @@ Hard rules:
       streamed: response?.streamed === true,
       persona: identity,
       voiceProfile: profile || null,
-      historyDepth: Math.max(1, Math.min(30, Math.trunc(Number(config.draftReplyHistoryDepth) || 8))),
+      historyDepth,
     };
   }
 }
