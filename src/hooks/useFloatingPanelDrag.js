@@ -5,7 +5,7 @@ import {
   getVisualViewportBounds,
 } from '../utils/floatingPanelGeometry.js';
 
-export function useFloatingPanelDrag({ panelRef, onPositionChange }) {
+export function useFloatingPanelDrag({ panelRef, onPositionChange, allowInteractiveRoot = false }) {
   const setDragging = useRuntimeStore((state) => state.setDragging);
   const cleanupRef = useRef(null);
   const releaseTimerRef = useRef(0);
@@ -15,7 +15,8 @@ export function useFloatingPanelDrag({ panelRef, onPositionChange }) {
     const panel = panelRef.current;
     if (!panel) return;
     const target = event.target;
-    if (target?.closest?.('button, input, textarea, select, a, [role="button"]')) return;
+    const interactive = target?.closest?.('button, input, textarea, select, a, [role="button"]');
+    if (interactive && (!allowInteractiveRoot || interactive !== event.currentTarget)) return;
 
     event.preventDefault();
     cleanupRef.current?.(false);
@@ -30,6 +31,7 @@ export function useFloatingPanelDrag({ panelRef, onPositionChange }) {
     const originX = event.clientX;
     const originY = event.clientY;
     let latest = { left: startRect.left, top: startRect.top };
+    let moved = false;
     let finished = false;
 
     try { captureTarget?.setPointerCapture?.(pointerId); } catch { /* best effort */ }
@@ -55,7 +57,10 @@ export function useFloatingPanelDrag({ panelRef, onPositionChange }) {
         { width: startRect.width, height: startRect.height },
         getVisualViewportBounds(window),
       );
-      panel.style.transform = `translate3d(${Math.round(latest.left - startRect.left)}px, ${Math.round(latest.top - startRect.top)}px, 0)`;
+      const dx = latest.left - startRect.left;
+      const dy = latest.top - startRect.top;
+      if (Math.hypot(dx, dy) >= 3) moved = true;
+      panel.style.transform = `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, 0)`;
     };
 
     const cleanup = (commit) => {
@@ -78,7 +83,7 @@ export function useFloatingPanelDrag({ panelRef, onPositionChange }) {
       panel.style.willChange = '';
       captureTarget.style.cursor = '';
 
-      if (commit && panel.isConnected) {
+      if (commit && panel.isConnected && moved) {
         onPositionChange?.({ left: Math.round(latest.left), top: Math.round(latest.top) });
         releaseTimerRef.current = window.setTimeout(() => {
           releaseTimerRef.current = 0;
@@ -106,7 +111,7 @@ export function useFloatingPanelDrag({ panelRef, onPositionChange }) {
     captureTarget?.addEventListener?.('lostpointercapture', onLostPointerCapture, { once: true });
     window.addEventListener('blur', onWindowBlur);
     document.addEventListener('visibilitychange', onVisibilityChange);
-  }, [onPositionChange, panelRef, setDragging]);
+  }, [allowInteractiveRoot, onPositionChange, panelRef, setDragging]);
 
   useEffect(() => () => {
     cleanupRef.current?.(false);
