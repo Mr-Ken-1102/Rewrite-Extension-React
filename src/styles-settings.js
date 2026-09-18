@@ -15,6 +15,10 @@ export const RWA_SETTINGS_CSS = `
   --rwas-subtle: rgba(255,255,255,.36);
 }
 
+.rwas-suspended {
+  pointer-events: none !important;
+}
+
 .rwas-settings,
 .rwas-settings * {
   box-sizing: border-box;
