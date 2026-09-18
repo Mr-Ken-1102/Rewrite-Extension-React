@@ -76,7 +76,12 @@ export default function App() {
         <AIArchitectModal onClose={() => setActiveModal('settings')} onDone={() => setActiveModal('settings')} />
       )}
       {processState?.status === 'error' && (
-        <ErrorModal message={processState.errorMsg} onClose={handleCancelProcess} />
+        <ErrorModal
+          message={processState.errorMsg}
+          mode={processState.providerMode}
+          errorCode={processState.errorCode}
+          onClose={handleCancelProcess}
+        />
       )}
       {processState?.kind === 'ledger' && processState.status === 'ledger' && (
         <LedgerModal
@@ -87,7 +92,7 @@ export default function App() {
           onClose={closeLedger}
         />
       )}
-      {processState && ['loading', 'success', 'applying'].includes(processState.status) && (
+      {processState && ['loading', 'success', 'partial', 'applying'].includes(processState.status) && (
         <PreviewModal
           status={processState.status}
           result={processState.result}
@@ -96,6 +101,7 @@ export default function App() {
           progress={processState.progress}
           pieces={processState.pieces}
           applyReport={processState.applyReport}
+          streamed={processState.streamed === true}
           onAccept={handleAcceptPreview}
           onReplaceAll={handleReplaceAll}
           onManualSave={processState.kind === 'merged' ? null : handleManualSave}
