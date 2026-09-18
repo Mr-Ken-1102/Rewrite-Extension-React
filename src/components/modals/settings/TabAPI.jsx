@@ -148,7 +148,8 @@ export const TabAPI = () => {
         controller.signal,
         {
           chatId: activeChatId,
-          requestTimeoutMs: Math.max(90000, Number(config.requestTimeoutMs) || 45000),
+          requestTimeoutMs: Math.min(30000, Math.max(5000, Number(config.requestTimeoutMs) || 30000)),
+          marinaraTimeoutMs: config.connMode === 'marinara' ? 30000 : config.marinaraTimeoutMs,
         },
       );
       if (controller.signal.aborted) return;
@@ -393,16 +394,52 @@ export const TabAPI = () => {
         <ToggleSwitch checked={config.conciseSysPrompt} onChange={(value) => updateConfig({ conciseSysPrompt: value })} />
       </div>
 
+      <div className="rwa-setting-toggle-row">
+        <div>
+          <div>{t(language, 'Fast rewrite', 'Viết lại nhanh')}</div>
+          <small>{t(
+            language,
+            'For Marinara connections, ask the raw rewrite request to disable provider reasoning when the active model supports it. This does not change the chat connection settings.',
+            'Với kết nối Marinara, yêu cầu lượt viết lại tắt reasoning của provider khi model hiện tại hỗ trợ. Tùy chọn này không thay đổi cài đặt connection của chat.',
+          )}</small>
+        </div>
+        <ToggleSwitch checked={config.fastRewrite === true} onChange={(value) => updateConfig({ fastRewrite: value })} />
+      </div>
+
       <div className="rwa-lbl rwa-settings-section-title">{t(language, 'REQUEST SAFETY', 'AN TOÀN REQUEST')}</div>
       <div className="rwa-form-grid">
-        <span>{t(language, 'Timeout (ms)', 'Timeout (ms)')}</span>
-        <input type="number" className="rwa-inp" min="5000" max="180000" step="1000" value={config.requestTimeoutMs || 45000} onChange={(event) => updateConfig({ requestTimeoutMs: Math.max(5000, Math.min(180000, Number(event.target.value) || 45000)) })} />
+        {config.connMode === 'marinara' ? (
+          <>
+            <span>{t(language, 'Marinara timeout (ms)', 'Timeout Marinara (ms)')}</span>
+            <input
+              type="number"
+              className="rwa-inp"
+              min="0"
+              max="600000"
+              step="1000"
+              value={config.marinaraTimeoutMs ?? 0}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                updateConfig({ marinaraTimeoutMs: Number.isFinite(value) ? Math.max(0, Math.min(600000, value)) : 0 });
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <span>{t(language, 'Timeout (ms)', 'Timeout (ms)')}</span>
+            <input type="number" className="rwa-inp" min="5000" max="180000" step="1000" value={config.requestTimeoutMs || 45000} onChange={(event) => updateConfig({ requestTimeoutMs: Math.max(5000, Math.min(180000, Number(event.target.value) || 45000)) })} />
+          </>
+        )}
         <span>{t(language, 'Prompt budget (chars)', 'Giới hạn prompt (ký tự)')}</span>
         <input type="number" className="rwa-inp" min="8000" max="120000" step="1000" value={config.maxPromptChars || 32000} onChange={(event) => updateConfig({ maxPromptChars: Math.max(8000, Math.min(120000, Number(event.target.value) || 32000)) })} />
       </div>
-      {config.connMode === 'marinara' && (
-        <div className="rwa-request-note">{t(language, 'Marinara /generate/raw uses at least a 90-second safety window for cold local models; this field can extend it further.', 'Marinara /generate/raw dùng tối thiểu 90 giây cho model cục bộ đang nguội; trường này có thể kéo dài thêm thời gian chờ.')}</div>
-      )}
+      {config.connMode === 'marinara' ? (
+        <div className="rwa-request-note">{t(
+          language,
+          'Marinara rewrites stream live from /generate/raw. Set timeout to 0 to wait until the provider finishes. Cancel still aborts the browser request and the active Marinara raw run.',
+          'Lượt viết lại Marinara được stream trực tiếp từ /generate/raw. Đặt timeout bằng 0 để chờ đến khi provider hoàn tất. Nút Hủy vẫn dừng request của trình duyệt và raw run đang chạy trong Marinara.',
+        )}</div>
+      ) : null}
 
       <Button glow={false} className="rwa-full-width" variant="rwa-accept" onClick={handleTest} disabled={busy}>
         {busy ? t(language, 'Testing…', 'Đang kiểm tra…') : t(language, '⚡ Test effective connection', '⚡ Kiểm tra kết nối hiện dùng')}
