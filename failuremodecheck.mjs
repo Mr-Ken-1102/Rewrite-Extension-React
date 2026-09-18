@@ -146,23 +146,23 @@ export const MarinaraHost = {
   };
 }
 
-await ok('Marinara connection selection never silently switches providers', async () => {
+await ok('fixed Marinara routing never silently switches providers', async () => {
   const h = await loadApiHarness();
   try {
     h.host.control.apiHandler = async (path) => {
       assert.equal(path, '/connections');
       return [{ id: 'conn-b' }, { id: 'conn-c' }];
     };
-    let id = await h.api.APIService.resolveConnectionId({ connectionId: 'conn-a' });
+    let id = await h.api.APIService.resolveConnectionId({ marinaraRouting: 'fixed', connectionId: 'conn-a' });
     assert.equal(id, '');
     assert.deepEqual(h.store.control.updates, [{ connectionId: '' }]);
 
     h.store.control.updates.length = 0;
-    id = await h.api.APIService.resolveConnectionId({ connectionId: '' });
+    id = await h.api.APIService.resolveConnectionId({ marinaraRouting: 'fixed', connectionId: '' });
     assert.equal(id, '');
     assert.deepEqual(h.store.control.updates, []);
 
-    id = await h.api.APIService.resolveConnectionId({ connectionId: 'conn-b' });
+    id = await h.api.APIService.resolveConnectionId({ marinaraRouting: 'fixed', connectionId: 'conn-b' });
     assert.equal(id, 'conn-b');
   } finally {
     await rm(h.dir, { recursive: true, force: true });
@@ -200,11 +200,16 @@ await ok('Marinara rewrites stream the active chat connection without a client-s
       }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
     };
     const progress = [];
+    const statuses = [];
     const result = await h.api.APIService.runInference(
       'system',
       'user',
       new AbortController().signal,
-      { chatId: 'chat-1', onProgress: (value) => progress.push(value) },
+      {
+        chatId: 'chat-1',
+        onProgress: (value) => progress.push(value),
+        onStreamStatus: (value) => statuses.push(value),
+      },
     );
     assert.deepEqual(result, { result: 'hello', streamed: true });
     assert.equal(requestBody.connectionId, 'chat-conn');
@@ -214,6 +219,9 @@ await ok('Marinara rewrites stream the active chat connection without a client-s
     const rawCall = h.host.control.calls.find((call) => call.kind === 'fetch' && call.path === '/api/generate/raw');
     assert.equal(rawCall.timeout, 0);
     assert.equal(progress.at(-1), 'hello');
+    assert.ok(statuses.some((item) => item.status === 'connecting'));
+    assert.ok(statuses.some((item) => item.status === 'streaming'));
+    assert.ok(statuses.some((item) => item.status === 'done'));
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
