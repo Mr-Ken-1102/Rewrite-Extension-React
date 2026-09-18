@@ -5,22 +5,29 @@ Rewrite Assistant keeps runtime product code, quality tooling, and historical ev
 ```text
 .github/
   workflows/             GitHub Actions release gates
+docs/
+  architecture/          Current design guardrails and architecture decisions
+  audits/
+    YYYY-MM-DD/           Historical audit reports grouped by date
+  LOCALIZATION-VI.md      Vietnamese UI terminology/style guide
 public/                  Static assets
 src/                     Runtime extension source
 tools/
   build/                  Build/release orchestration
   quality/                Regression, failure, fuzz, UX and Engine checks
-docs/
-  architecture/           Current design guardrails and architecture decisions
-  audits/
-    YYYY-MM-DD/           Historical audit reports grouped by date
+
+.gitattributes            Repository text/binary handling
+.gitignore                Generated/local file exclusions
 CHANGELOG.md              Current release history
 COMPATIBILITY.md          Supported Marinara Engine contracts
-SECURITY-PRIVACY.md       Security/privacy model
-extension-manifest.mjs    Installable manifest factory/validator
-package.json              Package metadata and canonical npm commands
-vite.config.js            Production build configuration
 README.md                 Product and development overview
+SECURITY-PRIVACY.md       Security/privacy model
+eslint.config.js          Project-wide lint configuration
+extension-manifest.mjs    Installable manifest factory/validator
+index.html                Vite application entry document
+package.json              Package metadata and canonical npm commands
+package-lock.json         Locked development/build dependency graph
+vite.config.js            Production build configuration
 ```
 
 ## Placement rules
