@@ -522,9 +522,16 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(modal, /data-rwa-feature="draft-reply-window"/);
   assert.match(modal, /rwa-draft-header/);
   assert.match(modal, /rwa-draft-footer/);
+  assert.match(modal, /rwa-draft-brand-eyebrow[^\n]*Rewrite Assistant/);
+  assert.match(modal, /rwa-draft-guidance-row/);
+  assert.match(modal, /rwa-draft-guidance-question/);
+  assert.match(modal, /rwa-draft-guidance-source/);
+  assert.doesNotMatch(modal, /rwa-draft-profile-note/);
   assert.doesNotMatch(modal, /<Modal\b/);
   assert.ok(modal.indexOf('rwa-draft-persona-chip') > modal.indexOf('rwa-draft-header'));
   assert.match(draftStyles, /\.rwa-draft-header,\s*\n\.rwa-draft-footer\s*\{[\s\S]*height:\s*36px/s);
+  assert.match(draftStyles, /\.rwa-draft-guidance-row\s*\{[\s\S]*display:\s*flex/s);
+  assert.match(draftStyles, /\.rwa-draft-footer \.rwa-btn\s*\{[\s\S]*font-size:\s*11\.2px/s);
   assert.match(draftStyles, /var\(--rwa2-bg/);
   assert.match(modal, /Insert into composer/);
   assert.match(modal, /Another/);
