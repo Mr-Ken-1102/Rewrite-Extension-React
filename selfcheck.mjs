@@ -679,6 +679,10 @@ ok('token preview is explicitly labeled Selection + context and snapshots select
   assert.match(panel, /not a provider billing\/tokenizer count/);
   assert.match(hook, /const oneShot = rewriteSelection\(\)/);
   assert.match(hook, /APIService\.inspectContext\(oneShot/);
+  assert.match(hook, /sameSelection \? current\.parts : null/);
+  assert.match(hook, /sameSelection \? current\.identities : null/);
+  assert.match(hook, /tokenInfo\.selectionKey !== selectionKey/);
+  assert.match(panel, /tokenInfo\.loading && !tokenInfo\.parts/);
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /characterNames:\s*extractIdentityNames\(context\.character\)/);
   assert.match(context, /personaNames:\s*extractIdentityNames\(context\.persona\)/);
