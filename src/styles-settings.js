@@ -132,7 +132,7 @@ export const RWA_SETTINGS_CSS = `
 .rwas-nav-label {
   padding: 0 10px 10px;
   color: var(--rwas-subtle);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
   font-weight: 800;
   letter-spacing: .10em;
@@ -199,7 +199,7 @@ export const RWA_SETTINGS_CSS = `
 
 .rwas-nav-copy strong {
   color: inherit;
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.15;
   font-weight: 680;
   overflow: hidden;
@@ -209,7 +209,7 @@ export const RWA_SETTINGS_CSS = `
 
 .rwas-nav-copy small {
   color: var(--rwas-subtle);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.15;
   font-weight: 520;
   overflow: hidden;
@@ -247,7 +247,7 @@ export const RWA_SETTINGS_CSS = `
 .rwas-page-kicker {
   margin-bottom: 6px;
   color: var(--rwas-brand);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
   font-weight: 800;
   letter-spacing: .09em;
@@ -266,7 +266,7 @@ export const RWA_SETTINGS_CSS = `
   max-width: 620px;
   margin-top: 6px;
   color: var(--rwas-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -284,7 +284,7 @@ export const RWA_SETTINGS_CSS = `
   padding: 0 13px !important;
   border-radius: 9px !important;
   box-shadow: none !important;
-  font-size: 10.5px !important;
+  font-size: 11.5px !important;
   font-weight: 650 !important;
 }
 
@@ -330,7 +330,7 @@ export const RWA_SETTINGS_CSS = `
 
 .rwas-save-status {
   color: var(--rwas-subtle);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.4;
 }
 
@@ -342,9 +342,26 @@ export const RWA_SETTINGS_CSS = `
   padding: 0 16px !important;
   border-radius: 9px !important;
   box-shadow: none !important;
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
 }
+
+/* Settings readability calibration. Keep the existing system font, weights and
+   information hierarchy; only raise undersized UI text so the dense settings
+   surface remains comfortable at normal desktop scaling. */
+.rwas-body .rwa-lbl { font-size: 11px !important; }
+.rwas-body :is(.rwa-form-row > span, .rwa-form-grid > span) { font-size: 12.5px !important; }
+.rwas-body .rwa-inp { font-size: 12px !important; }
+.rwas-body .rwa-prev { font-size: 11.5px !important; line-height: 1.5 !important; }
+.rwas-body .rwa-btn { font-size: 11.5px !important; }
+.rwas-body .rwa-setting-toggle-row > div > div { font-size: 13px; }
+.rwas-body .rwa-setting-toggle-row small { font-size: 11px; line-height: 1.4; }
+.rwas-body .rwa-connection-eyebrow { font-size: 10px; }
+.rwas-body .rwa-connection-name { font-size: 13.5px; }
+.rwas-body .rwa-connection-note { font-size: 11.5px; line-height: 1.5; }
+.rwas-body .rwa-api-preset strong { font-size: 11px; }
+.rwas-body .rwa-api-preset span { font-size: 10.5px; }
+.rwas-body .rwa-request-note { font-size: 10.75px; line-height: 1.45; }
 
 .rwas-settings :is(.rwas-close, .rwas-nav-btn, .rwas-page-actions .rwa-btn, .rwas-done):focus-visible {
   outline: 2px solid rgba(209,154,69,.72);
