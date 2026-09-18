@@ -44,7 +44,7 @@ const SETTINGS_SECTIONS = [
     meta: 'Prompt context',
     metaVi: 'Ngữ cảnh prompt',
     description: 'Control character, persona, lore, memory, and surrounding context policies.',
-    descriptionVi: 'Kiểm soát character, persona, lore, memory và chính sách ngữ cảnh xung quanh.',
+    descriptionVi: 'Kiểm soát Character, Persona, Lore, Memory và ngữ cảnh gần.',
   },
   {
     id: 'language',
@@ -53,7 +53,7 @@ const SETTINGS_SECTIONS = [
     meta: 'English / Tiếng Việt',
     metaVi: 'Tiếng Việt / English',
     description: 'Choose the Rewrite Assistant interface language without changing your presets or prompts.',
-    descriptionVi: 'Chọn ngôn ngữ giao diện Rewrite Assistant mà không thay đổi preset hoặc prompt của bạn.',
+    descriptionVi: 'Chọn ngôn ngữ giao diện mà không làm thay đổi thiết lập sẵn hay yêu cầu bạn đã tạo.',
   },
   {
     id: 'data',
@@ -247,8 +247,8 @@ export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspe
               </div>
 
               {!showAbout && activeTab === 'profiles' && (
-                <div className="rwas-page-actions" aria-label={vi ? 'Thao tác preset kiểu viết' : 'Style Preset actions'}>
-                  <Button glow={false} className="rwas-secondary-action" onClick={() => openEditProfile(null)}>{vi ? '+ Thêm style' : '+ Add Style'}</Button>
+                <div className="rwas-page-actions" aria-label={vi ? 'Thao tác thiết lập sẵn' : 'Style Preset actions'}>
+                  <Button glow={false} className="rwas-secondary-action" onClick={() => openEditProfile(null)}>{vi ? '+ Thêm thiết lập' : '+ Add Style'}</Button>
                   <Button glow={false} className="rwas-primary-action" variant="rwa-accept" onClick={openAIArchitect}>AI Architect</Button>
                 </div>
               )}
