@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 const packageJson = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 export const EXTENSION_NAME = 'Rewrite Assistant React';
-export const EXTENSION_DESCRIPTION = 'Rewrite Assistant v3.0.2 for Marinara Engine v2.4.4–v2.4.6. Includes exact selected-Character identity handling for group chats, Persona Draft Reply, guarded message updates, streaming/cancel support, privacy-safe context, and hardened storage/network lifecycle.';
+export const EXTENSION_DESCRIPTION = 'Rewrite Assistant v3.0.3 for Marinara Engine v2.4.4–v2.4.6. Includes exact selected-Character identity, mode-aware Persona Reply anchoring, a draggable modeless Draft Reply popup, safe per-mode launcher placement, guarded message updates, streaming/cancel support, privacy-safe context, and hardened storage/network lifecycle.';
 export const EXTENSION_RUNTIME = 'client';
 export const EXTENSION_CAPABILITIES = Object.freeze(['full_page_access']);
 
