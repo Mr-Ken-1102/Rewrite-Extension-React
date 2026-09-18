@@ -42,7 +42,15 @@ assert.match(preview, /SSE · streaming/);
 assert.match(preview, /streamStatus/);
 assert.match(preview, /nativeEditorPrepared/);
 assert.match(preview, /disabled=\{isApplying \|\| nativeEditorPrepared\}/);
+assert.match(preview, /Rewrite again/);
+assert.match(preview, /Viết lại lần nữa/);
+assert.match(preview, /rwar-rewrite-again/);
 assert.match(preview, /config\.typewriter && !streamed/);
+
+const resultCss = read('./src/styles-result.js');
+assert.match(resultCss, /height:\s*46px !important/);
+assert.match(resultCss, /\.rwar-actions-primary,[\s\S]*display:\s*contents/);
+assert.match(resultCss, /\.rwar-actions \.rwar-native-editor \{ flex-grow:\s*1\.72/);
 
 const confirm = read('./src/components/modals/ConfirmModal.jsx');
 assert.match(confirm, /role="alertdialog"/);
