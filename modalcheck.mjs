@@ -38,6 +38,10 @@ const preview = read('./src/components/modals/PreviewModal.jsx');
 assert.match(preview, /partialResult/);
 assert.match(preview, /Live result/);
 assert.match(preview, /Receiving result/);
+assert.match(preview, /SSE · streaming/);
+assert.match(preview, /streamStatus/);
+assert.match(preview, /nativeEditorPrepared/);
+assert.match(preview, /disabled=\{isApplying \|\| nativeEditorPrepared\}/);
 assert.match(preview, /config\.typewriter && !streamed/);
 
 const confirm = read('./src/components/modals/ConfirmModal.jsx');
