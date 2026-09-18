@@ -190,14 +190,17 @@ export const RWA_POPUP_CONTEXT_CSS = `
   transform: translateX(13px) !important;
 }
 
-.rwa2-one-shot {
+.rwa2-context-applied {
+  grid-column: 1 / -1;
   min-width: 0;
+  min-height: 34px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 3px;
-  padding-top: 3px;
-  border-top: 1px solid rgba(255,255,255,.04);
+  gap: 8px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-top: 1px solid rgba(255,255,255,.055);
+  background: rgba(0,0,0,.055);
 }
 .rwa2-one-shot-label {
   flex: 0 0 auto;
@@ -208,19 +211,30 @@ export const RWA_POPUP_CONTEXT_CSS = `
 }
 .rwa2-one-shot-chips {
   min-width: 0;
+  flex: 1 1 auto;
   display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.rwa2-one-shot-chips::-webkit-scrollbar { display: none; }
 .rwa2-chip {
   appearance: none;
+  min-width: 0;
+  max-width: 190px;
   min-height: 24px;
-  padding: 0 7px;
+  flex: 0 1 auto;
+  padding: 0 8px;
   border: 1px solid rgba(255,255,255,.07);
   border-radius: 999px;
   background: rgba(255,255,255,.018);
   color: var(--rwa2-text-2);
   font: 600 10px/1 system-ui, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
 }
 .rwa2-chip:hover {
