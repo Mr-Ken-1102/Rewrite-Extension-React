@@ -10,13 +10,14 @@ export const Modal = ({
   zIndex = 10002,
   className = '',
   bodyClassName = '',
+  animate = true,
 }) => {
   const dialogRef = useRef(null);
 
   useDialogFocusTrap(dialogRef, onClose);
 
   return (
-    <div className="rwa-ov" style={{ zIndex }}>
+    <div className={`rwa-ov ${animate ? '' : 'rwa-no-enter'}`.trim()} style={{ zIndex }}>
       <div
         ref={dialogRef}
         className={`rwa-win ${className}`.trim()}
