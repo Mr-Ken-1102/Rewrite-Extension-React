@@ -13,6 +13,7 @@ export const RWA_SETTINGS_CSS = `
   --rwas-text-2: rgba(255,255,255,.74);
   --rwas-muted: rgba(255,255,255,.52);
   --rwas-subtle: rgba(255,255,255,.36);
+  --rwas-workspace-gutter: 24px;
 }
 
 .rwas-suspended {
@@ -224,6 +225,18 @@ export const RWA_SETTINGS_CSS = `
 
 .rwas-nav-credits {
   margin-top: auto;
+  position: relative;
+}
+.rwas-nav-credits::before {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  background: rgba(255,255,255,.045);
+  transform: translateY(-4px);
+  pointer-events: none;
 }
 .rwas-nav-about {
   margin-top: 0;
@@ -244,7 +257,7 @@ export const RWA_SETTINGS_CSS = `
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 18px 24px 16px;
+  padding: 18px var(--rwas-workspace-gutter) 16px;
   border-bottom: 1px solid rgba(255,255,255,.055);
 }
 
@@ -307,7 +320,7 @@ export const RWA_SETTINGS_CSS = `
   min-height: 0 !important;
   height: auto !important;
   max-height: none !important;
-  padding: 20px 24px 28px !important;
+  padding: 20px var(--rwas-workspace-gutter) 28px !important;
   overflow-y: auto;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
@@ -331,7 +344,7 @@ export const RWA_SETTINGS_CSS = `
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 9px 20px;
+  padding: 9px var(--rwas-workspace-gutter);
   border-top: 1px solid var(--rwas-border);
   background: #101015;
 }
@@ -378,6 +391,7 @@ export const RWA_SETTINGS_CSS = `
 
 @media (max-width: 760px) {
   .rwas-settings {
+    --rwas-workspace-gutter: 16px;
     width: calc(100vw - 16px) !important;
     max-width: calc(100vw - 16px) !important;
     height: calc(100vh - 16px) !important;
@@ -419,11 +433,11 @@ export const RWA_SETTINGS_CSS = `
   .rwas-nav-copy small { display: none; }
   .rwas-nav-credits,
   .rwas-nav-about { display: inline-flex; margin-top: 0; margin-left: 4px; }
-  .rwas-page-head { min-height: 88px; padding: 14px 16px 12px; gap: 12px; }
+  .rwas-page-head { min-height: 88px; padding: 14px var(--rwas-workspace-gutter) 12px; gap: 12px; }
   .rwas-page-title { font-size: 18px; }
   .rwas-page-description { display: none; }
-  .rwas-body { padding: 16px !important; }
-  .rwas-statusbar { flex-basis: 52px; min-height: 52px; padding: 8px 12px; }
+  .rwas-body { padding: 16px var(--rwas-workspace-gutter) 20px !important; }
+  .rwas-statusbar { flex-basis: 52px; min-height: 52px; padding: 8px var(--rwas-workspace-gutter); }
 }
 
 @media (max-width: 520px) {
