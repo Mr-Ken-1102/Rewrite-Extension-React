@@ -364,8 +364,8 @@ export class ProviderService {
       });
 
       const result = await requestRaw();
-      if (result?.aborted === true) return result;
-      if (result?.error) return result;
+      if (result?.aborted === true) return { ...result, connectionSource: resolved.source, connectionId };
+      if (result?.error) return { ...result, connectionSource: resolved.source, connectionId };
 
       let content = extractMarinaraContent(result);
       if (!content.trim()) {
@@ -377,8 +377,8 @@ export class ProviderService {
         });
 
         const retry = await requestRaw({ reasoningEffort: null, enabledParameters: { reasoningEffort: true } });
-        if (retry?.aborted === true) return retry;
-        if (retry?.error) return retry;
+        if (retry?.aborted === true) return { ...retry, connectionSource: resolved.source, connectionId };
+        if (retry?.error) return { ...retry, connectionSource: resolved.source, connectionId };
         content = extractMarinaraContent(retry);
 
         if (!content.trim()) {
@@ -399,7 +399,7 @@ export class ProviderService {
           firstTokenMs: retry.firstTokenMs ?? null,
           retry: 'reasoning-disabled',
         });
-        return { ...retry, result: content };
+        return { ...retry, result: content, connectionSource: resolved.source, connectionId };
       }
 
       debugLogService.add('inference.response', {
@@ -408,7 +408,7 @@ export class ProviderService {
         streamed: result.streamed === true,
         firstTokenMs: result.firstTokenMs ?? null,
       });
-      return { ...result, result: content };
+      return { ...result, result: content, connectionSource: resolved.source, connectionId };
     }
 
     if (mode === 'sidecar') {
