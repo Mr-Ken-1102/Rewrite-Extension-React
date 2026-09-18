@@ -67,6 +67,10 @@ assert.match(css, /backdrop-filter:\s*none/);
 assert.match(css, /:focus-visible/);
 assert.match(css, /prefers-reduced-motion/);
 assert.doesNotMatch(css, /transition:\s*all/);
+assert.match(css, /\.rwas-nav-copy strong\s*\{[\s\S]*font-size:\s*12\.5px/);
+assert.match(css, /\.rwas-nav-copy small\s*\{[\s\S]*font-size:\s*11px/);
+assert.match(css, /\.rwas-page-description\s*\{[\s\S]*font-size:\s*12px/);
+assert.match(css, /\.rwas-body \.rwa-prev\s*\{\s*font-size:\s*11\.5px !important/);
 
 assert.match(main, /import \{ RWA_SETTINGS_CSS \} from '\.\/styles-settings\.js';/);
 assert.match(main, /RWA_PERFORMANCE_CSS\}\\n\$\{RWA_POPUP_CSS\}\\n\$\{RWA_SETTINGS_CSS\}/);
