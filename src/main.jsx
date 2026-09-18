@@ -75,6 +75,9 @@ import { sessionLedgerStore } from './services/advancedRewriteService';
     hostElement = document.createElement('div');
     hostElement.id = 'rwa-shadow-host';
     hostElement.style.cssText = 'position:fixed!important;top:0;left:0;width:0;height:0;overflow:visible;z-index:2147483647;display:block;';
+    const hostFontFamily = globalThis.getComputedStyle?.(document.body)?.fontFamily
+      || 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    hostElement.style.setProperty('--rwa-host-font', hostFontFamily);
     hostElement.className = `${document.documentElement.className || ''} ${document.body.className || ''}`.trim();
     document.body.appendChild(hostElement);
 
