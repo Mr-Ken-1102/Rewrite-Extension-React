@@ -72,7 +72,13 @@ ok('/generate/raw accepts connectionId + messages + streaming', () => {
   assert.match(src, /connectionId:\s*z\.string/);
   assert.match(src, /messages:\s*z\.array\(rawMessageSchema\)/);
   assert.match(src, /streaming:\s*z\.boolean\(\)\.optional\(\)/);
+  assert.match(src, /runId:\s*z\.string\(\)/);
   assert.match(src, /app\.post\("\/raw"/);
+  assert.match(src, /app\.post\("\/raw\/abort"/);
+  assert.match(src, /activeRawRuns\.set\(runId/);
+  assert.match(src, /body\.streaming/);
+  assert.match(src, /type:\s*"token"/);
+  assert.match(src, /type:\s*"result"/);
   assert.match(src, /return reply\.send\(\{ aborted: true, runId \}\)/);
 });
 
