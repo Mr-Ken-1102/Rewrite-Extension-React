@@ -1,7 +1,7 @@
 const EXPORT_TYPE = 'rewrite-assistant-portable-data';
 const EXPORT_VERSION = 1;
 const ROUTING_KEYS = new Set([
-  'connMode', 'connectionId', 'ollamaUrl', 'ollamaModel', 'extenderUrl',
+  'connMode', 'marinaraRouting', 'connectionId', 'ollamaUrl', 'ollamaModel', 'extenderUrl',
 ]);
 
 function safeConfig(config) {
