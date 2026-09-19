@@ -126,11 +126,14 @@ export const MarinaraHost = {
   contextSource = replaceImport(contextSource, '../voiceProfileIdentity.js', '../voiceProfileIdentity.mjs');
   await writeFile(join(dir, 'context', 'contextService.mjs'), contextSource);
 
+  await copyFile('./src/services/providers/providerCapabilities.js', join(dir, 'providers', 'providerCapabilities.mjs'));
+
   let providerSource = await readFile('./src/services/providers/providerService.js', 'utf8');
   providerSource = replaceImport(providerSource, '../../store/usePersistentStore', '../mockStore.mjs');
   providerSource = replaceImport(providerSource, '../marinaraHost', '../mockHost.mjs');
   providerSource = replaceImport(providerSource, '../debugLogService', '../mockDebug.mjs');
   providerSource = replaceImport(providerSource, '../policies/providerPolicy.js', '../policies/providerPolicy.mjs');
+  providerSource = replaceImport(providerSource, './providerCapabilities.js', './providerCapabilities.mjs');
   await writeFile(join(dir, 'providers', 'providerService.mjs'), providerSource);
 
   let voiceProfileSource = await readFile('./src/services/voiceProfileService.js', 'utf8');
