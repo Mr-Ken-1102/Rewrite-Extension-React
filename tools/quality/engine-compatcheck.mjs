@@ -97,6 +97,15 @@ ok('/generate/raw exposes the stable built-in Sidecar as a synthetic connection'
   assert.match(provider, /async chatComplete\(/);
 });
 
+ok('grouped Conversation DOM exposes visible per-segment speaker while data-card-css remains parent-scoped', () => {
+  const src = read('packages/client/src/components/chat/ConversationMessageGrouped.tsx');
+  assert.match(src, /data-component="ConversationMessage\.Grouped"/);
+  assert.match(src, /const segName = segChar\?\.convoDisplayName\?\.trim\(\) \|\| segChar\?\.name \|\| grp\.speaker/);
+  assert.match(src, /"data-card-css": message\.characterId \?\? undefined/);
+  assert.match(src, /items-baseline/);
+  assert.match(src, /\{segName\}/);
+});
+
 ok('legacy /sidecar/tracker contract remains available for Engine compatibility', () => {
   const src = read('packages/server/src/routes/sidecar.routes.ts');
   assert.match(src, /systemPrompt:\s*z\.string\(\)\.max\(16000\)/);
