@@ -280,6 +280,21 @@ export const RWA_POPUP_BASE_CSS = `
   border-color: var(--rwa2-brand-border) !important;
   color: var(--rwa2-text) !important;
 }
+.rwa2-popup .rwa2-profile-btn-voice {
+  border-color: rgba(209,154,69,.24) !important;
+  background:
+    linear-gradient(90deg, rgba(209,154,69,.055), transparent 72%),
+    var(--rwa2-surface) !important;
+}
+.rwa2-popup .rwa2-profile-btn-voice .rwa2-profile-name {
+  color: var(--rwa2-brand) !important;
+}
+.rwa2-popup .rwa2-profile-btn-voice:hover:not(:disabled) {
+  border-color: rgba(209,154,69,.42) !important;
+  background:
+    linear-gradient(90deg, rgba(209,154,69,.09), transparent 72%),
+    var(--rwa2-surface-hover) !important;
+}
 
 .rwa2-profile-name {
   width: 100%;
