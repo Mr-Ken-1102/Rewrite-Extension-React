@@ -61,6 +61,8 @@ assert.match(preview, /Rewrite again/);
 assert.match(preview, /Viết lại lần nữa/);
 assert.match(preview, /rwar-rewrite-again/);
 assert.match(preview, /rwar-ready-rail/);
+assert.match(preview, /rwar-working-rail/);
+assert.doesNotMatch(preview, /className="rwa-pulse"/);
 assert.ok(preview.indexOf('className="rwar-rewrite-again"') < preview.indexOf('className="rwar-native-editor"'));
 assert.match(preview, /config\.typewriter && !streamed/);
 
@@ -70,6 +72,8 @@ assert.match(resultCss, /\.rwar-actions-primary,[\s\S]*display:\s*contents/);
 assert.match(resultCss, /\.rwar-actions \.rwar-native-editor \{ flex-grow:\s*1\.72/);
 assert.match(resultCss, /@keyframes rwar-result-arrive/);
 assert.match(resultCss, /@keyframes rwar-ready-sweep/);
+assert.match(resultCss, /@keyframes rwar-working-sweep/);
+assert.match(resultCss, /\.rwar-working-rail > span[\s\S]*animation:\s*rwar-working-sweep 1\.35s/s);
 assert.match(resultCss, /\.rwar-window-ready \.rwar-section/);
 assert.match(resultCss, /\.rwar-actions \.rwar-rewrite-again\s*\{[\s\S]*border-color:\s*rgba\(209,154,69,.28\)/s);
 
