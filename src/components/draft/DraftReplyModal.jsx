@@ -63,19 +63,16 @@ export function DraftReplyModal({
       const rect = panel.getBoundingClientRect();
       const size = { width: rect.width, height: rect.height };
       const bounds = getVisualViewportBounds(window);
-      const anchor = DOMUtils.getChatComposerAnchor();
-      setPosition((current) => {
-        const remembered = state?.chatMode
-          ? useRuntimeStore.getState().draftReplyPanelPositions?.[state.chatMode]
-          : null;
-        const next = current
-          ? clampFloatingPanelPosition(current, size, bounds)
-          : remembered
-            ? clampFloatingPanelPosition(remembered, size, bounds)
-            : defaultDraftReplyPanelPosition(size, bounds, anchor);
-        if (state?.chatMode) useRuntimeStore.getState().setDraftReplyPanelPosition(state.chatMode, next);
-        return next;
-      });
+      const remembered = state?.chatMode
+        ? useRuntimeStore.getState().draftReplyPanelPositions?.[state.chatMode]
+        : null;
+      const next = remembered
+        ? clampFloatingPanelPosition(remembered, size, bounds)
+        : defaultDraftReplyPanelPosition(size, bounds);
+      if (remembered && state?.chatMode) {
+        useRuntimeStore.getState().setDraftReplyPanelPosition(state.chatMode, next);
+      }
+      setPosition(next);
     };
     const schedule = () => {
       if (frame) return;
@@ -113,9 +110,7 @@ export function DraftReplyModal({
     const rect = panel.getBoundingClientRect();
     const size = { width: rect.width, height: rect.height };
     const bounds = getVisualViewportBounds(window);
-    const anchor = DOMUtils.getChatComposerAnchor();
-    const next = defaultDraftReplyPanelPosition(size, bounds, anchor);
-    if (chatMode) setRuntimePanelPosition(chatMode, next);
+    const next = defaultDraftReplyPanelPosition(size, bounds);
     setPosition(next);
   }, [chatMode, panelResetVersion, setRuntimePanelPosition, state?.chatId]);
 
