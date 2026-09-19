@@ -44,16 +44,14 @@ ok('default style labels can localize without mutating profile prompts or ids', 
   assert.match(grid, /onRun\(profile\)/);
 });
 
-ok('profile and identity-profile explanations are available from keyboard focus', () => {
+ok('preset and Voice Profile explanations are available from keyboard focus in one grid', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  const header = read('./src/components/popup/PopupHeader.jsx');
+  assert.match(grid, /featuredProfile/);
   assert.match(grid, /aria-description=\{profile\.prompt\}/);
   assert.match(grid, /onFocus=\{\(event\) => \{/);
   assert.match(grid, /onTooltip\(event, \{[\s\S]*kind:\s*'preset'/s);
   assert.match(grid, /onBlur=\{onTooltipLeave\}/);
-  assert.match(header, /aria-description=\{identityProfile\.prompt\}/);
-  assert.match(header, /onFocus=\{\(event\) => onTooltip\?\.\(event, identityTooltip\)\}/);
-  assert.match(header, /onBlur=\{onTooltipLeave\}/);
+  assert.match(grid, /rwa2-profile-btn-voice/);
 });
 
 ok('popup header keeps drag ownership except on explicit interactive controls', () => {
@@ -62,7 +60,7 @@ ok('popup header keeps drag ownership except on explicit interactive controls', 
   const css = read('./src/styles-popup-base.js');
   assert.match(header, /<header className="rwa2-toolbar" onPointerDown=\{onDragStart\}>/);
   assert.doesNotMatch(header, /rwa2-toolbar-actions" onPointerDown=/);
-  assert.ok((header.match(/data-rwa-no-drag="true"/g) || []).length >= 3);
+  assert.equal((header.match(/data-rwa-no-drag="true"/g) || []).length, 2);
   assert.match(drag, /closest\?\.\('\[data-rwa-no-drag="true"\], button, input, textarea, select, a, \[role="button"\]'\)/);
   assert.match(css, /\.rwa2-toolbar-actions\s*\{[\s\S]*flex:\s*0 1 auto/s);
 });
@@ -100,11 +98,17 @@ ok('non-modal popup exposes a localized named region without interfering with di
 ok('popup controls preserve switch semantics and named compact groups', () => {
   const toggle = read('./src/components/ui/ToggleSwitch.jsx');
   const context = read('./src/components/popup/ContextDeck.jsx');
+  const settingsContext = read('./src/components/modals/settings/TabContext.jsx');
   const performance = read('./src/components/popup/PerformanceStrip.jsx');
   assert.match(toggle, /role="switch"/);
   assert.match(toggle, /aria-label=\{ariaLabel\}/);
-  assert.match(context, /role="group" aria-label=\{text\('Persistent context sources', 'Nguồn ngữ cảnh mặc định'\)\}/);
+  assert.match(settingsContext, /DEFAULT REWRITE SOURCES/);
+  assert.match(settingsContext, /config\.injectChar/);
+  assert.match(settingsContext, /config\.injectUser/);
+  assert.match(settingsContext, /config\.injectLorebook/);
+  assert.match(settingsContext, /config\.localContextEnabled/);
   assert.match(context, /role="group" aria-label=\{text\('Sources and parameters for this rewrite', 'Nguồn và tham số cho lần viết lại này'\)\}/);
+  assert.doesNotMatch(context, /Persistent context sources/);
   assert.match(context, /aria-pressed=\{!excluded\}/);
   assert.match(context, /aria-expanded=\{tokenOpen\}/);
   assert.match(context, /aria-expanded=\{open\}/);
