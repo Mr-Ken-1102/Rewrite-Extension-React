@@ -178,15 +178,16 @@ ok('settings expose current-chat connection without duplicate model selection', 
   assert.match(api, /No separate model selection is required/);
 });
 
-ok('popup keeps one compact context summary whose token trigger opens direct details', () => {
+ok('popup keeps one compact request summary with separate token and context disclosures', () => {
   const context = read('./src/components/popup/ContextDeck.jsx');
   assert.match(context, /rwa2-context-summary/);
   assert.match(context, /rwa2-context-chip/);
   assert.match(context, /≈\$\{total\.toLocaleString\(\)\} tok/);
+  assert.match(context, /aria-expanded=\{tokenOpen\}/);
   assert.match(context, /aria-expanded=\{open\}/);
-  assert.match(context, /Token details/);
+  assert.match(context, /rwa2-token-popover/);
   assert.match(context, /Estimate only — not the provider billing\/tokenizer count/);
-  assert.doesNotMatch(context, /Input composition|rwa2-token-composition/);
+  assert.doesNotMatch(context, /This rewrite|Input composition|rwa2-token-detail-grid/);
 });
 
 ok('context refresh keeps resolved identity and token text stable while controls re-inspect', () => {
@@ -210,7 +211,7 @@ ok('profile columns are configurable beyond two on the wide popup', () => {
   assert.doesNotMatch(settings, /Math\.min\(config\.cols \|\| 2, 2\)/);
 });
 
-ok('popup geometry is delegated to the compact 520px isolated visual contract', () => {
+ok('popup geometry is delegated to the balanced 488px isolated visual contract', () => {
   const popup = read('./src/components/PopupMain.jsx');
   const position = read('./src/hooks/usePopupPosition.js');
   const geometry = read('./src/popupGeometry.js');
@@ -218,7 +219,7 @@ ok('popup geometry is delegated to the compact 520px isolated visual contract', 
   assert.match(popup, /className="rwa2-popup"/);
   assert.match(popup, /rwa2-workbench/);
   assert.match(position, /POPUP_DESKTOP_WIDTH/);
-  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 520/);
+  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 488/);
   assert.match(geometry, /POPUP_GRID_COLUMNS = 12/);
   assert.match(css, /POPUP_DESKTOP_WIDTH/);
 });
