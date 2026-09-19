@@ -77,15 +77,21 @@ ok('profile grid derives viewport height from shared geometry and exposes determ
   assert.doesNotMatch(source, /gridTemplateColumns:/);
 });
 
-ok('profile prompts use a persistent readable inspector instead of transient hover-only tooltips', () => {
+ok('profile prompts use a prominent floating hover/focus preview without consuming popup space', () => {
   const source = read('./src/components/popup/ProfileGrid.jsx');
+  const popup = read('./src/components/PopupMain.jsx');
   const base = read('./src/styles-popup-base.js');
-  assert.match(source, /rwa2-preset-inspector/);
-  assert.match(source, /rwa2-preset-inspector-prompt/);
-  assert.match(source, /setInspectedIndex\(index\)/);
-  assert.match(base, /\.rwa2-preset-inspector\s*\{/);
-  assert.match(base, /\.rwa2-preset-inspector-prompt\s*\{[\s\S]*font-size:\s*11\.5px/s);
-  assert.match(base, /\.rwa2-profile-btn-inspected/);
+  assert.match(source, /onMouseEnter=\{\(event\) => onTooltip\(event, \{/);
+  assert.match(source, /kind:\s*'preset'/);
+  assert.match(source, /title:\s*displayName/);
+  assert.match(source, /prompt:\s*profile\.prompt/);
+  assert.match(source, /onMouseLeave=\{onTooltipLeave\}/);
+  assert.doesNotMatch(source, /rwa2-preset-inspector/);
+  assert.match(popup, /rwa2-tooltip-preset/);
+  assert.match(popup, /rwa2-tooltip-preset-name/);
+  assert.match(popup, /rwa2-tooltip-preset-copy/);
+  assert.match(base, /\.rwa2-tooltip-preset\s*\{/);
+  assert.match(base, /\.rwa2-tooltip-preset-copy\s*\{[\s\S]*font-size:\s*11\.5px/s);
 });
 
 ok('normal profile grid degrades before cells become narrower than the 140px contract', () => {
@@ -140,9 +146,8 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /fastRewrite/);
   assert.match(source, /compact/);
   assert.match(geometry, /POPUP_FAST_REWRITE_HEIGHT\s*=\s*35/);
-  assert.match(geometry, /POPUP_PRESET_INSPECTOR_HEIGHT\s*=\s*76/);
   assert.match(geometry, /\+ POPUP_FAST_REWRITE_HEIGHT/);
-  assert.match(geometry, /\+ POPUP_PRESET_INSPECTOR_HEIGHT/);
+  assert.doesNotMatch(geometry, /POPUP_PRESET_INSPECTOR_HEIGHT/);
   assert.doesNotMatch(geometry, /fastRewrite \? POPUP_FAST_REWRITE_HEIGHT : 0/);
 });
 
