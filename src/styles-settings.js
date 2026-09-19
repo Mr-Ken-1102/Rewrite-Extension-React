@@ -474,14 +474,43 @@ export const RWA_SETTINGS_CSS = `
 }
 .rwa-connection-test-status-error .rwa-connection-test-dot { background: #ff6b78; }
 
-.rwa-connection-hub .rwa-fast-rewrite-global {
-  margin: 10px 0 0 !important;
-  padding: 10px 0 0 !important;
-  border-top: 1px solid rgba(255,255,255,.055) !important;
+.rwa-performance-settings {
+  margin-top: 10px;
+  border-top: 1px solid rgba(255,255,255,.055);
+}
+.rwa-connection-hub .rwa-performance-settings .rwa-setting-toggle-row {
+  margin: 0 !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,.045) !important;
+}
+.rwa-connection-hub .rwa-performance-settings .rwa-setting-toggle-row:last-child {
+  padding-bottom: 0 !important;
   border-bottom: 0 !important;
 }
-.rwa-connection-hub .rwa-fast-rewrite-global > div {
+.rwa-connection-hub .rwa-performance-settings .rwa-setting-toggle-row > div {
+  min-width: 0;
   padding-right: 14px;
+}
+.rwa-capability-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+  margin-left: 7px;
+  padding: 0 6px;
+  border: 1px solid rgba(255,255,255,.075);
+  border-radius: 999px;
+  background: rgba(255,255,255,.025);
+  color: var(--rwas-subtle);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .055em;
+  vertical-align: 1px;
+}
+.rwa-capability-badge-live {
+  border-color: rgba(209,154,69,.18);
+  background: rgba(209,154,69,.055);
+  color: var(--rwas-brand);
 }
 
 .rwas-settings :is(.rwas-close, .rwas-nav-btn, .rwas-page-actions .rwa-btn, .rwas-done, .rwa-connection-test):focus-visible {
