@@ -7,6 +7,7 @@ import { unwrapMatchingOuterQuotes } from '../../src/utils/textSanitizers.js';
 import { normalizeRewriteResult } from '../../src/services/prompt/promptService.js';
 import { DOMUtils } from '../../src/utils/domUtils.js';
 import { decodeMarinaraCharacter } from '../../src/services/context/marinaraEntityAdapter.js';
+import { captureIdentityDomEvidence } from '../../src/utils/identityDiagnosticDom.js';
 import { readMessageDomIdentity } from '../../src/utils/messageDomIdentity.js';
 import {
   detectMarinaraChatMode,
@@ -1217,6 +1218,83 @@ ok('debug logging is opt-in, bounded, session-only, and metadata-owned by the se
   assert.match(debug, /event: String\(event \|\| 'event'\)/);
   assert.doesNotMatch(debug, /localStorage|storage\.patch|persist/);
   assert.match(dataTab, /Debug logging is opt-in/);
+});
+
+ok('diagnostic build keeps CI294 grouped resolver behavior frozen while capturing bounded evidence', () => {
+  const diagnostic = readFileSync('./src/services/identityDiagnosticService.js', 'utf8');
+  const domDiagnostic = readFileSync('./src/utils/identityDiagnosticDom.js', 'utf8');
+  const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
+  const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
+  const autoHook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
+  const vite = readFileSync('./vite.config.js', 'utf8');
+
+  assert.match(identity, /\.\.\.\(Array\.isArray\(character\?\.aliases\) \? character\.aliases : \[\]\)/);
+  assert.match(diagnostic, /const MAX_SNAPSHOTS = 20/);
+  assert.match(diagnostic, /schemaVersion: 'rwa\.identity-diagnostic\.v1'/);
+  assert.match(diagnostic, /triggerReason === 'profile-generation-failure'/);
+  assert.match(diagnostic, /\['name', character\?\.name\]/);
+  assert.match(diagnostic, /\['convoDisplayName', character\?\.convoDisplayName\]/);
+  assert.match(diagnostic, /\['nameAliases', value\]/);
+  assert.match(diagnostic, /exportedVia/);
+  assert.match(diagnostic, /snapshots\.splice\(0, snapshots\.length - MAX_SNAPSHOTS\)/);
+  assert.doesNotMatch(diagnostic, /localStorage|sessionStorage|persist\(/);
+  assert.doesNotMatch(domDiagnostic, /outerHTML|innerHTML/);
+  assert.match(domDiagnostic, /textContentLength/);
+  assert.match(domDiagnostic, /data-card-css/);
+  assert.match(domDiagnostic, /data-message-role/);
+  assert.match(contextTab, /Capture identity diagnostic/);
+  assert.match(contextTab, /Copy diagnostics/);
+  assert.match(contextTab, /Clear diagnostic snapshots/);
+  assert.match(autoHook, /triggerReason: 'profile-generation-failure'/);
+  assert.doesNotMatch(autoHook, /triggerReason: 'manual'/);
+  assert.match(vite, /globalThis\.__RWA_BUILD_COMMIT__/);
+  assert.match(vite, /process\.env\.GITHUB_SHA/);
+});
+
+ok('identity DOM diagnostic stores structure without message text', () => {
+  const makeElement = (tagName, className = '', attrs = {}, textLength = 0) => {
+    const element = {
+      nodeType: 1,
+      nodeName: tagName.toUpperCase(),
+      tagName: tagName.toUpperCase(),
+      className,
+      classList: className.split(/\s+/).filter(Boolean),
+      children: [],
+      parentElement: null,
+      textContent: 'x'.repeat(textLength),
+      getAttribute: (name) => Object.prototype.hasOwnProperty.call(attrs, name) ? attrs[name] : null,
+      closest: () => null,
+    };
+    return element;
+  };
+  const message = makeElement('div', 'message', { 'data-message-role': 'assistant' }, 120);
+  const grouped = makeElement('div', 'grouped', { 'data-component': 'ConversationMessage.Grouped' }, 80);
+  const card = makeElement('div', 'card', { 'data-card-css': 'char-1' }, 40);
+  const span = makeElement('span', 'speaker', {}, 8);
+  message.children = [grouped]; grouped.parentElement = message;
+  grouped.children = [card]; card.parentElement = grouped;
+  card.children = [span]; span.parentElement = card;
+  span.closest = (selector) => {
+    if (selector === '[data-component="ConversationMessage.Grouped"]') return grouped;
+    if (selector === '[data-card-css]') return card;
+    return null;
+  };
+  message.contains = () => true;
+
+  const evidence = captureIdentityDomEvidence({
+    browserSelection: { anchorNode: span, focusNode: span },
+    messageElement: message,
+    anchorElement: span,
+    domIdentity: { detectedName: 'Visible Speaker', detectedRole: 'assistant' },
+  });
+
+  assert.equal(evidence.dom.groupedRootFound, true);
+  assert.equal(evidence.dom.scopedCardFound, true);
+  assert.equal(evidence.dom.dataCardCss, 'char-1');
+  assert.equal(evidence.dom.detectedName, 'Visible Speaker');
+  assert.deepEqual(evidence.dom.scopedCard.childIndexPath, [0]);
+  assert.equal(evidence.dom.scopedCard.textContentLength, 40);
+  assert.equal(Object.hasOwn(evidence.dom, 'outerHTML'), false);
 });
 
 ok('token preview is explicitly labeled Selection + context and snapshots selection once', () => {
