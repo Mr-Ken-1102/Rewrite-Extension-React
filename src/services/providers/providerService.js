@@ -561,14 +561,28 @@ export class ProviderService {
 
     if (mode === 'sidecar') {
       if (systemPrompt.length > 16000 || userPrompt.length > 16000) {
-        return { error: 'Marinara v2.4.4 Sidecar accepts at most 16,000 characters per prompt.', errorCode: 'RWA_PROVIDER_CONTEXT_LIMIT' };
+        return { error: 'Marinara Sidecar rewrite prompts are limited to 16,000 characters per prompt.', errorCode: 'RWA_PROVIDER_CONTEXT_LIMIT' };
       }
-      const result = await MarinaraHost.apiFetch(ENDPOINTS.tracker, {
-        method: 'POST', body: JSON.stringify({ systemPrompt, userPrompt }), signal,
-      }, timeout);
+
+      const result = await requestEngineRaw({
+        connectionId: LOCAL_SIDECAR_CONNECTION_ID,
+        systemPrompt,
+        userPrompt,
+        streaming: liveStreaming,
+        timeout,
+        signal,
+        onProgress: override.onProgress,
+        onStreamStatus: override.onStreamStatus,
+        mode,
+      });
       if (!result) return { error: 'The local sidecar returned an unreadable response.' };
-      if (result.error) return normalizeProviderFailure(result.error);
-      debugLogService.add('inference.response', { mode, resultChars: String(result.result || '').length });
+      if (result.aborted === true) return { aborted: true };
+      if (result.error) return result;
+      debugLogService.add('inference.response', {
+        mode,
+        resultChars: String(result.result || '').length,
+        streamed: result.streamed === true,
+      });
       return result;
     }
 
@@ -578,7 +592,7 @@ export class ProviderService {
       try { validateProviderHttpUrl(root, 'Extender'); } catch (err) { return { error: err?.message || String(err) }; }
       try {
         const endpoint = `${root}/v1/chat/completions`;
-        if (fastRewrite && typeof override.onStreamStatus === 'function') {
+        if (liveStreaming && typeof override.onStreamStatus === 'function') {
           try { override.onStreamStatus({ status: 'connecting', chars: 0 }); } catch { /* noop */ }
         }
         const response = await MarinaraHost.fetch(endpoint, withProviderNetworkHints(endpoint, {
@@ -590,7 +604,7 @@ export class ProviderService {
               { role: 'user', content: userPrompt },
             ],
             temperature: Math.max(0, Math.min(2, Number.isFinite(Number(config.directTemp)) ? Number(config.directTemp) : 0.7)),
-            stream: fastRewrite,
+            stream: liveStreaming,
           }),
           signal,
         }), timeout);
@@ -605,11 +619,11 @@ export class ProviderService {
           return normalizeProviderFailure(detail || `HTTP ${response.status} from Extender.`, `HTTP ${response.status} from Extender.`);
         }
 
-        if (fastRewrite) {
+        if (liveStreaming) {
           const streamed = await readOpenAICompatibleStream(response, signal, override.onProgress, override.onStreamStatus, 'Extender');
           if (streamed.aborted) return { aborted: true };
           if (streamed.error) return normalizeProviderFailure(streamed.error, 'Extender streaming failed.');
-          debugLogService.add('inference.response', { mode, resultChars: streamed.content.length, streamed: true, fastRewrite: true });
+          debugLogService.add('inference.response', { mode, resultChars: streamed.content.length, streamed: true, liveStreaming: true });
           return { result: streamed.content, streamed: true };
         }
 
@@ -635,7 +649,7 @@ export class ProviderService {
 
     try {
       const endpoint = `${base}/chat/completions`;
-      if (fastRewrite && typeof override.onStreamStatus === 'function') {
+      if (liveStreaming && typeof override.onStreamStatus === 'function') {
         try { override.onStreamStatus({ status: 'connecting', chars: 0 }); } catch { /* noop */ }
       }
       const response = await MarinaraHost.fetch(endpoint, withProviderNetworkHints(endpoint, {
@@ -648,7 +662,7 @@ export class ProviderService {
             { role: 'user', content: userPrompt },
           ],
           temperature: Math.max(0, Math.min(2, Number.isFinite(Number(config.directTemp)) ? Number(config.directTemp) : 0.7)),
-          stream: fastRewrite,
+          stream: liveStreaming,
         }),
         signal,
       }), timeout);
@@ -663,11 +677,11 @@ export class ProviderService {
         return normalizeProviderFailure(detail || `HTTP ${response.status} from Direct API.`, `HTTP ${response.status} from Direct API.`);
       }
 
-      if (fastRewrite) {
+      if (liveStreaming) {
         const streamed = await readOpenAICompatibleStream(response, signal, override.onProgress, override.onStreamStatus, 'Direct API');
         if (streamed.aborted) return { aborted: true };
         if (streamed.error) return normalizeProviderFailure(streamed.error, 'Direct API streaming failed.');
-        debugLogService.add('inference.response', { mode, resultChars: streamed.content.length, streamed: true, fastRewrite: true });
+        debugLogService.add('inference.response', { mode, resultChars: streamed.content.length, streamed: true, liveStreaming: true });
         return { result: streamed.content, streamed: true };
       }
 
