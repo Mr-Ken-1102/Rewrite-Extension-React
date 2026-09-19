@@ -167,10 +167,10 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /multiMessage/);
   assert.match(source, /compact/);
   assert.doesNotMatch(source, /fastRewrite/);
-  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*35/);
-  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*36/);
+  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*28/);
+  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*62/);
   assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*29/);
-  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*76/);
+  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*46/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
   assert.match(geometry, /contextSummaryCount > 5 \? POPUP_CONTEXT_WRAP_EXTRA : 0/);
