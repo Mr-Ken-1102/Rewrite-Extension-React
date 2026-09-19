@@ -51,25 +51,34 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 }
 
 @media (max-width: 559px) {
-  .rwa2-context-sources { grid-column: span 7; }
-  .rwa2-context-modifiers { grid-column: span 5; }
-  .rwa2-source-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 8px;
+  .rwa2-token-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rwa2-inspector-controls { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .rwa2-inspector-parameters {
+    padding-left: 0;
+    padding-top: 8px;
+    border-left: 0;
+    border-top: 1px solid rgba(255,255,255,.045);
   }
 }
 
 @media (max-width: 459px) {
-  .rwa2-context-identity {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .rwa2-live-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
   }
-  .rwa2-context-sources,
-  .rwa2-context-modifiers {
-    grid-column: 1 / -1;
+  .rwa2-live-controls {
+    justify-content: space-between;
   }
-  .rwa2-context-sources { border-right: 0; }
-  .rwa2-context-modifiers {
-    border-top: 1px solid rgba(255,255,255,.055);
+  .rwa2-live-token {
+    width: 100%;
+    max-width: none;
+    justify-content: space-between;
+    border-top: 1px solid rgba(255,255,255,.04);
+    border-radius: 5px;
+  }
+  .rwa2-recipe {
+    align-items: flex-start;
   }
 }
 
@@ -82,16 +91,10 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
     padding-left: 8px;
     padding-right: 8px;
   }
-  .rwa2-context-identity {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 4px;
-  }
-  .rwa2-token-status {
-    justify-self: stretch;
-    min-width: 0;
-    max-width: none;
-  }
-  .rwa2-target-chip { max-width: 150px; }
+  .rwa2-live-label { display: none; }
+  .rwa2-recipe-title { display: none; }
+  .rwa2-inspector-source-grid { grid-template-columns: minmax(0,1fr); }
+  .rwa2-token-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .rwa2-actionbar {
     flex-wrap: wrap;
     gap: 4px;
@@ -109,7 +112,8 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 
 @media (prefers-reduced-motion: reduce) {
   .rwa2-popup *,
-  .rwa2-tooltip {
+  .rwa2-tooltip,
+  .rwa2-inspector {
     transition: none !important;
     animation: none !important;
   }
