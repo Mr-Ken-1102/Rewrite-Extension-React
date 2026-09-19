@@ -35,6 +35,8 @@ assert.match(modal, /\+ Thêm thiết lập/);
 assert.match(modal, /AI Architect/);
 assert.doesNotMatch(modal, /useGlowPointer/);
 
+assert.match(modal, /initialTab = 'profiles'/);
+assert.match(modal, /SETTINGS_SECTIONS\.some\(\(section\) => section\.id === initialTab\)/);
 assert.match(modal, /role="tablist"/);
 assert.match(modal, /onKeyDown=\{handleNavKeyDown\}/);
 assert.match(modal, /NAV_KEYS/);
