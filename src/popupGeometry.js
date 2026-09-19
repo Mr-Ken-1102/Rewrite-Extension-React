@@ -3,7 +3,7 @@ export const POPUP_VIEWPORT_GUTTER = 8;
 export const POPUP_OUTER_PADDING_X = 10;
 export const POPUP_GRID_COLUMNS = 12;
 export const POPUP_GRID_GAP = 6;
-export const POPUP_NORMAL_MIN_CELL = 140;
+export const POPUP_NORMAL_MIN_CELL = 110;
 export const POPUP_COMPACT_MIN_CELL = 100;
 export const POPUP_PROFILE_ROW_HEIGHT = 30;
 export const POPUP_COMPACT_ROW_HEIGHT = 27;
@@ -16,9 +16,9 @@ export const POPUP_STACKED_CONTEXT_EXTRA = 72;
 export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 36;
 
 export const POPUP_NORMAL_BREAKPOINTS = Object.freeze({
-  fourToThree: 598,
-  threeToTwo: 452,
-  twoToOne: 306,
+  fourToThree: 475,
+  threeToTwo: 355,
+  twoToOne: 245,
 });
 
 export const POPUP_COMPACT_BREAKPOINTS = Object.freeze({
