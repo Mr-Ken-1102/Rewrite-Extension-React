@@ -1117,8 +1117,8 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
-  const recipeBar = readFileSync('./src/components/popup/RecipeBar.jsx', 'utf8');
-  const requestInspector = readFileSync('./src/components/popup/RequestInspector.jsx', 'utf8');
+  const contextDeck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
+  const performanceStrip = readFileSync('./src/components/popup/PerformanceStrip.jsx', 'utf8');
   const preview = readFileSync('./src/components/modals/PreviewModal.jsx', 'utf8');
   const profiles = readFileSync('./src/components/modals/settings/TabProfiles.jsx', 'utf8');
   const custom = readFileSync('./src/components/modals/CustomPromptModal.jsx', 'utf8');
@@ -1135,10 +1135,13 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(popup, /selection\?\.captureId/);
   assert.match(popup, /deriveTrimmedSelection/);
   assert.match(popup, /pinnedPos/);
-  assert.match(recipeBar, /Recipe/);
-  assert.match(recipeBar, /rwa2-recipe-chip/);
-  assert.match(requestInspector, /Request Inspector/);
-  assert.match(requestInspector, /Persistent context sources/);
+  assert.match(contextDeck, /This rewrite/);
+  assert.match(contextDeck, /rwa2-context-chip/);
+  assert.match(contextDeck, /Token details/);
+  assert.match(contextDeck, /Persistent context sources/);
+  assert.match(performanceStrip, /key:\s*'FREE'/);
+  assert.match(performanceStrip, /key:\s*'FAST'/);
+  assert.match(performanceStrip, /key:\s*'STREAM'/);
   const contextPresentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
   assert.match(contextPresentation, /Char: \$\{characterNameText\}/);
   assert.match(contextPresentation, /Persona: \$\{personaNameText\}/);
