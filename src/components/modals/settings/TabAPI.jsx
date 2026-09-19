@@ -4,6 +4,7 @@ import { useToastStore } from '../../../store/useToastStore';
 import { APIService } from '../../../services/apiService';
 import { MarinaraHost } from '../../../services/marinaraHost';
 import { isLikelyLocalNetworkUrl } from '../../../services/policies/providerPolicy';
+import { getProviderCapabilities } from '../../../services/providers/providerCapabilities.js';
 import { DOMUtils } from '../../../utils/domUtils';
 import { Button } from '../../ui/Button';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
@@ -14,22 +15,28 @@ const connectionLabel = (connection) => connection?.name || connection?.label ||
 function fastRewriteDescription(mode, language) {
   if (mode === 'marinara') {
     return t(language,
-      'Rewrite requests use Marinara live SSE and request reduced/disabled reasoning when the active provider supports it. Saved chat/provider settings are not changed.',
-      'Request viết lại dùng SSE trực tiếp của Marinara và yêu cầu giảm/tắt reasoning khi provider hiện tại hỗ trợ. Thiết lập chat/provider đã lưu không bị thay đổi.');
-  }
-  if (mode === 'direct') {
-    return t(language,
-      'Direct OpenAI-compatible rewrites stream live output as tokens arrive. No provider-specific reasoning flag is forced, so compatible local APIs are not broken.',
-      'Direct OpenAI-compatible sẽ stream kết quả trực tiếp khi token đến. Không ép tham số reasoning riêng của từng provider để tránh làm hỏng API local tương thích.');
-  }
-  if (mode === 'extender') {
-    return t(language,
-      'Extender rewrites use OpenAI-compatible live streaming for lower perceived latency.',
-      'Rewrite qua Extender dùng OpenAI-compatible streaming để giảm độ trễ cảm nhận.');
+      'Reduces or disables reasoning only for rewrite requests when the selected Marinara provider supports it. Model, context, preset, and saved connection settings stay unchanged.',
+      'Giảm hoặc tắt reasoning chỉ cho request viết lại khi provider Marinara đang chọn hỗ trợ. Model, context, preset và cấu hình connection đã lưu không thay đổi.');
   }
   return t(language,
-    'Sidecar rewrites use a compact safety-preserving system prompt to reduce local-model overhead. The current Sidecar endpoint does not expose SSE or reasoning controls.',
-    'Rewrite qua Sidecar dùng system prompt gọn hơn nhưng vẫn giữ quy tắc an toàn để giảm overhead cho model local. Endpoint Sidecar hiện chưa có SSE hoặc điều khiển reasoning.');
+    'This backend does not expose a safe acceleration control that Rewrite Assistant can use. The global preference is preserved, but Fast Rewrite is unavailable in this mode.',
+    'Backend này chưa expose cơ chế tăng tốc an toàn mà Rewrite Assistant có thể điều khiển. Tùy chọn toàn cục vẫn được giữ nhưng Fast Rewrite không khả dụng ở mode này.');
+}
+
+function liveStreamingDescription(mode, language) {
+  if (mode === 'marinara') {
+    return t(language,
+      'Streams rewrite output through Marinara /generate/raw SSE. This improves time-to-first-text but does not reduce model compute.',
+      'Stream kết quả viết lại qua SSE của Marinara /generate/raw. Cơ chế này giúp thấy chữ sớm hơn nhưng không làm giảm compute của model.');
+  }
+  if (mode === 'sidecar') {
+    return t(language,
+      'Streams the built-in local Sidecar through Marinara /generate/raw using its stable local-sidecar connection. This is real SSE, not a typewriter simulation.',
+      'Stream model Sidecar cục bộ qua Marinara /generate/raw bằng local-sidecar connection ổn định. Đây là SSE thật, không phải hiệu ứng typewriter giả.');
+  }
+  return t(language,
+    'Uses OpenAI-compatible streaming on this endpoint and progressively displays supported output as tokens arrive.',
+    'Dùng OpenAI-compatible streaming trên endpoint này và hiển thị dần kết quả khi token được trả về.');
 }
 
 const PresetItem = ({ name, url, updateConfig, showToast, language }) => (
@@ -142,6 +149,7 @@ export const TabAPI = () => {
     () => config.connMode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl),
     [config.connMode, config.ollamaUrl],
   );
+  const capabilities = getProviderCapabilities(config.connMode);
   const browserOrigin = globalThis.location?.origin || t(language, 'Unavailable in this host', 'Không xác định trong host này');
 
   const directUrlAdvisory = useMemo(() => {
@@ -305,12 +313,36 @@ export const TabAPI = () => {
           )}</span>
         </div>
 
-        <div className="rwa-setting-toggle-row rwa-fast-rewrite-setting rwa-fast-rewrite-global">
-          <div>
-            <div>{t(language, 'Fast rewrite', 'Viết lại nhanh')}</div>
-            <small>{fastRewriteDescription(config.connMode, language)}</small>
+        <div className="rwa-performance-settings">
+          <div className="rwa-setting-toggle-row rwa-fast-rewrite-setting rwa-fast-rewrite-global">
+            <div>
+              <div>
+                {t(language, 'Fast rewrite', 'Viết lại nhanh')}
+                {!capabilities.fastRewrite ? <span className="rwa-capability-badge">{t(language, 'Unavailable', 'Không hỗ trợ')}</span> : null}
+              </div>
+              <small>{fastRewriteDescription(config.connMode, language)}</small>
+            </div>
+            <ToggleSwitch
+              checked={config.fastRewrite !== false}
+              disabled={!capabilities.fastRewrite}
+              onChange={(value) => updateConfig({ fastRewrite: value })}
+            />
           </div>
-          <ToggleSwitch checked={config.fastRewrite !== false} onChange={(value) => updateConfig({ fastRewrite: value })} />
+
+          <div className="rwa-setting-toggle-row rwa-live-streaming-setting">
+            <div>
+              <div>
+                {t(language, 'Live streaming', 'Streaming trực tiếp')}
+                <span className="rwa-capability-badge rwa-capability-badge-live">SSE</span>
+              </div>
+              <small>{liveStreamingDescription(config.connMode, language)}</small>
+            </div>
+            <ToggleSwitch
+              checked={config.liveStreaming !== false}
+              disabled={!capabilities.liveStreaming}
+              onChange={(value) => updateConfig({ liveStreaming: value })}
+            />
+          </div>
         </div>
       </div>
 
