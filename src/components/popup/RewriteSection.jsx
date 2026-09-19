@@ -1,4 +1,3 @@
-import { Button } from '../ui/Button';
 import { MultiMessageNotice } from './MultiMessageNotice';
 import { ProfileGrid } from './ProfileGrid';
 import { getProviderCapabilities } from '../../services/providers/providerCapabilities.js';
@@ -9,7 +8,6 @@ export function RewriteSection({
   colCount,
   rows,
   compact,
-  autoProfile,
   fastRewrite = false,
   liveStreaming = true,
   connectionMode = 'marinara',
@@ -21,9 +19,7 @@ export function RewriteSection({
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
-  const autoIdentityLabel = autoProfile
-    ? `${autoProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${autoProfile.identityName || autoProfile.name}`
-    : '';
+
   const capabilities = getProviderCapabilities(connectionMode);
   const fastState = capabilities.fastRewrite
     ? (fastRewrite ? text('Reasoning reduced', 'Giảm reasoning') : text('Off', 'Tắt'))
@@ -61,26 +57,6 @@ export function RewriteSection({
           <span className="rwa2-performance-meta">{streamState}</span>
         </div>
       </div>
-
-      {autoProfile && (
-        <Button
-          glow={false}
-          className="rwa2-auto-profile"
-          aria-label={autoIdentityLabel}
-          aria-description={autoProfile.prompt}
-          onMouseEnter={(event) => onTooltip(event, `${autoIdentityLabel} · ${autoProfile.name}: ${autoProfile.prompt}`)}
-          onMouseLeave={onTooltipLeave}
-          onFocus={(event) => onTooltip(event, `${autoIdentityLabel} · ${autoProfile.name}: ${autoProfile.prompt}`)}
-          onBlur={onTooltipLeave}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRun(autoProfile);
-          }}
-        >
-          <span aria-hidden="true">✦</span>
-          <span>{autoIdentityLabel}</span>
-        </Button>
-      )}
 
       <MultiMessageNotice language={language} selection={selection} mergeMultiMsg={mergeMultiMsg} />
 
