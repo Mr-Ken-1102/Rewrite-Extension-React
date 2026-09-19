@@ -67,6 +67,10 @@ export function ContextDeck({
   }, [tokenOpen]);
 
   useEffect(() => {
+    setTokenOpen(false);
+  }, [tokenInfo.selectionKey]);
+
+  useEffect(() => {
     if (open) setTokenOpen(false);
   }, [open]);
 
@@ -164,7 +168,7 @@ export function ContextDeck({
       </div>
 
       {tokenOpen && (
-        <div id="rwa2-token-popover" className="rwa2-token-popover" role="dialog" aria-label={text('Token details', 'Chi tiết token')}>
+        <div id="rwa2-token-popover" className="rwa2-token-popover" role="region" aria-label={text('Token details', 'Chi tiết token')}>
           <div className="rwa2-token-popover-head">
             <span>{text('Request size', 'Kích thước yêu cầu')}</span>
             <strong>{tokenLabel}</strong>
