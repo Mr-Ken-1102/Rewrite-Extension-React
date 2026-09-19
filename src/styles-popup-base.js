@@ -173,7 +173,7 @@ export const RWA_POPUP_BASE_CSS = `
 
 .rwa2-rewrite {
   min-width: 0;
-  padding: 7px;
+  padding: 6px 7px 7px;
   border: 1px solid rgba(209,154,69,.10);
   border-radius: 11px;
   background:
@@ -337,8 +337,15 @@ export const RWA_POPUP_BASE_CSS = `
   background: var(--rwa2-brand-soft) !important;
 }
 .rwa2-popup .rwa2-settings {
-  flex: 0 0 128px;
-  width: 128px !important;
+  flex: 0 0 34px;
+  width: 34px !important;
+  padding: 0 !important;
+  color: var(--rwa2-muted) !important;
+}
+.rwa2-popup .rwa2-settings:hover:not(:disabled) {
+  color: var(--rwa2-brand) !important;
+  border-color: var(--rwa2-brand-border) !important;
+  background: var(--rwa2-brand-soft) !important;
 }
 .rwa2-action-icon { font-size: 14px; line-height: 1; }
 
