@@ -10,6 +10,7 @@ import { usePopupDrag } from '../hooks/usePopupDrag';
 import { usePopupPosition } from '../hooks/usePopupPosition';
 import { PopupHeader } from './popup/PopupHeader';
 import { RewriteSection } from './popup/RewriteSection';
+import { IdentityStatusRow } from './popup/IdentityStatusRow';
 import { ContextDeck } from './popup/ContextDeck';
 import { TrimSelectionModal } from './popup/TrimSelectionModal';
 import { PopupTooltip } from './popup/PopupTooltip';
@@ -234,6 +235,16 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           onDragStart={handleDragStart}
           onTrim={openTrim}
           onPinToggle={handlePinToggle}
+          onClose={() => useRuntimeStore.getState().setPopupPosition(null)}
+        />
+
+        <IdentityStatusRow
+          language={language}
+          tokenInfo={tokenInfo}
+          voiceIdentity={voiceIdentity}
+          identityProfile={autoProfile}
+          onTooltip={showTooltip}
+          onTooltipLeave={hideTooltip}
         />
 
         <main className="rwa2-workbench">
@@ -258,13 +269,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             config={config}
             updateConfig={updateConfig}
             keepFocus={keepFocus}
-            tokenInfo={tokenInfo}
             contextSources={contextSources}
-            voiceIdentity={voiceIdentity}
-            identityProfile={autoProfile}
             onToggleContext={toggleContextSource}
-            onTooltip={showTooltip}
-            onTooltipLeave={hideTooltip}
           />
         </main>
 
