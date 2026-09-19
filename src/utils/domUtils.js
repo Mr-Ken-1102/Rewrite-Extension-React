@@ -165,7 +165,27 @@ export const DOMUtils = {
       const renderedFull = this.renderedTextForElement(messageEl);
       const occ = this.selectionOccurrenceInElement(range, messageEl, text);
       const anchorElement = rangeAnchorWithin(range, messageEl);
-      const { detectedRole, detectedCharacterId, detectedName } = readMessageDomIdentity(messageEl, anchorElement);
+      let domIdentity = readMessageDomIdentity(messageEl, anchorElement);
+
+      if (domIdentity.detectedGroupedSpeaker) {
+        const groupedNames = new Map();
+        const scopes = [...(messageEl.querySelectorAll?.('[data-card-css]') || [])];
+        for (const scope of scopes) {
+          let intersects = false;
+          try { intersects = range.intersectsNode(scope); } catch { intersects = false; }
+          if (!intersects) continue;
+          const candidate = readMessageDomIdentity(messageEl, scope);
+          const name = String(candidate?.detectedName || '').trim();
+          if (!candidate?.detectedGroupedSpeaker || !name) continue;
+          groupedNames.set(name.toLocaleLowerCase().replace(/\s+/g, ' '), name);
+        }
+        if (groupedNames.size === 1) {
+          domIdentity = { ...domIdentity, detectedName: [...groupedNames.values()][0], detectedGroupedSpeakerAmbiguous: false };
+        } else if (groupedNames.size > 1) {
+          domIdentity = { ...domIdentity, detectedName: null, detectedGroupedSpeakerAmbiguous: true };
+        }
+      }
+
       segments.push({
         source: 'message',
         mid,
@@ -173,9 +193,7 @@ export const DOMUtils = {
         occ,
         fp: ctxFingerprint(renderedFull, text, occ),
         renderedAtSelection: renderedFull,
-        detectedRole,
-        detectedCharacterId,
-        detectedName,
+        ...domIdentity,
       });
     }
     return segments;
@@ -201,7 +219,7 @@ export const DOMUtils = {
       const mid = active.dataset.rwaMid || parentMsg?.getAttribute('data-message-id') || parentMsg?.getAttribute('mesid') || parentMsg?.id || lastClickedMid;
       if (!mid) return null;
       active.dataset.rwaMid = mid;
-      const { detectedRole, detectedCharacterId, detectedName } = readMessageDomIdentity(parentMsg, active);
+      const domIdentity = readMessageDomIdentity(parentMsg, active);
       return {
         source: 'textarea',
         text,
@@ -211,9 +229,7 @@ export const DOMUtils = {
         end,
         el: active,
         originalValue: active.value,
-        detectedRole,
-        detectedCharacterId,
-        detectedName,
+        ...domIdentity,
         captureId: nextSelectionCaptureId(),
       };
     }
