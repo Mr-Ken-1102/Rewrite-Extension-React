@@ -251,7 +251,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             updateConfig={updateConfig}
             keepFocus={keepFocus}
             tokenInfo={tokenInfo}
-            selection={selection}
             contextSources={contextSources}
             contextExclusions={contextExclusions}
             onToggleContext={toggleContextExclusion}
