@@ -62,6 +62,7 @@ export function usePopupPosition({
   compact,
   popupPos,
   pinnedPos,
+  inspectorOpen = false,
 }) {
   const viewport = useViewportSize();
 
@@ -95,6 +96,7 @@ export function usePopupPosition({
             visibleRows,
             compact,
             multiMessage,
+            inspectorOpen,
             viewportWidth: viewport.width,
           }),
         );
@@ -144,6 +146,7 @@ export function usePopupPosition({
     compact,
     popupPos,
     pinnedPos,
+    inspectorOpen,
     viewport.width,
     viewport.height,
   ]);
