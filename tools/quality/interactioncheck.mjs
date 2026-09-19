@@ -86,7 +86,9 @@ ok('popup tooltip is collision-aware across visual viewport edges', () => {
   assert.match(source, /tooltipRef\.current\.getBoundingClientRect\(\)/);
   assert.match(source, /rect\.right > maxX/);
   assert.match(source, /rect\.bottom > maxY/);
-  assert.match(source, /role="tooltip"/);
+  const tooltip = read('./src/components/popup/PopupTooltip.jsx');
+  assert.match(source, /<PopupTooltip ref=\{tooltipRef\}/);
+  assert.match(tooltip, /role="tooltip"/);
 });
 
 ok('non-modal popup exposes a localized named region without interfering with dialog Escape ownership', () => {
@@ -109,11 +111,13 @@ ok('popup controls preserve switch semantics and named request groups', () => {
   assert.match(live, /aria-expanded=\{inspectorOpen\}/);
 });
 
-ok('trim-selection dialog opts out of cursor-following glow work', () => {
+ok('trim-selection dialog is isolated and opts out of cursor-following glow work', () => {
   const source = read('./src/components/PopupMain.jsx');
+  const trim = read('./src/components/popup/TrimSelectionModal.jsx');
   assert.doesNotMatch(source, /rwa-glow-button/);
-  const trimBlock = source.match(/\{trimOpen && \([\s\S]*?<\/Modal>\s*\)\}/)?.[0] || '';
-  assert.equal((trimBlock.match(/<Button\b[^>]*glow=\{false\}/g) || []).length, 2);
+  assert.match(source, /<TrimSelectionModal/);
+  assert.equal((trim.match(/<Button\b[^>]*glow=\{false\}/g) || []).length, 2);
+  assert.doesNotMatch(trim, /rwa-glow-button/);
 });
 
 ok('waiting result surfaces show continuous activity without ignoring reduced-motion preferences', () => {
