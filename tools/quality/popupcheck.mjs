@@ -22,7 +22,7 @@ ok('popup geometry constants encode the balanced 488px / three-column-first cont
   assert.match(source, /POPUP_FIXED_HEIGHT = 124/);
   assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 35/);
   assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 36/);
-  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 98/);
+  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 76/);
 });
 
 ok('popup geometry accounts for collapsed context, optional detail, and narrow stacking', () => {
@@ -165,7 +165,7 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.doesNotMatch(source, /fastRewrite/);
   assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*35/);
   assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*36/);
-  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*98/);
+  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*76/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
   assert.match(geometry, /contextOpen \? POPUP_CONTEXT_DETAIL_HEIGHT : 0/);
