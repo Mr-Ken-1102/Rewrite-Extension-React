@@ -726,7 +726,7 @@ await ok('Marinara rewrites stream the active chat connection without a client-s
   }
 });
 
-await ok('Fast Rewrite streams Direct OpenAI-compatible output without provider-specific reasoning flags', async () => {
+await ok('Live Streaming streams Direct OpenAI-compatible output independently from Fast Rewrite', async () => {
   const h = await loadApiHarness();
   try {
     h.store.control.state.config = {
@@ -735,7 +735,8 @@ await ok('Fast Rewrite streams Direct OpenAI-compatible output without provider-
       ollamaModel: 'local-model',
       directTemp: 0.7,
       requestTimeoutMs: 45000,
-      fastRewrite: true,
+      fastRewrite: false,
+      liveStreaming: true,
     };
     let requestBody = null;
     h.host.control.fetchHandler = async (url, options) => {
@@ -781,7 +782,44 @@ await ok('Fast Rewrite streams Direct OpenAI-compatible output without provider-
   }
 });
 
-await ok('Fast Rewrite streams Extender OpenAI-compatible output', async () => {
+await ok('Fast Rewrite does not masquerade as streaming on Direct when Live Streaming is off', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'direct',
+      ollamaUrl: 'http://127.0.0.1:11434/v1',
+      ollamaModel: 'local-model',
+      directTemp: 0.7,
+      requestTimeoutMs: 45000,
+      fastRewrite: true,
+      liveStreaming: false,
+    };
+    let requestBody = null;
+    h.host.control.fetchHandler = async (url, options) => {
+      assert.equal(url, 'http://127.0.0.1:11434/v1/chat/completions');
+      requestBody = JSON.parse(options.body);
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: 'complete direct' } }],
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    };
+
+    const result = await h.api.APIService.runInference(
+      'system',
+      'user',
+      new AbortController().signal,
+      { rewriteRequest: true },
+    );
+
+    assert.deepEqual(result, { result: 'complete direct' });
+    assert.equal(requestBody.stream, false);
+    assert.equal(Object.hasOwn(requestBody, 'reasoning_effort'), false);
+    assert.equal(Object.hasOwn(requestBody, 'reasoningEffort'), false);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Live Streaming streams Extender output independently from Fast Rewrite', async () => {
   const h = await loadApiHarness();
   try {
     h.store.control.state.config = {
@@ -789,14 +827,15 @@ await ok('Fast Rewrite streams Extender OpenAI-compatible output', async () => {
       extenderUrl: 'http://127.0.0.1:3001',
       directTemp: 0.7,
       requestTimeoutMs: 45000,
-      fastRewrite: true,
+      fastRewrite: false,
+      liveStreaming: true,
     };
     let requestBody = null;
     h.host.control.fetchHandler = async (url, options) => {
       assert.equal(url, 'http://127.0.0.1:3001/v1/chat/completions');
       requestBody = JSON.parse(options.body);
       const chunks = [
-        'data: {"choices":[{"delta":{"content":"fast "},"finish_reason":null}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"live "},"finish_reason":null}]}\n\n',
         'data: {"choices":[{"delta":{"content":"extender"},"finish_reason":"stop"}]}\n\n',
         'data: [DONE]\n\n',
       ];
@@ -819,20 +858,21 @@ await ok('Fast Rewrite streams Extender OpenAI-compatible output', async () => {
       },
     );
 
-    assert.deepEqual(result, { result: 'fast extender', streamed: true });
+    assert.deepEqual(result, { result: 'live extender', streamed: true });
     assert.equal(requestBody.stream, true);
-    assert.equal(progress.at(-1), 'fast extender');
+    assert.equal(progress.at(-1), 'live extender');
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
 });
 
-await ok('Fast Rewrite gives Sidecar a compact safety-preserving rewrite system prompt', async () => {
+await ok('Live Streaming uses Marinara raw SSE for Sidecar without mutating the rewrite prompt', async () => {
   const h = await loadApiHarness();
   try {
     h.store.control.state.config = {
       connMode: 'sidecar',
       fastRewrite: true,
+      liveStreaming: true,
       conciseSysPrompt: false,
       maxPromptChars: 32000,
       requestTimeoutMs: 45000,
@@ -840,22 +880,37 @@ await ok('Fast Rewrite gives Sidecar a compact safety-preserving rewrite system 
       lengthPct: 0,
     };
     let requestBody = null;
-    h.host.control.apiHandler = async (path, options) => {
-      assert.equal(path, '/sidecar/tracker');
+    h.host.control.fetchHandler = async (url, options) => {
+      assert.equal(url, '/api/generate/raw');
       requestBody = JSON.parse(options.body);
-      return { result: 'Shortened line.' };
+      const chunks = [
+        'data: {"type":"raw_started","data":{"runId":"sidecar-run"}}\n\n',
+        'data: {"type":"token","data":"Side"}\n\n',
+        'data: {"type":"token","data":"car"}\n\n',
+        'data: {"type":"result","data":{"content":"Sidecar"}}\n\n',
+        'data: {"type":"done","data":""}\n\n',
+      ];
+      return new Response(new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
+          controller.close();
+        },
+      }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
     };
 
     const result = await h.api.APIService.fetchAIResponse(
       { id: 'compress', name: 'Compress', prompt: 'Make it shorter.' },
       { cid: 'chat-sidecar', mid: 'm1', text: 'A longer line.' },
       new AbortController().signal,
-      { context: {} },
+      { context: {}, onProgress: () => {} },
     );
 
-    assert.equal(result.result, 'Shortened line.');
-    assert.equal(requestBody.systemPrompt, h.api.REWRITE_SYSTEM_PROMPT_CONCISE);
-    assert.match(requestBody.systemPrompt, /preserve facts, POV, tense, language, voice, names, continuity/);
+    assert.equal(result.result, 'Sidecar');
+    assert.equal(requestBody.connectionId, '__local_sidecar__');
+    assert.equal(requestBody.streaming, true);
+    assert.equal(requestBody.messages[0].content, h.api.REWRITE_SYSTEM_PROMPT);
+    assert.notEqual(requestBody.messages[0].content, h.api.REWRITE_SYSTEM_PROMPT_CONCISE);
+    assert.equal(requestBody.parameters, undefined);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
