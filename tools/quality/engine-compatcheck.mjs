@@ -97,6 +97,16 @@ ok('/generate/raw exposes the stable built-in Sidecar as a synthetic connection'
   assert.match(provider, /async chatComplete\(/);
 });
 
+ok('Character API returns raw storage rows while Conversation display name lives under data.extensions', () => {
+  const routes = read('packages/server/src/routes/characters.routes.ts');
+  const storage = read('packages/server/src/services/storage/characters.storage.ts');
+  const types = read('packages/shared/src/types/character.ts');
+  assert.match(storage, /data:\s*JSON\.stringify\(normalizedData\)/);
+  assert.match(storage, /async getById\(id: string\)[\s\S]*return rows\[0\] \?\? null/s);
+  assert.match(routes, /app\.get<\{ Params: \{ id: string \} \}>\("\/:id"[\s\S]*return char;/s);
+  assert.match(types, /export interface CharacterExtensions[\s\S]*convoDisplayName\?: string;/s);
+});
+
 ok('grouped Conversation DOM exposes visible per-segment speaker while data-card-css remains parent-scoped', () => {
   const src = read('packages/client/src/components/chat/ConversationMessageGrouped.tsx');
   assert.match(src, /data-component="ConversationMessage\.Grouped"/);
