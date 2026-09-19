@@ -3,27 +3,26 @@ export const RWA_POPUP_A11Y_CSS = `
    Loaded after popup layout/context so these cross-cutting rules stay authoritative. */
 
 .rwa2-version,
-.rwa2-region-label,
 .rwa2-section-meta,
-.rwa2-recipe-title,
-.rwa2-recipe-chip,
-.rwa2-live-token,
-.rwa2-inspector-total,
-.rwa2-inspector-depth,
-.rwa2-inspector-length-head > span {
+.rwa2-context-title,
+.rwa2-context-chip,
+.rwa2-token-trigger,
+.rwa2-context-detail-total,
+.rwa2-context-depth,
+.rwa2-context-length-head > span {
   font-size: 11px !important;
 }
 
-.rwa2-live-key { font-size: 11px; }
-.rwa2-live-label { font-size: 11px; }
+.rwa2-performance-key { font-size: 10px; }
+.rwa2-performance-meta { font-size: 11px; }
 .rwa2-profile-name { font-size: 13px; }
-.rwa2-token-cell { font-size: 11px; }
-.rwa2-inspector-note,
-.rwa2-inspector-empty,
-.rwa2-inspector-subtitle { font-size: 11px; }
+.rwa2-token-detail-item { font-size: 11px; }
+.rwa2-token-detail-note,
+.rwa2-token-detail-empty { font-size: 11px; }
+.rwa2-context-detail-label { font-size: 10px; }
 
-.rwa2-recipe-chip {
-  min-height: 27px;
+.rwa2-context-chip {
+  min-height: 26px;
   padding: 0 9px;
 }
 
@@ -38,10 +37,9 @@ export const RWA_POPUP_A11Y_CSS = `
   .rwa2-icon-button,
   .rwa2-identity-chip-profile,
   .rwa2-profile-btn,
-  .rwa2-live-control,
-  .rwa2-live-token,
-  .rwa2-recipe-chip,
-  .rwa2-inspector-close,
+  .rwa2-performance-item,
+  .rwa2-context-chip,
+  .rwa2-token-trigger,
   .rwa2-action,
   .rwa2-depth-input
 ):focus-visible {
