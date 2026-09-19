@@ -168,18 +168,21 @@ ok('responsive context geometry stacks deliberately on narrow viewports', () => 
   assert.match(css, /\.rwa2-context-sources,[\s\S]*\.rwa2-context-modifiers\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
 });
 
-ok('Fast Rewrite keeps stable geometry while exposing active and standard states', () => {
+ok('Fast Rewrite keeps stable geometry and exposes provider-aware paths in every mode', () => {
   const main = read('./src/components/PopupMain.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   const base = read('./src/styles-popup-base.js');
   const responsive = read('./src/styles-popup-responsive.js');
-  assert.match(main, /fastRewrite=\{config\.connMode === 'marinara' && config\.fastRewrite !== false\}/);
+  assert.match(main, /fastRewrite=\{config\.fastRewrite !== false\}/);
+  assert.match(main, /connectionMode=\{config\.connMode\}/);
+  assert.doesNotMatch(main, /fastRewrite=\{config\.connMode === 'marinara'/);
   assert.match(rewrite, /rwa2-fast-strip-active/);
   assert.match(rewrite, /rwa2-fast-strip-idle/);
-  assert.match(rewrite, /Fast path · SSE live/);
+  assert.match(rewrite, /Reasoning-light · SSE live/);
+  assert.match(rewrite, /Direct stream · SSE live/);
+  assert.match(rewrite, /Extender stream · SSE live/);
+  assert.match(rewrite, /Compact prompt · local path/);
   assert.match(rewrite, /Standard path/);
-  assert.match(rewrite, /Đường nhanh · SSE trực tiếp/);
-  assert.match(rewrite, /Luồng tiêu chuẩn/);
   assert.match(base, /@keyframes rwa2-fast-sweep/);
   assert.match(base, /\.rwa2-fast-strip-idle/);
   assert.match(base, /\.rwa2-fast-rail/);
