@@ -56,6 +56,17 @@ ok('profile and identity-profile explanations are available from keyboard focus'
   assert.match(header, /onBlur=\{onTooltipLeave\}/);
 });
 
+ok('popup header keeps drag ownership except on explicit interactive controls', () => {
+  const header = read('./src/components/popup/PopupHeader.jsx');
+  const drag = read('./src/hooks/usePopupDrag.js');
+  const css = read('./src/styles-popup-base.js');
+  assert.match(header, /<header className="rwa2-toolbar" onPointerDown=\{onDragStart\}>/);
+  assert.doesNotMatch(header, /rwa2-toolbar-actions" onPointerDown=/);
+  assert.ok((header.match(/data-rwa-no-drag="true"/g) || []).length >= 3);
+  assert.match(drag, /closest\?\.\('\[data-rwa-no-drag="true"\], button, input, textarea, select, a, \[role="button"\]'\)/);
+  assert.match(css, /\.rwa2-toolbar-actions\s*\{[\s\S]*flex:\s*0 1 auto/s);
+});
+
 ok('context help tooltip is keyboard reachable and bilingual', () => {
   const source = read('./src/components/popup/ContextPanel.jsx');
   assert.match(source, /CONTEXT_MODE_HELP/);
