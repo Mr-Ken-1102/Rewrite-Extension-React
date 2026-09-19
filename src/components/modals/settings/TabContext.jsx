@@ -122,8 +122,8 @@ export const TabContext = () => {
       <div className="rwa-lbl">{text('DEFAULT REWRITE SOURCES', 'NGUỒN VIẾT LẠI MẶC ĐỊNH')}</div>
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
         {text(
-          'These are the defaults for new rewrites. Source switches in the popup can temporarily turn a source on or off for the current rewrite without changing these defaults.',
-          'Đây là các nguồn mặc định cho những lần viết lại mới. Các nút nguồn trong popup có thể tạm bật hoặc tắt một nguồn cho lần viết lại hiện tại mà không đổi thiết lập mặc định này.',
+          'These defaults are shared with the source switches in the popup. Changing either place is saved and applies to future rewrites.',
+          'Các mặc định này được dùng chung với các nút nguồn trong popup. Thay đổi ở một trong hai nơi sẽ được lưu và áp dụng cho các lần viết lại sau.',
         )}
       </div>
       <Row title={text('Character', 'Nhân vật')} note={text('Include the resolved Character card when available.', 'Dùng Character card đã xác định khi có.')}>
@@ -137,6 +137,9 @@ export const TabContext = () => {
       </Row>
       <Row title={text('Around', 'Xung quanh')} note={text('Include nearby prose around the selected text.', 'Dùng phần văn bản lân cận quanh vùng chọn.')}>
         <ToggleSwitch checked={config.localContextEnabled} onChange={(value) => updateConfig({ localContextEnabled: value })} />
+      </Row>
+      <Row title={text('History', 'Lịch sử')} note={text('Include previous visible messages up to the History depth shown in the popup.', 'Dùng các tin nhắn hiển thị trước đó theo Độ sâu lịch sử trong popup.')}>
+        <ToggleSwitch checked={config.historyContextEnabled !== false} onChange={(value) => updateConfig({ historyContextEnabled: value })} />
       </Row>
 
       <div className="rwa-lbl" style={{ marginTop: '22px' }}>{text('CONTEXT BEHAVIOR', 'HÀNH VI NGỮ CẢNH')}</div>
