@@ -5,30 +5,28 @@ export const RWA_POPUP_A11Y_CSS = `
 .rwa2-version,
 .rwa2-region-label,
 .rwa2-section-meta,
-.rwa2-target-chip,
-.rwa2-one-shot-label,
-.rwa2-chip,
-.rwa2-control-label,
-.rwa2-length-value {
+.rwa2-recipe-title,
+.rwa2-recipe-chip,
+.rwa2-live-token,
+.rwa2-inspector-total,
+.rwa2-inspector-depth,
+.rwa2-inspector-length-head > span {
   font-size: 11px !important;
 }
 
-.rwa2-profile-name {
-  font-size: 13px;
+.rwa2-live-key { font-size: 9.5px; }
+.rwa2-live-label { font-size: 10px; }
+.rwa2-profile-name { font-size: 13px; }
+.rwa2-token-cell { font-size: 10.5px; }
+.rwa2-inspector-note,
+.rwa2-inspector-empty,
+.rwa2-inspector-subtitle { font-size: 10px; }
+
+.rwa2-recipe-chip {
+  min-height: 27px;
+  padding: 0 9px;
 }
 
-.rwa2-token-status {
-  font-size: 12px;
-  line-height: 1.2;
-}
-
-.rwa2-chip {
-  min-height: 26px;
-  padding: 0 8px;
-}
-
-/* Readability calibration only: preserve the popup typeface and hierarchy,
-   while lifting the smallest labels one step above the previous 9.5–11px range. */
 .rwa2-brand-title { font-size: 12.5px; }
 .rwa2-section-title { font-size: 12.5px; }
 .rwa2-popup .rwa2-auto-profile,
@@ -38,10 +36,12 @@ export const RWA_POPUP_A11Y_CSS = `
 
 .rwa2-popup :is(
   .rwa2-icon-button,
-  .rwa2-info,
-  .rwa2-auto-profile,
+  .rwa2-identity-chip-profile,
   .rwa2-profile-btn,
-  .rwa2-chip,
+  .rwa2-live-control,
+  .rwa2-live-token,
+  .rwa2-recipe-chip,
+  .rwa2-inspector-close,
   .rwa2-action,
   .rwa2-depth-input
 ):focus-visible {
