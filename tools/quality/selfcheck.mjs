@@ -927,7 +927,7 @@ ok('assistant rewrites bind Character context to the selected speaker and fail c
   assert.match(domIdentity, /groupedSpeakerName/);
   assert.match(identity, /voiceIdentityFromGroupedSelection/);
   assert.match(identity, /sourceOfTruth: 'grouped-dom-name'/);
-  assert.match(coordinator, /selection\.captureId/);
+  assert.match(coordinator, /selection\?\.captureId/);
   assert.match(coordinator, /fetchChatCharacters/);
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   assert.match(popup, /voiceIdentityFromSelection\(selection\) \|\| tokenInfo\.voiceIdentity/);
