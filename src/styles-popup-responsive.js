@@ -51,15 +51,9 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 }
 
 @media (max-width: 459px) {
-  .rwa2-context-control-grid {
+  .rwa2-context-adjust-row {
     grid-template-columns: minmax(0, 1fr);
-    gap: 7px;
-  }
-  .rwa2-context-adjust {
-    padding-left: 0;
-    padding-top: 7px;
-    border-left: 0;
-    border-top: 1px solid rgba(255,255,255,.045);
+    gap: 6px;
   }
   .rwa2-token-popover {
     right: 0;
@@ -81,7 +75,6 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
     padding-inline: 5px;
   }
   .rwa2-performance-key { letter-spacing: .04em; }
-  .rwa2-context-source-grid { grid-template-columns: minmax(0,1fr); }
   .rwa2-actionbar { gap: 4px; }
   .rwa2-popup .rwa2-custom {
     flex: 1 1 auto;
