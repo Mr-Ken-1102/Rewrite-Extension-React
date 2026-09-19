@@ -7,6 +7,7 @@ import { analyzeMergedMessageCompatibility } from '../policies/contextPolicy.js'
 import { validateProviderHttpUrl } from '../policies/providerPolicy.js';
 import { estimateTokens } from '../prompt/promptService.js';
 import { resolveVoiceIdentity } from '../voiceProfileIdentity.js';
+import { decodeMarinaraCharacter } from './marinaraEntityAdapter.js';
 
 const ENDPOINTS = {
   chats: '/chats',
@@ -81,9 +82,10 @@ function boundedVoiceField(parts, label, value, maxChars) {
 }
 
 function buildVoiceReference(entity, kind, snapshotName = '') {
-  const data = safeObject(entity?.data);
-  const extensions = safeObject(data.extensions);
-  const name = snapshotName || data.name || entity?.name || '';
+  const character = kind === 'character' ? decodeMarinaraCharacter(entity) : null;
+  const data = character?.data || safeObject(entity?.data);
+  const extensions = character?.extensions || safeObject(data.extensions);
+  const name = snapshotName || character?.name || data.name || entity?.name || '';
   const parts = [];
   if (name) parts.push(`Name: ${String(name).slice(0, 160)}`);
 
@@ -138,11 +140,12 @@ export class ContextService {
     return Promise.all(uniqueIds.map(async (id) => {
       try {
         const char = await MarinaraHost.apiFetch(`${ENDPOINTS.chars}/${encodeURIComponent(id)}`, { signal }, 15000);
-        const data = safeObject(char?.data);
+        const character = decodeMarinaraCharacter(char, id);
         return {
-          id,
-          name: String(data.name || char?.name || id).slice(0, 160),
-          convoDisplayName: String(data.convoDisplayName || char?.convoDisplayName || '').slice(0, 160),
+          id: character.id || id,
+          name: character.name || id,
+          convoDisplayName: character.convoDisplayName,
+          aliases: character.aliases,
         };
       } catch (err) {
         if (MarinaraHost.isAbortError(err) || signal?.aborted) throw err;
@@ -169,14 +172,12 @@ export class ContextService {
         }
       }));
       const blocks = chars.filter(Boolean).map((char) => {
-        const data = safeObject(char?.data);
-        const name = data.name || char?.name || '';
-        const personality = data.personality || char?.personality || '';
-        const description = data.description || char?.description || '';
+        const character = decodeMarinaraCharacter(char);
+        const data = character.data;
         const parts = [];
-        if (name) parts.push(`Name: ${String(name).slice(0, 160)}`);
-        if (personality) parts.push(`Personality: ${String(personality).slice(0, 600)}`);
-        if (description) parts.push(`Description: ${String(description).slice(0, 900)}`);
+        if (character.name) parts.push(`Name: ${character.name}`);
+        if (data.personality) parts.push(`Personality: ${String(data.personality).slice(0, 600)}`);
+        if (data.description) parts.push(`Description: ${String(data.description).slice(0, 900)}`);
         return parts.join('\n');
       }).filter(Boolean);
       return blocks.join('\n\n');
