@@ -320,7 +320,7 @@ await ok('grouped Character resolution scales to arbitrary chat cardinality and 
       if (path === '/chats/chat-many') {
         return { id: 'chat-many', characterIds: characters.map((character) => character.id) };
       }
-      const match = path.match(/^\\/characters\\/(char-\\d+)$/);
+      const match = path.match(/^\/characters\/(char-\d+)$/);
       if (match) {
         const character = characters.find((item) => item.id === match[1]);
         if (!character) throw new Error(`unknown Character endpoint: ${path}`);
