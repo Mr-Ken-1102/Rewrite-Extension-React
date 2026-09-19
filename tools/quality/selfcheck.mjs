@@ -421,10 +421,11 @@ ok('Marinara private storage is preferred with legacy migration fallback', () =>
   assert.match(storage, /safeLocalStorage\.getItem\(name\)/);
 });
 
-ok('character context supports bounded multi-character chats', () => {
+ok('Character prompt context stays bounded while identity discovery scans the full chat roster', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /function normalizeIdList/);
-  assert.match(context, /\.slice\(0, 8\)/);
+  assert.match(context, /function normalizeIdList\(value, maxItems = 8\)/);
+  assert.match(context, /return unique\.slice\(0, Math\.max/);
+  assert.match(context, /fetchChatCharacters[\s\S]*Number\.POSITIVE_INFINITY/s);
   assert.match(context, /Promise\.all/);
 });
 
