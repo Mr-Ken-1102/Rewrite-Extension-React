@@ -805,7 +805,9 @@ ok('v2.4.4 sidecar prompt cap is enforced before request', () => {
 ok('persisted profile collection is bounded for Marinara private storage', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   assert.match(schema, /\.slice\(0, 64\)/);
-  assert.match(schema, /name:\s*profile\.name\.trim\(\)\.slice\(0, 80\)/);
+  assert.match(schema, /const rawName = profile\.name\.trim\(\)/);
+  assert.match(schema, /const normalizedName = builtInName && rawName === builtInName\.legacy/);
+  assert.match(schema, /name:\s*normalizedName\.slice\(0, 80\)/);
   assert.match(schema, /const rawPrompt = profile\.prompt\.trim\(\)\.slice\(0, 5000\)/);
   assert.match(schema, /let byteBudget = 500_000/);
   assert.match(schema, /truncateUtf8\(rawPrompt, byteBudget - baseBytes\)/);
