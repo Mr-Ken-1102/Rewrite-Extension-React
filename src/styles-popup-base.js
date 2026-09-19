@@ -1,3 +1,10 @@
+import {
+  POPUP_DESKTOP_WIDTH,
+  POPUP_OUTER_PADDING_X,
+  POPUP_PROFILE_ROW_GAP,
+  POPUP_NORMAL_MIN_CELL,
+} from './popupGeometry';
+
 export const RWA_POPUP_BASE_CSS = `
 :host {
   --rwa2-brand: #e2a13b;
@@ -256,7 +263,7 @@ export const RWA_POPUP_BASE_CSS = `
 
 .rwa2-profile-grid {
   display:grid;
-  gap:7px 8px;
+  gap:${POPUP_PROFILE_ROW_GAP}px 8px;
   min-width:0;
   margin:0;
   padding:0;
@@ -271,7 +278,7 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-cols-1 { grid-template-columns:minmax(0,1fr); }
 .rwa2-cols-2 { grid-template-columns:repeat(2,minmax(0,1fr)); }
 .rwa2-cols-3 { grid-template-columns:repeat(3,minmax(0,1fr)); }
-.rwa2-cols-4 { grid-template-columns:repeat(4,minmax(110px,1fr)); }
+.rwa2-cols-4 { grid-template-columns:repeat(4,minmax(${POPUP_NORMAL_MIN_CELL}px,1fr)); }
 .rwa2-profile-grid-compact.rwa2-cols-5 { grid-template-columns:repeat(5,minmax(0,1fr)); }
 .rwa2-profile-grid-compact.rwa2-cols-6 { grid-template-columns:repeat(6,minmax(0,1fr)); }
 
@@ -410,7 +417,7 @@ export const RWA_POPUP_BASE_CSS = `
   max-width:min(320px,calc(100vw - 16px));
   display:grid;
   gap:7px;
-  padding:10px 12px 11px;
+  padding:10px ${POPUP_OUTER_PADDING_X}px 11px;
   border-color:rgba(226,161,59,.30);
   background:radial-gradient(circle at 100% 0%,rgba(226,161,59,.075),transparent 42%),#15181d;
   box-shadow:0 16px 38px rgba(0,0,0,.54),inset 2px 0 0 rgba(226,161,59,.42),inset 0 1px 0 rgba(255,255,255,.025);
