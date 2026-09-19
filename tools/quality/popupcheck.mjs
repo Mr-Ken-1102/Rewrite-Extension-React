@@ -204,7 +204,7 @@ ok('active Character or Persona Voice Profile fills the spare final preset slot 
 ok('responsive context detail stacks controls without turning token details into layout rows', () => {
   const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /@media \(max-width: 459px\)/);
-  assert.match(css, /\.rwa2-context-control-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /\.rwa2-token-popover\s*\{[\s\S]*right:\s*0/);
   assert.match(css, /@media \(max-width: 419px\)/);
   assert.doesNotMatch(css, /\.rwa2-token-detail-grid/);
