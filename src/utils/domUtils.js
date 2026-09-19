@@ -1,6 +1,7 @@
 import { ctxFingerprint } from '../services/spanMapper.js';
 import { readMessageDomIdentity } from './messageDomIdentity.js';
 import { resolveMarinaraChatComposer, resolveMarinaraChatComposerAnchor } from './chatComposerAnchor.js';
+import { captureIdentityDomEvidence } from './identityDiagnosticDom.js';
 
 function escapeSelectorValue(value) {
   const str = String(value ?? '');
@@ -195,6 +196,7 @@ export const DOMUtils = {
         }
       }
 
+      const browserSelection = window.getSelection?.() || null;
       segments.push({
         source: 'message',
         mid,
@@ -203,6 +205,12 @@ export const DOMUtils = {
         fp: ctxFingerprint(renderedFull, text, occ),
         renderedAtSelection: renderedFull,
         ...domIdentity,
+        identityDiagnosticRaw: captureIdentityDomEvidence({
+          browserSelection,
+          messageElement: messageEl,
+          anchorElement,
+          domIdentity,
+        }),
       });
     }
     return segments;
@@ -239,6 +247,12 @@ export const DOMUtils = {
         el: active,
         originalValue: active.value,
         ...domIdentity,
+        identityDiagnosticRaw: captureIdentityDomEvidence({
+          browserSelection: window.getSelection?.() || null,
+          messageElement: parentMsg,
+          anchorElement: active,
+          domIdentity,
+        }),
         captureId: nextSelectionCaptureId(),
       };
     }
@@ -276,6 +290,7 @@ export const DOMUtils = {
       detectedName: singleSegment ? first.detectedName : null,
       detectedGroupedSpeaker: singleSegment ? first.detectedGroupedSpeaker === true : false,
       detectedGroupedSpeakerAmbiguous: singleSegment ? first.detectedGroupedSpeakerAmbiguous === true : true,
+      identityDiagnosticRaw: singleSegment ? first.identityDiagnosticRaw || null : null,
       segments: segments.map((segment) => ({ ...segment, cid })),
       multiMessage: !singleSegment,
       captureId,
