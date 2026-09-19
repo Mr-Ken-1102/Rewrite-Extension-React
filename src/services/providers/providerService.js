@@ -15,7 +15,6 @@ import {
 } from './providerCapabilities.js';
 
 const ENDPOINTS = {
-  tracker: '/sidecar/tracker',
   connections: '/connections',
   generateRaw: '/generate/raw',
   chats: '/chats',
@@ -477,7 +476,7 @@ export class ProviderService {
     const fastRewrite = override.rewriteRequest === true && config.fastRewrite !== false && capabilities.fastRewrite;
     const liveStreaming = config.liveStreaming !== false
       && capabilities.liveStreaming
-      && (override.rewriteRequest === true || typeof override.onProgress === 'function');
+      && (override.liveStreaming === true || override.rewriteRequest === true || typeof override.onProgress === 'function');
     debugLogService.add('inference.request', {
       mode,
       systemChars: systemPrompt.length,
