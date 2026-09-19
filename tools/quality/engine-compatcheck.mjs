@@ -67,7 +67,7 @@ ok('Lorebook scan is GET and returns an entries envelope', () => {
   assert.match(src, /totalTokens:/);
 });
 
-ok('/generate/raw accepts connectionId + messages + streaming', () => {
+ok('/generate/raw supports streamed SSE and complete JSON responses', () => {
   const src = read('packages/server/src/routes/generate/raw-route.ts');
   assert.match(src, /connectionId:\s*z\.string/);
   assert.match(src, /messages:\s*z\.array\(rawMessageSchema\)/);
@@ -76,13 +76,28 @@ ok('/generate/raw accepts connectionId + messages + streaming', () => {
   assert.match(src, /app\.post\("\/raw"/);
   assert.match(src, /app\.post\("\/raw\/abort"/);
   assert.match(src, /activeRawRuns\.set\(runId/);
-  assert.match(src, /body\.streaming/);
+  assert.match(src, /if \(body\.streaming\)/);
   assert.match(src, /type:\s*"token"/);
   assert.match(src, /type:\s*"result"/);
+  assert.match(src, /content:\s*\(result\.content \?\? ""\)\.trimEnd\(\)/);
   assert.match(src, /return reply\.send\(\{ aborted: true, runId \}\)/);
 });
 
-ok('/sidecar/tracker accepts two <=16k prompt strings', () => {
+ok('/generate/raw exposes the stable built-in Sidecar as a synthetic connection', () => {
+  const raw = read('packages/server/src/routes/generate/raw-route.ts');
+  const defaults = read('packages/shared/src/constants/defaults.ts');
+  const local = read('packages/server/src/services/generation/local-sidecar-generation-connection.ts');
+  const provider = read('packages/server/src/services/llm/providers/local-sidecar.provider.ts');
+  assert.match(defaults, /LOCAL_SIDECAR_CONNECTION_ID\s*=\s*"__local_sidecar__"/);
+  assert.match(raw, /body\.connectionId === LOCAL_SIDECAR_CONNECTION_ID/);
+  assert.match(raw, /createLocalSidecarGenerationConnection\(\)/);
+  assert.match(local, /id:\s*LOCAL_SIDECAR_CONNECTION_ID/);
+  assert.match(local, /provider:\s*"local_sidecar"/);
+  assert.match(provider, /async \*chat\(/);
+  assert.match(provider, /async chatComplete\(/);
+});
+
+ok('legacy /sidecar/tracker contract remains available for Engine compatibility', () => {
   const src = read('packages/server/src/routes/sidecar.routes.ts');
   assert.match(src, /systemPrompt:\s*z\.string\(\)\.max\(16000\)/);
   assert.match(src, /userPrompt:\s*z\.string\(\)\.max\(16000\)/);
