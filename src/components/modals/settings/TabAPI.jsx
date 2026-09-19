@@ -233,12 +233,17 @@ export const TabAPI = () => {
 
       <div className="rwa-form-row">
         <span>{t(language, 'Connection mode', 'Chế độ kết nối')}</span>
-        <select className="rwa-inp" value={config.connMode || 'marinara'} onChange={(event) => updateConfig({ connMode: event.target.value })}>
-          <option value="marinara">{t(language, 'Marinara connection (recommended)', 'Kết nối Marinara (khuyến nghị)')}</option>
-          <option value="sidecar">{t(language, 'Marinara local sidecar model', 'Model Sidecar cục bộ của Marinara')}</option>
-          <option value="direct">Direct OpenAI-compatible API</option>
-          <option value="extender">Marinara Extender</option>
-        </select>
+        <div className="rwa-connection-mode-control">
+          <select className="rwa-inp" value={config.connMode || 'marinara'} onChange={(event) => updateConfig({ connMode: event.target.value })}>
+            <option value="marinara">{t(language, 'Marinara connection (recommended)', 'Kết nối Marinara (khuyến nghị)')}</option>
+            <option value="sidecar">{t(language, 'Marinara local sidecar model', 'Model Sidecar cục bộ của Marinara')}</option>
+            <option value="direct">Direct OpenAI-compatible API</option>
+            <option value="extender">Marinara Extender</option>
+          </select>
+          <Button glow={false} className="rwa-connection-test" onClick={handleTest} disabled={busy}>
+            {busy ? t(language, 'Working…', 'Đang xử lý…') : t(language, '⚡ Test connection', '⚡ Kiểm tra kết nối')}
+          </Button>
+        </div>
       </div>
 
       {config.connMode === 'marinara' && (
@@ -448,9 +453,6 @@ export const TabAPI = () => {
         <div className="rwa-request-note">{t(language, 'Normal Marinara rewrites do not use a client-side deadline: the active chat provider is allowed to finish, while Cancel aborts the actual Marinara generation. The timeout field remains applicable to Direct API, Extender, Sidecar, and the connection test.', 'Rewrite bình thường qua Marinara không bị cắt bởi deadline phía extension: provider của chat được phép chạy đến khi hoàn tất, còn nút Hủy sẽ dừng generation thật trong Marinara. Trường timeout vẫn áp dụng cho Direct API, Extender, Sidecar và bài kiểm tra kết nối.')}</div>
       )}
 
-      <Button glow={false} className="rwa-full-width" variant="rwa-accept" onClick={handleTest} disabled={busy}>
-        {busy ? t(language, 'Testing…', 'Đang kiểm tra…') : t(language, '⚡ Test effective connection', '⚡ Kiểm tra kết nối hiện dùng')}
-      </Button>
     </>
   );
 };
