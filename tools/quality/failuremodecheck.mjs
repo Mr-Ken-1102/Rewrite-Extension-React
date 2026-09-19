@@ -51,6 +51,7 @@ async function loadApiHarness() {
   await writeFile(join(dir, 'voiceProfileIdentity.mjs'), voiceIdentitySource);
   await mkdir(join(dir, 'policies'), { recursive: true });
   await mkdir(join(dir, 'context'), { recursive: true });
+  await copyFile('./src/services/context/marinaraEntityAdapter.js', join(dir, 'context', 'marinaraEntityAdapter.js'));
   await mkdir(join(dir, 'providers'), { recursive: true });
   await mkdir(join(dir, 'prompt'), { recursive: true });
 
