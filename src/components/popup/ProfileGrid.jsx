@@ -24,6 +24,33 @@ function profileDisplayName(profile, language) {
   return PROFILE_LABELS_VI[profile.id] || profile.name;
 }
 
+function PresetIcon({ id }) {
+  const common = {
+    width: 20,
+    height: 20,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.8,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+  };
+  if (id === 'expand') return <svg {...common}><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v5h5M9 12h7M9 16h7" /></svg>;
+  if (id === 'compress') return <svg {...common}><path d="M5 7h14M5 12h11M5 17h8" /></svg>;
+  if (id === 'thoughts') return <svg {...common}><path d="M8.4 20v-3.1c-2.1-1.2-3.4-3.5-3.4-6C5 6.5 8.1 3 12 3s7 3.5 7 7.9c0 1.2-.2 2.3-.7 3.3l1.7 2.2h-3.7V20" /><path d="M11 8.5h2M10 12h4" /></svg>;
+  if (id === 'dialogue') return <svg {...common}><path d="M4 5.5h16v10H9l-5 4z" /></svg>;
+  if (id === 'active') return <svg {...common}><path d="m13.5 2-8 12h7l-2 8 8-12h-7z" /></svg>;
+  if (id === 'diffwords') return <svg {...common}><path d="M4 18c7-1 12-5 15-13 1 7-1 13-7 15-3 1-6 .2-8-2Z" /><path d="M6 17c3-3 6-5 10-7" /></svg>;
+  if (id === 'showdont') return <svg {...common}><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" /><circle cx="12" cy="12" r="2.5" /></svg>;
+  if (id === 'emotion' || id === 'romance') return <svg {...common}><path d="M12 20.2 4.2 12.6C-.1 8.4 6 2.4 10.2 6.5L12 8.3l1.8-1.8c4.2-4.1 10.3 1.9 6 6.1z" /></svg>;
+  if (id === 'transitions') return <svg {...common}><path d="M3 7c2.2-2 4.4-2 6.6 0s4.4 2 6.6 0S20.5 5 22 6.3M3 12c2.2-2 4.4-2 6.6 0s4.4 2 6.6 0 4.3-2 5.8-.7M3 17c2.2-2 4.4-2 6.6 0s4.4 2 6.6 0 4.3-2 5.8-.7" /></svg>;
+  if (id === 'noai') return <svg {...common}><path d="M12 21V9M12 14c-4.5 0-7-2.5-7-7 4.5 0 7 2.5 7 7ZM12 11c0-4.5 2.5-7 7-7 0 4.5-2.5 7-7 7Z" /></svg>;
+  if (id === 'expdialogue') return <svg {...common}><path d="M4 5h12v8H8l-4 3z" /><path d="M10 15h6l4 3v-8h-2" /></svg>;
+  if (id === 'grammar') return <svg {...common}><path d="M8 3c.4 3 2 4.6 5 5-3 .4-4.6 2-5 5-.4-3-2-4.6-5-5 3-.4 4.6-2 5-5ZM17 11c.35 2.5 1.7 3.85 4.2 4.2-2.5.35-3.85 1.7-4.2 4.2-.35-2.5-1.7-3.85-4.2-4.2 2.5-.35 3.85-1.7 4.2-4.2Z" /></svg>;
+  return <svg {...common}><circle cx="12" cy="12" r="7" /></svg>;
+}
+
 export function ProfileGrid({
   language = 'en',
   profiles,
@@ -43,9 +70,12 @@ export function ProfileGrid({
   const [activeIndex, setActiveIndex] = useState(0);
   const classes = [
     'rwa2-profile-grid',
-    `rwa2-cols-${effectiveCols}`,
+    'rwa2-cols-' + effectiveCols,
     compact ? 'rwa2-profile-grid-compact' : '',
   ].filter(Boolean).join(' ');
+  const placeholderCount = !compact && effectiveCols === 3
+    ? Math.max(0, 15 - Math.min(15, gridProfiles.length))
+    : 0;
 
   useEffect(() => {
     if (!gridProfiles.length) {
@@ -81,17 +111,11 @@ export function ProfileGrid({
     if (!gridRef.current) return;
     const target = event.target instanceof Element ? event.target.closest('.rwa2-profile-btn') : null;
     if (!target) return;
-
     const buttons = Array.from(gridRef.current.querySelectorAll('.rwa2-profile-btn:not(:disabled)'));
     const currentIndex = buttons.indexOf(target);
     if (currentIndex < 0 || buttons.length === 0) return;
 
-    const isTypeaheadKey = event.key.length === 1
-      && !event.ctrlKey
-      && !event.metaKey
-      && !event.altKey
-      && event.key.trim().length > 0;
-
+    const isTypeaheadKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey && event.key.trim().length > 0;
     if (isTypeaheadKey) {
       const state = typeaheadRef.current;
       if (state.timer !== null) window.clearTimeout(state.timer);
@@ -113,11 +137,8 @@ export function ProfileGrid({
       return;
     }
 
-    const computedColumns = window.getComputedStyle(gridRef.current).gridTemplateColumns
-      .split(' ')
-      .filter(Boolean).length || 1;
+    const computedColumns = window.getComputedStyle(gridRef.current).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
     let nextIndex;
-
     if (event.key === 'ArrowRight') nextIndex = Math.min(buttons.length - 1, currentIndex + 1);
     else if (event.key === 'ArrowLeft') nextIndex = Math.max(0, currentIndex - 1);
     else if (event.key === 'ArrowDown') nextIndex = Math.min(buttons.length - 1, currentIndex + computedColumns);
@@ -155,19 +176,11 @@ export function ProfileGrid({
             tabIndex={index === activeIndex ? 0 : -1}
             aria-label={displayName}
             aria-description={profile.prompt}
-            onMouseEnter={(event) => onTooltip(event, {
-              kind: 'preset',
-              title: displayName,
-              prompt: profile.prompt,
-            })}
+            onMouseEnter={(event) => onTooltip(event, { kind: 'preset', title: displayName, prompt: profile.prompt })}
             onMouseLeave={onTooltipLeave}
             onFocus={(event) => {
               setActiveIndex(index);
-              onTooltip(event, {
-                kind: 'preset',
-                title: displayName,
-                prompt: profile.prompt,
-              });
+              onTooltip(event, { kind: 'preset', title: displayName, prompt: profile.prompt });
             }}
             onBlur={onTooltipLeave}
             onClick={(event) => {
@@ -175,12 +188,18 @@ export function ProfileGrid({
               onRun(profile);
             }}
           >
+            {!compact ? <span className="rwa2-profile-icon"><PresetIcon id={profile.id} /></span> : null}
             <span className="rwa2-profile-name" style={profile.color ? { color: profile.color } : {}}>
               {compact ? displayName.slice(0, 2).toUpperCase() : displayName}
             </span>
           </Button>
         );
       })}
+      {Array.from({ length: placeholderCount }, (_, index) => (
+        <div className="rwa2-profile-placeholder" aria-hidden="true" key={'placeholder-' + index}>
+          <span>+</span>
+        </div>
+      ))}
     </div>
   );
 }
