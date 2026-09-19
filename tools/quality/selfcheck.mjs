@@ -1466,6 +1466,7 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   const rewriteSection = readFileSync('./src/components/popup/RewriteSection.jsx', 'utf8');
+  const popupHeader = readFileSync('./src/components/popup/PopupHeader.jsx', 'utf8');
   const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
   assert.match(api, /VoiceProfileService\.generateAutoProfile/);
