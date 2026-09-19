@@ -46,13 +46,13 @@ ok('default style labels can localize without mutating profile prompts or ids', 
 
 ok('preset explanations remain keyboard reachable while Voice Profile identity stays outside the preset grid', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  const context = read('./src/components/popup/ContextDeck.jsx');
+  const status = read('./src/components/popup/IdentityStatusRow.jsx');
   assert.doesNotMatch(grid, /featuredProfile|rwa2-profile-btn-voice|__featured/);
   assert.match(grid, /aria-description=\{profile\.prompt\}/);
   assert.match(grid, /onFocus=\{\(event\) => \{/);
   assert.match(grid, /onTooltip\(event, \{[\s\S]*kind:\s*'preset'/s);
   assert.match(grid, /onBlur=\{onTooltipLeave\}/);
-  assert.match(context, /rwa2-identity-profile-ready/);
+  assert.match(status, /rwa2-identity-profile-ready/);
 });
 
 ok('popup header keeps drag ownership except on explicit interactive controls', () => {
@@ -99,6 +99,7 @@ ok('non-modal popup exposes a localized named region without interfering with di
 ok('popup controls preserve switch semantics and named compact groups', () => {
   const toggle = read('./src/components/ui/ToggleSwitch.jsx');
   const context = read('./src/components/popup/ContextDeck.jsx');
+  const status = read('./src/components/popup/IdentityStatusRow.jsx');
   const settingsContext = read('./src/components/modals/settings/TabContext.jsx');
   const performance = read('./src/components/popup/PerformanceStrip.jsx');
   assert.match(toggle, /role="switch"/);
@@ -111,8 +112,8 @@ ok('popup controls preserve switch semantics and named compact groups', () => {
   assert.match(context, /role="group"[\s\S]*Default rewrite sources/);
   assert.doesNotMatch(context, /Persistent context sources/);
   assert.match(context, /aria-pressed=\{source\.enabled\}/);
-  assert.match(context, /aria-label=\{text\('Show token estimate details'/);
-  assert.match(context, /onFocus=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
+  assert.match(status, /aria-label=\{text\('Show token estimate details'/);
+  assert.match(status, /onFocus=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.match(performance, /aria-pressed=\{item\.active\}/);
   assert.match(performance, /key:\s*'FREE MODE'/);
   assert.match(performance, /key:\s*'FAST REWRITE'/);
