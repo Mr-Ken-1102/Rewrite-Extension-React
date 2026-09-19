@@ -1163,7 +1163,7 @@ ok('auto-profile policy yields to manual rewrites and enforces a 60-second failu
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
   assert.match(app, /useAutoVoiceProfileCoordinator/);
   assert.match(coordinator, /isProcessing = useRuntimeStore/);
-  assert.match(coordinator, /resolveVoiceIdentity/);
+  assert.match(coordinator, /resolveVoiceProfileTarget/);
   assert.match(coordinator, /useAutoProfileGeneration/);
   assert.match(hook, /shouldStartAutoProfile/);
   assert.match(hook, /autoProfileBackoffRemaining/);
