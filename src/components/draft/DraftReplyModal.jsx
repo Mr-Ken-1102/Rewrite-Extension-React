@@ -3,6 +3,7 @@ import { Button } from '../ui/Button';
 import { usePersistentStore } from '../../store/usePersistentStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useRuntimeStore } from '../../store/useRuntimeStore';
+import { DOMUtils } from '../../utils/domUtils.js';
 import {
   clampFloatingPanelPosition,
   defaultDraftReplyPanelPosition,
