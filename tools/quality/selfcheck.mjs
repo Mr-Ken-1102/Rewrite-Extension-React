@@ -999,7 +999,7 @@ ok('assistant rewrites bind Character context to the selected speaker and fail c
   assert.match(identity, /voiceIdentityFromGroupedSelection/);
   assert.match(identity, /sourceOfTruth: 'grouped-dom-name'/);
   assert.match(coordinator, /selection\?\.captureId/);
-  assert.match(coordinator, /fetchChatCharacters/);
+  assert.match(coordinator, /resolveVoiceProfileTarget/);
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   assert.match(popup, /voiceIdentityFromSelection\(selection\) \|\| tokenInfo\.voiceIdentity/);
 });
@@ -1488,7 +1488,7 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.ok(context.indexOf("'Example dialogue'") < context.indexOf("'Description'"));
   assert.doesNotMatch(context.slice(context.indexOf('function buildVoiceReference'), context.indexOf('export class ContextService')), /system_prompt|post_history_instructions/);
   assert.match(coordinator, /resolved\.selectionKey === selectionKey/);
-  assert.match(coordinator, /const targetMessage = identity\?\.kind === 'character' && selection\.detectedGroupedSpeaker === true/);
+  assert.match(coordinator, /resolveVoiceProfileTarget\(selection, controller\.signal\)/);
   assert.match(hook, /const targetMessageRef = useRef\(targetMessage\)/);
   assert.match(hook, /targetMessageRef\.current = targetMessage/);
   assert.match(hook, /targetMessage: targetMessageRef\.current/);
