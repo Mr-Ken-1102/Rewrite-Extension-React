@@ -32,13 +32,13 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-popup {
   position: fixed;
   z-index: 10000;
-  width: min(488px, calc(100vw - 16px));
-  min-width: min(488px, calc(100vw - 16px));
-  max-width: min(488px, calc(100vw - 16px));
+  width: min(${POPUP_DESKTOP_WIDTH}px, calc(100vw - 16px));
+  min-width: min(${POPUP_DESKTOP_WIDTH}px, calc(100vw - 16px));
+  max-width: min(${POPUP_DESKTOP_WIDTH}px, calc(100vw - 16px));
   display: flex;
   flex-direction: column;
   gap: 9px;
-  padding: 10px 12px 11px;
+  padding: 10px ${POPUP_OUTER_PADDING_X}px 11px;
   border: 1px solid rgba(226,161,59,.24);
   border-radius: 15px;
   background:
