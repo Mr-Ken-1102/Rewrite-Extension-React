@@ -41,7 +41,7 @@ ok('default style labels can localize without mutating profile prompts or ids', 
   assert.match(grid, /expand:\s*'Làm giàu'/);
   assert.match(grid, /grammar:\s*'Trau chuốt'/);
   assert.match(grid, /profileDisplayName\(profile, language\)/);
-  assert.match(grid, /onRun\(profile\)/);
+  assert.match(grid, /onRun\(profile\.__featured \? featuredProfile : profile\)/);
 });
 
 ok('preset and Voice Profile explanations are available from keyboard focus in one grid', () => {
