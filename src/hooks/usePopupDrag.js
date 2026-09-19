@@ -33,6 +33,9 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
 
     let latestLeft = startLeft;
     let latestTop = startTop;
+    let pendingDx = 0;
+    let pendingDy = 0;
+    let frameId = 0;
     let finished = false;
 
     try { captureTarget?.setPointerCapture?.(pointerId); } catch { /* best effort */ }
@@ -41,6 +44,11 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
     captureTarget.style.cursor = 'grabbing';
     el.style.willChange = 'transform';
     el.style.transform = 'translate3d(0, 0, 0)';
+
+    const flushVisual = () => {
+      frameId = 0;
+      el.style.transform = `translate3d(${pendingDx}px, ${pendingDy}px, 0)`;
+    };
 
     const onPointerMove = (moveEvent) => {
       if (pointerId !== undefined && moveEvent.pointerId !== pointerId) return;
@@ -64,14 +72,19 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
         Math.max(8, window.innerHeight - height - 8),
       );
 
-      const dx = Math.round(latestLeft - startLeft);
-      const dy = Math.round(latestTop - startTop);
-      el.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+      pendingDx = Math.round(latestLeft - startLeft);
+      pendingDy = Math.round(latestTop - startTop);
+      if (!frameId) frameId = window.requestAnimationFrame(flushVisual);
     };
 
     const cleanup = (commit) => {
       if (finished) return;
       finished = true;
+
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+        frameId = 0;
+      }
 
       captureTarget?.removeEventListener?.('pointermove', onPointerMove);
       captureTarget?.removeEventListener?.('pointerup', onPointerUp);
