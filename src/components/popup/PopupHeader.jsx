@@ -38,10 +38,11 @@ export function PopupHeader({
         <span className="rwa2-version">V3.0.3</span>
       </div>
 
-      <div className="rwa2-toolbar-actions" onPointerDown={(event) => event.stopPropagation()}>
+      <div className="rwa2-toolbar-actions">
         {identityProfile && (
           <button
             type="button"
+            data-rwa-no-drag="true"
             className="rwa2-identity-chip"
             aria-label={identityLabel}
             aria-description={identityProfile.prompt}
@@ -60,6 +61,7 @@ export function PopupHeader({
         )}
         <button
           type="button"
+          data-rwa-no-drag="true"
           className="rwa2-icon-button"
           onClick={onTrim}
           disabled={multiCount > 1}
@@ -78,6 +80,7 @@ export function PopupHeader({
         </button>
         <button
           type="button"
+          data-rwa-no-drag="true"
           className={`rwa2-icon-button ${pinned ? 'rwa2-icon-button-active' : ''}`}
           onClick={onPinToggle}
           title={pinned ? text('Unpin popup', 'Bỏ ghim popup') : text('Pin popup here', 'Ghim popup tại đây')}
