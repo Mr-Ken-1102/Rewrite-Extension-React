@@ -178,21 +178,24 @@ ok('settings expose current-chat connection without duplicate model selection', 
   assert.match(api, /No separate model selection is required/);
 });
 
-ok('popup keeps explicit one-shot and token-estimate copy contracts', () => {
-  const source = read('./src/components/popup/ContextPanel.jsx');
-  assert.match(source, /This rewrite:/);
-  assert.match(source, /Selection \+ context ≈/);
-  assert.match(source, /rwa2-source-grid/);
-  assert.match(source, /rwa2-context-applied/);
+ok('popup keeps explicit recipe controls and compact token estimate contracts', () => {
+  const recipe = read('./src/components/popup/RecipeBar.jsx');
+  const live = read('./src/components/popup/LiveRail.jsx');
+  const inspector = read('./src/components/popup/RequestInspector.jsx');
+  assert.match(recipe, /Recipe/);
+  assert.match(recipe, /rwa2-recipe-chip/);
+  assert.match(live, /≈\$\{tokenInfo\.parts\.total\.toLocaleString\(\)\} tok/);
+  assert.match(live, /aria-expanded=\{inspectorOpen\}/);
+  assert.match(inspector, /Estimate only — not the provider billing\/tokenizer count/);
 });
 
-ok('context refresh keeps resolved identity and token text stable while toggles re-inspect', () => {
+ok('context refresh keeps resolved identity and token text stable while controls re-inspect', () => {
   const hook = read('./src/hooks/useContextInspector.js');
-  const panel = read('./src/components/popup/ContextPanel.jsx');
+  const live = read('./src/components/popup/LiveRail.jsx');
   assert.match(hook, /const sameSelection = current\.selectionKey === selectionKey/);
   assert.match(hook, /identities: sameSelection \? current\.identities : null/);
   assert.match(hook, /parts: sameSelection \? current\.parts : null/);
-  assert.match(panel, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.match(live, /tokenInfo\.loading && !tokenInfo\.parts/);
   assert.doesNotMatch(hook, /loading: true, identities: null/);
 });
 
