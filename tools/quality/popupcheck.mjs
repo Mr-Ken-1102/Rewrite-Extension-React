@@ -183,26 +183,22 @@ ok('popup main passes geometry-relevant state without changing rewrite semantics
   assert.match(source, /<PopupFooter/);
 });
 
-ok('active Character or Persona profile lives in the right side of the popup header', () => {
+ok('active Character or Persona Voice Profile fills the spare final preset slot instead of the header', () => {
   const main = read('./src/components/PopupMain.jsx');
   const header = read('./src/components/popup/PopupHeader.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const grid = read('./src/components/popup/ProfileGrid.jsx');
   const base = read('./src/styles-popup-base.js');
-  const responsive = read('./src/styles-popup-responsive.js');
-  assert.match(main, /voiceIdentity=\{voiceIdentity\}/);
   assert.match(main, /identityProfile=\{autoProfile\}/);
-  assert.match(main, /onRunIdentityProfile=\{runProfile\}/);
-  assert.match(header, /rwa2-toolbar-actions/);
-  assert.match(header, /rwa2-identity-chip/);
-  assert.match(header, /voiceIdentity\?\.kind/);
-  assert.match(header, /identityKind === 'persona'/);
-  assert.match(header, /rwa2-identity-chip-static/);
-  assert.match(header, /onRunIdentityProfile\?\.\(identityProfile\)/);
-  assert.doesNotMatch(rewrite, /rwa2-auto-profile|autoProfile/);
+  assert.match(main, /voiceIdentity=\{voiceIdentity\}/);
+  assert.doesNotMatch(header, /identityProfile|voiceIdentity|rwa2-identity-chip|onRunIdentityProfile/);
+  assert.match(rewrite, /featuredProfile=\{identityProfile\}/);
+  assert.match(rewrite, /featuredLabel=\{identityProfile/);
+  assert.match(grid, /\[\.\.\.profiles, \{ \.\.\.featuredProfile, __featured: true/);
+  assert.match(grid, /rwa2-profile-btn-voice/);
+  assert.match(grid, /voice:\$\{profile\.identityKey \|\| profile\.id\}/);
+  assert.match(base, /\.rwa2-popup \.rwa2-profile-btn-voice\s*\{/);
   assert.match(base, /\.rwa2-toolbar-actions\s*\{[\s\S]*justify-content:\s*flex-end/s);
-  assert.match(base, /\.rwa2-identity-chip\s*\{/);
-  assert.match(base, /text-overflow:\s*ellipsis/);
-  assert.match(responsive, /\.rwa2-identity-chip\s*\{\s*max-width:\s*108px/);
 });
 
 ok('responsive context detail stacks controls without turning token details into layout rows', () => {
@@ -252,7 +248,8 @@ ok('context deck separates current-request chips, token popover, and advanced co
   const css = read('./src/styles-popup-context.js');
   const context = read('./src/components/popup/ContextDeck.jsx');
   const presentation = read('./src/hooks/useContextPresentation.js');
-  assert.match(css, /\.rwa2-context-source-grid\s*\{[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.doesNotMatch(css, /\.rwa2-context-source-grid\s*\{/);
+  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, \.78fr\) minmax\(0, 1\.22fr\)/);
   assert.match(context, /rwa2-token-popover/);
   assert.match(context, /role="region"/);
   assert.match(context, /setTokenOpen\(\(current\) => !current\)/);
@@ -261,7 +258,9 @@ ok('context deck separates current-request chips, token popover, and advanced co
   assert.match(context, /History depth/);
   assert.match(context, /Rewrite length adjustment/);
   assert.match(context, /summaryLabel\(source\)/);
+  assert.match(context, /config\.lengthEnabled &&/);
   assert.match(context, /lengthLabel/);
+  assert.doesNotMatch(context, /Persistent context sources/);
   assert.doesNotMatch(context, /identityName|characterNames|personaNames/);
   assert.match(presentation, /label:\s*text\('Character', 'Nhân vật'\), detail:\s*characterLabel/);
   assert.match(presentation, /label:\s*'Persona', detail:\s*personaLabel/);
