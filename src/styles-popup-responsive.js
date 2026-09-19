@@ -50,40 +50,24 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
   .rwa2-profile-grid-compact { grid-template-columns: minmax(0, 1fr); }
 }
 
-@media (max-width: 559px) {
-  .rwa2-token-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .rwa2-inspector-controls { grid-template-columns: minmax(0, 1fr); gap: 8px; }
-  .rwa2-inspector-parameters {
+@media (max-width: 459px) {
+  .rwa2-context-control-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+  .rwa2-context-adjust {
     padding-left: 0;
-    padding-top: 8px;
+    padding-top: 7px;
     border-left: 0;
     border-top: 1px solid rgba(255,255,255,.045);
   }
-}
-
-@media (max-width: 459px) {
-  .rwa2-live-rail {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 3px;
-  }
-  .rwa2-live-controls {
-    justify-content: space-between;
-  }
-  .rwa2-live-token {
-    width: 100%;
-    max-width: none;
-    justify-content: space-between;
-    border-top: 1px solid rgba(255,255,255,.04);
-    border-radius: 5px;
-  }
-  .rwa2-recipe {
-    align-items: flex-start;
+  .rwa2-token-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 419px) {
-  .rwa2-identity-chip { max-width: 128px; }
+  .rwa2-identity-chip { max-width: 112px; }
   .rwa2-popup {
     width: calc(100vw - 12px);
     min-width: calc(100vw - 12px);
@@ -91,10 +75,27 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
     padding-left: 8px;
     padding-right: 8px;
   }
-  .rwa2-live-label { display: none; }
-  .rwa2-recipe-title { display: none; }
-  .rwa2-inspector-source-grid { grid-template-columns: minmax(0,1fr); }
-  .rwa2-token-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .rwa2-performance-item {
+    gap: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .rwa2-performance-meta { font-size: 0 !important; }
+  .rwa2-performance-meta::after {
+    content: attr(data-short);
+    font-size: 11px;
+  }
+  .rwa2-context-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .rwa2-token-trigger {
+    width: 100%;
+    max-width: none;
+    justify-content: space-between;
+  }
+  .rwa2-context-source-grid { grid-template-columns: minmax(0,1fr); }
   .rwa2-actionbar {
     flex-wrap: wrap;
     gap: 4px;
@@ -113,7 +114,7 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 @media (prefers-reduced-motion: reduce) {
   .rwa2-popup *,
   .rwa2-tooltip,
-  .rwa2-inspector {
+  .rwa2-context-collapse {
     transition: none !important;
     animation: none !important;
   }
