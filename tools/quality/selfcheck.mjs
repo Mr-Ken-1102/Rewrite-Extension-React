@@ -1135,12 +1135,12 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(popup, /selection\?\.captureId/);
   assert.match(popup, /deriveTrimmedSelection/);
   assert.match(popup, /pinnedPos/);
-  assert.match(contextDeck, /This rewrite/);
   assert.match(contextDeck, /rwa2-context-chip/);
-  assert.match(contextDeck, /Token details/);
+  assert.match(contextDeck, /rwa2-token-popover/);
   assert.match(contextDeck, /Persistent context sources/);
-  assert.match(performanceStrip, /key:\s*'FREE'/);
-  assert.match(performanceStrip, /key:\s*'FAST'/);
+  assert.doesNotMatch(contextDeck, /This rewrite/);
+  assert.match(performanceStrip, /key:\s*'FREE MODE'/);
+  assert.match(performanceStrip, /key:\s*'FAST REWRITE'/);
   assert.match(performanceStrip, /key:\s*'STREAM'/);
   const contextPresentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
   assert.match(contextPresentation, /Char: \$\{characterNameText\}/);
@@ -1280,14 +1280,17 @@ ok('debug logging is opt-in, bounded, session-only, and metadata-owned by the se
   assert.match(dataTab, /Debug logging is opt-in/);
 });
 
-ok('token preview stays compact in Context and expands into direct token details', () => {
+ok('token preview stays compact and opens an independent token popover', () => {
   const deck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
   const hook = readFileSync('./src/hooks/useContextInspector.js', 'utf8');
   assert.match(deck, /≈\$\{total\.toLocaleString\(\)\} tok/);
-  assert.match(deck, /Show the estimated token breakdown for this rewrite/);
+  assert.match(deck, /Show token details/);
+  assert.match(deck, /rwa2-token-popover/);
+  assert.match(deck, /role="dialog"/);
   assert.match(deck, /Estimate only — not the provider billing\/tokenizer count/);
-  assert.match(deck, /Token details/);
-  assert.doesNotMatch(deck, /Input composition|rwa2-token-composition/);
+  assert.match(deck, /setTokenOpen\(\(current\) => !current\)/);
+  assert.match(deck, /className="rwa2-context-toggle"/);
+  assert.doesNotMatch(deck, /rwa2-token-detail-grid|Input composition|rwa2-token-composition/);
   assert.match(hook, /const oneShot = rewriteSelection\(\)/);
   assert.match(hook, /APIService\.inspectContext\(oneShot/);
   assert.match(hook, /sameSelection \? current\.parts : null/);
