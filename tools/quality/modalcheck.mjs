@@ -76,7 +76,10 @@ assert.match(resultCss, /\.rwar-actions \.rwar-native-editor \{ flex-grow:\s*1\.
 assert.match(resultCss, /@keyframes rwar-result-arrive/);
 assert.match(resultCss, /@keyframes rwar-ready-sweep/);
 assert.match(resultCss, /@keyframes rwar-working-sweep/);
-assert.match(resultCss, /\.rwar-working-rail > span[\s\S]*animation:\s*rwar-working-sweep 1\.35s/s);
+assert.match(resultCss, /\.rwar-working-rail > span[\s\S]*animation:\s*rwar-working-sweep 1\.05s/s);
+assert.match(resultCss, /@keyframes rwa-waiting-dot/);
+assert.match(resultCss, /@keyframes rwar-selected-sheen/);
+assert.match(resultCss, /\.rwa-waiting-dots > i/);
 assert.match(resultCss, /\.rwar-window-ready \.rwar-section/);
 assert.match(resultCss, /\.rwar-actions \.rwar-rewrite-again\s*\{[\s\S]*border-color:\s*rgba\(209,154,69,.28\)/s);
 
