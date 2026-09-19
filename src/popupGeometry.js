@@ -43,13 +43,11 @@ export function getResponsivePopupExtra(viewportWidth) {
 export function estimatePopupHeight({
   visibleRows,
   compact = false,
-  hasAutoProfile = false,
   multiMessage = false,
   viewportWidth = POPUP_DESKTOP_WIDTH,
 }) {
   return POPUP_FIXED_HEIGHT
     + getProfileViewportHeight(visibleRows, compact)
-    + (hasAutoProfile ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
     + (multiMessage ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
     // Performance status keeps a permanent row so Fast Rewrite / Streaming toggles never change popup geometry.
     + POPUP_PERFORMANCE_STRIP_HEIGHT
