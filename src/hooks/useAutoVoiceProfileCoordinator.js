@@ -15,8 +15,14 @@ export function useAutoVoiceProfileCoordinator() {
   ));
   const showToast = useToastStore((state) => state.showToast);
   const [resolved, setResolved] = useState({ selectionKey: '', identity: null, targetMessage: null });
+  const selectionCaptureKey = selection?.captureId
+    || [
+      selection?.detectedGroupedSpeaker === true ? 'grouped' : 'message',
+      selection?.detectedCharacterId || '',
+      selection?.detectedName || '',
+    ].join(':');
   const selectionKey = selection?.cid && selection?.mid
-    ? `${selection.cid}\u0000${selection.mid}\u0000${selection.captureId || ''}`
+    ? `${selection.cid}\u0000${selection.mid}\u0000${selectionCaptureKey}`
     : '';
   const domIdentity = voiceIdentityFromSelection(selection);
   const resolvedIdentity = resolved.selectionKey === selectionKey ? resolved.identity : null;
