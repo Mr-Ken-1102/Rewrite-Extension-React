@@ -48,8 +48,9 @@ ok('profile and auto-profile explanations are available from keyboard focus', ()
   const grid = read('./src/components/popup/ProfileGrid.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   assert.match(grid, /aria-description=\{profile\.prompt\}/);
-  assert.match(grid, /onFocus=\{\(event\) => \{/);
-  assert.match(grid, /onBlur=\{onTooltipLeave\}/);
+  assert.match(grid, /onFocus=\{\(\) => \{/);
+  assert.match(grid, /setInspectedIndex\(index\)/);
+  assert.match(grid, /rwa2-preset-inspector/);
   assert.match(rewrite, /aria-description=\{autoProfile\.prompt\}/);
   assert.match(rewrite, /onFocus=\{\(event\) => onTooltip/);
   assert.match(rewrite, /onBlur=\{onTooltipLeave\}/);
