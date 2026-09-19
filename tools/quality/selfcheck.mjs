@@ -389,7 +389,7 @@ ok('no persisted undo history in Zustand partialize', () => {
 
 ok('new installs use the requested layout and identity-assistance defaults without enabling broad context injection', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
-  assert.match(schema, /cols:\s*4/);
+  assert.match(schema, /cols:\s*3/);
   assert.match(schema, /rows:\s*5/);
   assert.match(schema, /historyDepth:\s*1/);
   assert.match(schema, /contextDepth:\s*1/);
