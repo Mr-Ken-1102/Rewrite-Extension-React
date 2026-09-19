@@ -61,13 +61,14 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
     border-left: 0;
     border-top: 1px solid rgba(255,255,255,.045);
   }
-  .rwa2-token-detail-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .rwa2-token-popover {
+    right: 0;
+    width: min(300px, calc(100vw - 24px));
   }
 }
 
 @media (max-width: 419px) {
-  .rwa2-identity-chip { max-width: 112px; }
+  .rwa2-identity-chip { max-width: 108px; }
   .rwa2-popup {
     width: calc(100vw - 12px);
     min-width: calc(100vw - 12px);
@@ -77,38 +78,21 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
   }
   .rwa2-performance-item {
     gap: 4px;
-    padding-left: 6px;
-    padding-right: 6px;
+    padding-inline: 5px;
   }
-  .rwa2-performance-meta { font-size: 0 !important; }
-  .rwa2-performance-meta::after {
-    content: attr(data-short);
-    font-size: 11px;
-  }
-  .rwa2-context-summary {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .rwa2-token-trigger {
-    width: 100%;
-    max-width: none;
-    justify-content: space-between;
-  }
+  .rwa2-performance-key { letter-spacing: .04em; }
   .rwa2-context-source-grid { grid-template-columns: minmax(0,1fr); }
-  .rwa2-actionbar {
-    flex-wrap: wrap;
-    gap: 4px;
-  }
+  .rwa2-actionbar { gap: 4px; }
   .rwa2-popup .rwa2-custom {
-    flex: 1 1 150px;
+    flex: 1 1 auto;
     width: auto !important;
     margin-left: 0 !important;
   }
-  .rwa2-popup .rwa2-settings {
-    flex: 0 1 96px;
-    width: auto !important;
-  }
+}
+
+@media (max-width: 359px) {
+  .rwa2-performance-meta { display: none; }
+  .rwa2-performance-item { padding-inline: 3px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
