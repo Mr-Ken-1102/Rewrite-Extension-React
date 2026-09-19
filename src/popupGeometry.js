@@ -1,32 +1,32 @@
-export const POPUP_DESKTOP_WIDTH = 520;
+export const POPUP_DESKTOP_WIDTH = 488;
 export const POPUP_VIEWPORT_GUTTER = 8;
 export const POPUP_OUTER_PADDING_X = 10;
 export const POPUP_GRID_COLUMNS = 12;
 export const POPUP_GRID_GAP = 6;
-export const POPUP_NORMAL_MIN_CELL = 116;
+export const POPUP_NORMAL_MIN_CELL = 110;
 export const POPUP_COMPACT_MIN_CELL = 92;
 export const POPUP_PROFILE_ROW_HEIGHT = 30;
 export const POPUP_COMPACT_ROW_HEIGHT = 27;
 export const POPUP_PROFILE_ROW_GAP = 5;
-export const POPUP_FIXED_HEIGHT = 145;
+export const POPUP_FIXED_HEIGHT = 124;
 export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
 export const POPUP_PERFORMANCE_STRIP_HEIGHT = 35;
-export const POPUP_CONTEXT_SUMMARY_HEIGHT = 35;
-export const POPUP_CONTEXT_DETAIL_HEIGHT = 132;
-export const POPUP_NARROW_CONTEXT_EXTRA = 72;
-export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 36;
+export const POPUP_CONTEXT_SUMMARY_HEIGHT = 36;
+export const POPUP_CONTEXT_DETAIL_HEIGHT = 98;
+export const POPUP_NARROW_CONTEXT_EXTRA = 60;
+export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 30;
 
 export const POPUP_NORMAL_BREAKPOINTS = Object.freeze({
-  fourToThree: 520,
-  threeToTwo: 392,
-  twoToOne: 270,
+  fourToThree: 478,
+  threeToTwo: 355,
+  twoToOne: 245,
 });
 
 export const POPUP_COMPACT_BREAKPOINTS = Object.freeze({
-  sixToFive: 520,
-  fiveToFour: 446,
-  fourToThree: 372,
-  threeToTwo: 298,
+  sixToFive: 488,
+  fiveToFour: 424,
+  fourToThree: 360,
+  threeToTwo: 296,
   twoToOne: 220,
 });
 
