@@ -34,7 +34,7 @@ export const DEFAULT_PROFILES = [
 
 export const DEFAULT_CONFIG = {
   uiLanguage: 'en',
-  cols: 4,
+  cols: 3,
   rows: 5,
   typewriter: true,
   showDiff: true,
