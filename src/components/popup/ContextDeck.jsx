@@ -106,7 +106,7 @@ export function ContextDeck({
         </button>
       </div>
 
-      <div className="rwa2-context-chips" role="group" aria-label={text('Sources for this rewrite', 'Nguồn cho lần viết lại này')}>
+      <div className="rwa2-context-chips" role="group" aria-label={text('Default rewrite sources', 'Nguồn viết lại mặc định')}>
         {contextSources.map((source) => (
           <button
             key={source.key}
@@ -114,14 +114,13 @@ export function ContextDeck({
             className={[
               'rwa2-context-chip',
               source.enabled ? 'rwa2-context-chip-on' : 'rwa2-context-chip-off',
-              source.overridden ? 'rwa2-context-chip-overridden' : '',
-            ].filter(Boolean).join(' ')}
+            ].join(' ')}
             aria-pressed={source.enabled}
             disabled={source.disabled}
             title={source.disabled
               ? text(
-                source.key === 'history' ? 'Set History depth above 0 to use this source.' : 'This source is unavailable while Free Mode is on.',
-                source.key === 'history' ? 'Đặt Độ sâu lịch sử lớn hơn 0 để dùng nguồn này.' : 'Nguồn này không khả dụng khi Chế độ tự do đang bật.',
+                'This source is unavailable while Free Mode is on.',
+                'Nguồn này không khả dụng khi Chế độ tự do đang bật.',
               )
               : (source.detail || source.label)}
             onClick={(event) => {
@@ -142,11 +141,11 @@ export function ContextDeck({
           <input
             type="number"
             className="rwa2-depth-input"
-            min="0"
+            min="1"
             max="20"
             value={config.contextDepth !== undefined ? config.contextDepth : 0}
             aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
-            onChange={(event) => updateConfig({ contextDepth: Math.max(0, parseInt(event.target.value, 10) || 0) })}
+            onChange={(event) => updateConfig({ contextDepth: Math.max(1, parseInt(event.target.value, 10) || 1) })}
           />
         </label>
 

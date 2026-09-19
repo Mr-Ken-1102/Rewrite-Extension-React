@@ -1,19 +1,10 @@
 import { useMemo } from 'react';
 
-function hasOverride(overrides, key) {
-  return !!overrides && typeof overrides === 'object' && Object.prototype.hasOwnProperty.call(overrides, key);
-}
-
-function effectiveSource(overrides, key, fallback) {
-  return hasOverride(overrides, key) ? !!overrides[key] : !!fallback;
-}
-
 export function useContextPresentation({
   activeRole,
   config,
   tokenInfo,
   voiceIdentity = null,
-  contextOverrides = {},
   text,
 }) {
   const characterNameText = Array.isArray(tokenInfo.identities?.characterNames)
@@ -50,13 +41,12 @@ export function useContextPresentation({
 
   const contextSources = useMemo(() => {
     const freeModeBlocked = !!config.freeMode;
-    const source = (key, label, detail, fallback, disabled = false) => ({
+    const source = (key, label, detail, enabled, disabled = false) => ({
       key,
       label,
       detail,
-      enabled: disabled ? false : effectiveSource(contextOverrides, key, fallback),
+      enabled: disabled ? false : !!enabled,
       disabled,
-      overridden: hasOverride(contextOverrides, key),
     });
 
     const sources = [
@@ -64,12 +54,13 @@ export function useContextPresentation({
       source('persona', 'Persona', personaLabel, config.injectUser, freeModeBlocked),
       source('lore', 'Lore', 'Lore', config.injectLorebook, freeModeBlocked),
       source('surrounding', text('Around', 'Xung quanh'), text('Nearby context around the selection', 'Ngữ cảnh gần vùng chọn'), config.localContextEnabled),
-      source('history', text('History', 'Lịch sử'), text('History depth: ', 'Độ sâu lịch sử: ') + Math.max(0, Number(config.contextDepth) || 0), (config.contextDepth || 0) > 0, (config.contextDepth || 0) <= 0),
+      source(
+        'history',
+        text('History', 'Lịch sử'),
+        text('History depth: ', 'Độ sâu lịch sử: ') + Math.max(1, Number(config.contextDepth) || 1),
+        config.historyContextEnabled !== false,
+      ),
     ];
-
-    if (config.useExtenderMemory) {
-      sources.push(source('memory', text('Memory', 'Bộ nhớ'), text('Extender memory', 'Bộ nhớ Extender'), true, freeModeBlocked));
-    }
 
     return sources;
   }, [
@@ -80,8 +71,6 @@ export function useContextPresentation({
     config.injectLorebook,
     config.injectUser,
     config.localContextEnabled,
-    config.useExtenderMemory,
-    contextOverrides,
     personaLabel,
     text,
   ]);

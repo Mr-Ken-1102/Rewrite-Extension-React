@@ -49,12 +49,10 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const text = useCallback((en, viText) => (vi ? viText : en), [vi]);
 
   const [tip, setTip] = useState({ show: false, content: '', kind: 'default', x: 0, y: 0 });
-  const [contextOverrides, setContextOverrides] = useState({});
   const [trimOpen, setTrimOpen] = useState(false);
   const [trimText, setTrimText] = useState(selection?.text || '');
 
   useEffect(() => {
-    setContextOverrides({});
     setTrimOpen(false);
     setTrimText(selection?.text || '');
   }, [selection?.captureId, selection?.text]);
@@ -122,10 +120,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     .slice()
     .sort((a, b) => ((a.order || 0) - (b.order || 0)) || String(a.id).localeCompare(String(b.id))), [profiles]);
 
-  const rewriteSelection = useCallback(() => ({
-    ...selection,
-    contextOverrides: { ...contextOverrides },
-  }), [contextOverrides, selection]);
+  const rewriteSelection = useCallback(() => ({ ...selection }), [selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
   const voiceIdentity = selection?.multiMessage ? null : (voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null);
@@ -136,7 +131,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     config,
     tokenInfo,
     voiceIdentity,
-    contextOverrides,
     text,
   });
 
@@ -160,9 +154,22 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   }, [hideTooltip, onRewrite, rewriteSelection]);
 
   const toggleContextSource = useCallback((key, enabled) => {
-    setContextOverrides((current) => ({ ...current, [key]: !!enabled }));
+    const value = !!enabled;
+    const patch = key === 'character'
+      ? { injectChar: value }
+      : key === 'persona'
+        ? { injectUser: value }
+        : key === 'lore'
+          ? { injectLorebook: value }
+          : key === 'surrounding'
+            ? { localContextEnabled: value }
+            : key === 'history'
+              ? { historyContextEnabled: value }
+              : null;
+    if (!patch) return;
+    updateConfig(patch);
     keepFocus();
-  }, [keepFocus]);
+  }, [keepFocus, updateConfig]);
 
   const handlePinToggle = useCallback((event) => {
     event?.preventDefault?.();
