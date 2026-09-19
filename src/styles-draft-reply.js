@@ -4,7 +4,7 @@ export const RWA_DRAFT_REPLY_CSS = `
   z-index: 10003;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .rwa-draft-launcher {
@@ -157,6 +157,13 @@ export const RWA_DRAFT_REPLY_CSS = `
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.rwa-draft-persona-chip-generic {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--rwa2-brand, #d19a45) 44%, transparent);
+  background: color-mix(in srgb, var(--rwa2-brand, #d19a45) 6%, var(--rwa2-bg, #111217));
+  color: color-mix(in srgb, var(--rwa2-brand, #d19a45) 82%, white 18%);
+}
+
 .rwa-draft-close {
   appearance: none;
   width: 28px;
@@ -267,12 +274,28 @@ export const RWA_DRAFT_REPLY_CSS = `
   font-size: 9.6px;
   line-height: 1.5;
 }
-.rwa-draft-generation { display: grid; gap: 9px; }
+.rwa-draft-generation {
+  display: grid;
+  gap: 9px;
+  padding-top: 2px;
+}
+.rwa-draft-generation .rwar-working-rail {
+  margin-bottom: 1px;
+}
 .rwa-draft-loading-copy {
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   text-align: center;
   color: var(--rwa2-muted, rgba(255,255,255,.54));
   font-size: 10.5px;
   font-weight: 700;
+}
+.rwa-draft-live {
+  border-color: color-mix(in srgb, var(--rwa2-brand, #d19a45) 20%, var(--rwa2-border, rgba(255,255,255,.08))) !important;
+  box-shadow: inset 0 0 0 1px rgba(209,154,69,.025), 0 0 18px rgba(209,154,69,.035);
 }
 .rwa-draft-live,
 .rwa-draft-result {
@@ -346,6 +369,16 @@ export const RWA_DRAFT_REPLY_CSS = `
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rwa-draft-window *,
+  .rwa-draft-window,
+  .rwa-draft-launcher-cluster * {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition: none !important;
+  }
 }
 
 @media (max-width: 620px) {
