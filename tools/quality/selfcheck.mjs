@@ -387,17 +387,18 @@ ok('no persisted undo history in Zustand partialize', () => {
 });
 
 
-ok('new installs keep identity context opt-in while using the requested layout/history defaults', () => {
+ok('new installs use the requested layout and identity-assistance defaults without enabling broad context injection', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   assert.match(schema, /cols:\s*4/);
-  assert.match(schema, /rows:\s*4/);
+  assert.match(schema, /rows:\s*5/);
   assert.match(schema, /historyDepth:\s*1/);
   assert.match(schema, /contextDepth:\s*1/);
   assert.match(schema, /injectChar:\s*false/);
   assert.match(schema, /injectUser:\s*false/);
   assert.match(schema, /injectLorebook:\s*false/);
+  assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
-  assert.match(schema, /autoProfileEnabled:\s*false/);
+  assert.match(schema, /autoProfileEnabled:\s*true/);
   assert.match(schema, /draftReplyEnabled:\s*true/);
   assert.match(schema, /draftReplyHistoryDepth:\s*8/);
   assert.match(schema, /draftReplyLauncherPlacement:\s*'auto'/);
