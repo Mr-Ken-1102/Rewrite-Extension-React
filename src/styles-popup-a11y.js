@@ -1,30 +1,19 @@
 export const RWA_POPUP_A11Y_CSS = `
-/* Readability, target-size and keyboard-focus contract.
-   Loaded after popup layout/context so these cross-cutting rules stay authoritative. */
-
 .rwa2-version,
 .rwa2-context-chip,
 .rwa2-token-trigger,
 .rwa2-context-depth,
-.rwa2-context-length-head > span {
-  font-size: 11px !important;
-}
+.rwa2-length-label,
+.rwa2-length-auto { font-size:11px !important; }
 
-.rwa2-performance-key { font-size: 10px; }
-.rwa2-performance-meta { font-size: 11px; }
-.rwa2-profile-name { font-size: 13px; }
-.rwa2-identity-chip { font-size: 10.5px; }
-
-.rwa2-context-chip {
-  min-height: 24px;
-  padding: 0 7px;
-}
-
-.rwa2-brand-title { font-size: 12.5px; }
-.rwa2-popup .rwa2-auto-profile,
-.rwa2-popup .rwa2-action { font-size: 11.5px !important; }
-.rwa2-multi-notice { font-size: 11px; }
-.rwa2-tooltip { font-size: 11px; line-height: 1.45; }
+.rwa2-performance-key { font-size:9.5px; }
+.rwa2-performance-meta { font-size:10px; }
+.rwa2-profile-name { font-size:12px; }
+.rwa2-identity-chip { font-size:12px; }
+.rwa2-brand-title { font-size:17px; }
+.rwa2-popup .rwa2-action { font-size:11px !important; }
+.rwa2-multi-notice { font-size:11px; }
+.rwa2-tooltip { font-size:11px; line-height:1.45; }
 
 .rwa2-popup :is(
   .rwa2-icon-button,
@@ -33,29 +22,26 @@ export const RWA_POPUP_A11Y_CSS = `
   .rwa2-context-chip,
   .rwa2-token-trigger,
   .rwa2-action,
-  .rwa2-depth-input
+  .rwa2-depth-input,
+  .rwa2-length-auto
 ):focus-visible {
-  outline: 2px solid rgba(209, 154, 69, .72);
-  outline-offset: 2px;
-}
-
-.rwa2-popup .rwa-tog-wrap input:focus-visible + .rwa-tog-sl {
-  outline: 2px solid rgba(209, 154, 69, .72);
-  outline-offset: 2px;
+  outline:2px solid rgba(226,161,59,.72);
+  outline-offset:2px;
 }
 
 .rwa2-range:focus-visible {
-  outline: 2px solid rgba(209, 154, 69, .72);
-  outline-offset: 2px;
-  border-radius: 999px;
+  outline:2px solid rgba(226,161,59,.72);
+  outline-offset:2px;
+  border-radius:999px;
 }
 
-@media (prefers-contrast: more) {
+@media (prefers-contrast:more) {
   .rwa2-popup {
-    --rwa2-border: rgba(255,255,255,.18);
-    --rwa2-border-strong: rgba(255,255,255,.28);
-    --rwa2-muted: rgba(255,255,255,.68);
-    --rwa2-subtle: rgba(255,255,255,.54);
+    --rwa2-border:rgba(255,255,255,.18);
+    --rwa2-border-strong:rgba(255,255,255,.28);
+    --rwa2-muted:rgba(255,255,255,.68);
+    --rwa2-subtle:rgba(255,255,255,.54);
   }
 }
+
 `;
