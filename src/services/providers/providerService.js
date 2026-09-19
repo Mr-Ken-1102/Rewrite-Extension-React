@@ -266,6 +266,100 @@ async function readOpenAICompatibleStream(response, signal, onProgress, onStream
   return { content: streamed, streamed: true };
 }
 
+async function requestEngineRaw({
+  connectionId,
+  systemPrompt,
+  userPrompt,
+  parameters = null,
+  streaming = false,
+  timeout = 0,
+  signal,
+  onProgress,
+  onStreamStatus,
+  mode = 'marinara',
+}) {
+  const runId = createRawRunId();
+  if (streaming && typeof onStreamStatus === 'function') {
+    try { onStreamStatus({ status: 'connecting', runId, chars: 0 }); } catch { /* noop */ }
+  }
+
+  const body = {
+    connectionId,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    streaming,
+    runId,
+    ...(parameters ? { parameters } : {}),
+  };
+
+  let abortSent = false;
+  const abortServerRun = () => {
+    if (abortSent) return;
+    abortSent = true;
+    void MarinaraHost.apiFetch(`${ENDPOINTS.generateRaw}/abort`, {
+      method: 'POST',
+      body: JSON.stringify({ runId, connectionId }),
+    }, 5000).catch(() => {});
+  };
+
+  if (signal?.aborted) {
+    abortServerRun();
+    return { aborted: true };
+  }
+  signal?.addEventListener?.('abort', abortServerRun, { once: true });
+
+  try {
+    const response = await MarinaraHost.fetch(`/api${ENDPOINTS.generateRaw}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-marinara-csrf': '1',
+        Accept: streaming ? 'text/event-stream' : 'application/json',
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal,
+    }, timeout);
+
+    if (!response.ok) {
+      const raw = await response.text().catch(() => '');
+      let detail = raw;
+      try {
+        const parsed = JSON.parse(raw);
+        detail = parsed?.error || parsed?.message || raw;
+      } catch { /* keep raw text */ }
+      return normalizeProviderFailure(detail || `HTTP ${response.status} from Marinara.`);
+    }
+
+    if (streaming) {
+      const streamed = await readRawStream(response, signal, onProgress, onStreamStatus);
+      if (streamed.aborted) return { aborted: true };
+      if (streamed.error) {
+        debugLogService.add('inference.stream_error', {
+          mode,
+          runId,
+          partialChars: String(streamed.partial || '').length,
+          message: streamed.error,
+        });
+        return normalizeProviderFailure(streamed.error, 'Marinara streaming failed.');
+      }
+      return { result: streamed.content || '', streamed: true };
+    }
+
+    const data = await response.json().catch(() => ({}));
+    if (data?.aborted) return { aborted: true };
+    if (data?.error) return normalizeProviderFailure(data.error);
+    return { result: extractMarinaraContent(data), streamed: false };
+  } catch (err) {
+    if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
+    return normalizeProviderFailure(err, 'Marinara request failed.');
+  } finally {
+    signal?.removeEventListener?.('abort', abortServerRun);
+  }
+}
+
 async function queryLocalNetworkPermission(addressSpace) {
   const permissionName = addressSpace === 'loopback'
     ? 'loopback-network'
