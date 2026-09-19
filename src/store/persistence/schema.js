@@ -154,7 +154,7 @@ export function sanitizeConfig(value, legacyVersion = STORE_VERSION) {
       input.historyContextEnabled,
       input.contextDepth === undefined ? DEFAULT_CONFIG.historyContextEnabled : Number(input.contextDepth) > 0,
     ),
-    contextDepth: Math.trunc(clampNumber(input.contextDepth, 1, 20, DEFAULT_CONFIG.contextDepth)),
+    contextDepth: Math.trunc(clampNumber(input.contextDepth, 0, 20, DEFAULT_CONFIG.contextDepth)),
     onlyAltR: cleanBoolean(input.onlyAltR, DEFAULT_CONFIG.onlyAltR),
     speakerAware: cleanBoolean(input.speakerAware, DEFAULT_CONFIG.speakerAware),
     useExtenderMemory: cleanBoolean(input.useExtenderMemory, DEFAULT_CONFIG.useExtenderMemory),

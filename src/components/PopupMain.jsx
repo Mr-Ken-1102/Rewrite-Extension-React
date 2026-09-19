@@ -164,12 +164,15 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           : key === 'surrounding'
             ? { localContextEnabled: value }
             : key === 'history'
-              ? { historyContextEnabled: value }
+              ? {
+                  historyContextEnabled: value,
+                  ...(value && (Number(config.contextDepth) || 0) <= 0 ? { contextDepth: 1 } : {}),
+                }
               : null;
     if (!patch) return;
     updateConfig(patch);
     keepFocus();
-  }, [keepFocus, updateConfig]);
+  }, [config.contextDepth, keepFocus, updateConfig]);
 
   const handlePinToggle = useCallback((event) => {
     event?.preventDefault?.();

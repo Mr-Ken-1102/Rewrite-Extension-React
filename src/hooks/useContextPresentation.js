@@ -58,7 +58,7 @@ export function useContextPresentation({
         'history',
         text('History', 'Lịch sử'),
         text('History depth: ', 'Độ sâu lịch sử: ') + Math.max(1, Number(config.contextDepth) || 1),
-        config.historyContextEnabled !== false,
+        config.historyContextEnabled !== false && (Number(config.contextDepth) || 0) > 0,
       ),
     ];
 
