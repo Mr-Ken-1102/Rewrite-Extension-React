@@ -1,31 +1,30 @@
+function BrandSparkle() {
+  return (
+    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M12 1.8c.72 5.45 3.55 8.28 9 9-5.45.72-8.28 3.55-9 9-.72-5.45-3.55-8.28-9-9 5.45-.72 8.28-3.55 9-9Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function PopupHeader({
   language = 'en',
   selection,
   pinned,
-  identityProfile = null,
-  onRunIdentityProfile,
-  onTooltip,
-  onTooltipLeave,
   onDragStart,
   onTrim,
   onPinToggle,
+  onClose,
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const multiCount = Array.isArray(selection?.segments) ? selection.segments.length : 0;
-  const identityLabel = identityProfile
-    ? `${identityProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${identityProfile.identityName || identityProfile.name}`
-    : '';
-  const identityTooltip = identityProfile
-    ? `${identityLabel} · ${identityProfile.name}: ${identityProfile.prompt}`
-    : '';
   const iconProps = {
-    width: 14,
-    height: 14,
+    width: 18,
+    height: 18,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
-    strokeWidth: 1.8,
+    strokeWidth: 1.75,
     strokeLinecap: 'round',
     strokeLinejoin: 'round',
     'aria-hidden': true,
@@ -34,31 +33,24 @@ export function PopupHeader({
   return (
     <header className="rwa2-toolbar" onPointerDown={onDragStart}>
       <div className="rwa2-brand">
+        <span className="rwa2-brand-mark"><BrandSparkle /></span>
         <span className="rwa2-brand-title">Rewrite Assistant</span>
         <span className="rwa2-version">V3.0.3</span>
       </div>
 
       <div className="rwa2-toolbar-actions">
-        {identityProfile && (
-          <button
-            type="button"
-            data-rwa-no-drag="true"
-            className="rwa2-identity-chip"
-            aria-label={identityLabel}
-            aria-description={identityProfile.prompt}
-            onMouseEnter={(event) => onTooltip?.(event, identityTooltip)}
-            onMouseLeave={onTooltipLeave}
-            onFocus={(event) => onTooltip?.(event, identityTooltip)}
-            onBlur={onTooltipLeave}
-            onClick={(event) => {
-              event.stopPropagation();
-              onRunIdentityProfile?.(identityProfile);
-            }}
-          >
-            <span className="rwa2-identity-chip-mark" aria-hidden="true">✦</span>
-            <span className="rwa2-identity-chip-text">{identityLabel}</span>
-          </button>
-        )}
+        <button
+          type="button"
+          data-rwa-no-drag="true"
+          className={'rwa2-icon-button ' + (pinned ? 'rwa2-icon-button-active' : '')}
+          onClick={onPinToggle}
+          title={pinned ? text('Unpin popup', 'Bỏ ghim popup') : text('Pin popup here', 'Ghim popup tại đây')}
+          aria-label={pinned ? text('Unpin popup', 'Bỏ ghim popup') : text('Pin popup here', 'Ghim popup tại đây')}
+        >
+          <svg {...iconProps}>
+            <path d="m15.4 3.2 5.4 5.4-3.2 1.1-3.8 3.8.7 4.6-1.7 1.7-4.1-4.1-5.5 5.1 5.1-5.5-4.1-4.1 1.7-1.7 4.6.7 3.8-3.8 1.1-3.2Z" />
+          </svg>
+        </button>
         <button
           type="button"
           data-rwa-no-drag="true"
@@ -72,23 +64,17 @@ export function PopupHeader({
             ? text('Trim unavailable for multi-message selection', 'Không thể cắt vùng chọn qua nhiều tin nhắn')
             : text('Trim selection before sending', 'Cắt vùng chọn trước khi gửi')}
         >
-          <svg {...iconProps}>
-            <circle cx="6" cy="7" r="3" />
-            <circle cx="6" cy="17" r="3" />
-            <path d="M8.7 8.4 20 3M8.7 15.6 20 21M9 10l4 2" />
-          </svg>
+          <svg {...iconProps}><path d="M5 12h14" /></svg>
         </button>
         <button
           type="button"
           data-rwa-no-drag="true"
-          className={`rwa2-icon-button ${pinned ? 'rwa2-icon-button-active' : ''}`}
-          onClick={onPinToggle}
-          title={pinned ? text('Unpin popup', 'Bỏ ghim popup') : text('Pin popup here', 'Ghim popup tại đây')}
-          aria-label={pinned ? text('Unpin popup', 'Bỏ ghim popup') : text('Pin popup here', 'Ghim popup tại đây')}
+          className="rwa2-icon-button"
+          onClick={onClose}
+          title={text('Close popup', 'Đóng popup')}
+          aria-label={text('Close popup', 'Đóng popup')}
         >
-          <svg {...iconProps}>
-            <path d="M8 3h8M9 3v5l-3 4h12l-3-4V3M12 12v9" />
-          </svg>
+          <svg {...iconProps}><path d="M5 5l14 14M19 5 5 19" /></svg>
         </button>
       </div>
     </header>

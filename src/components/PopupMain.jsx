@@ -2,18 +2,18 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePersistentStore } from '../store/usePersistentStore';
 import { useRuntimeStore } from '../store/useRuntimeStore';
 import { useToastStore } from '../store/useToastStore';
-import { Button } from './ui/Button';
-import { Modal } from './ui/Modal';
 import { makeHistoryKey } from '../utils/historyKey';
 import { deriveTrimmedSelection } from '../utils/selectionContext';
-import { useRoleRadar } from '../hooks/useRoleRadar';
 import { useContextInspector } from '../hooks/useContextInspector';
 import { useContextPresentation } from '../hooks/useContextPresentation';
 import { usePopupDrag } from '../hooks/usePopupDrag';
 import { usePopupPosition } from '../hooks/usePopupPosition';
 import { PopupHeader } from './popup/PopupHeader';
 import { RewriteSection } from './popup/RewriteSection';
-import { ContextPanel } from './popup/ContextPanel';
+import { IdentityStatusRow } from './popup/IdentityStatusRow';
+import { ContextDeck } from './popup/ContextDeck';
+import { TrimSelectionModal } from './popup/TrimSelectionModal';
+import { PopupTooltip } from './popup/PopupTooltip';
 import { PopupFooter } from './popup/PopupFooter';
 import { voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
 
@@ -21,6 +21,7 @@ const EMPTY_HISTORY = Object.freeze({ undo: [], redo: [] });
 const TOOLTIP_GAP = 10;
 const TOOLTIP_MAX_WIDTH = 240;
 const PRESET_TOOLTIP_MAX_WIDTH = 320;
+const TOKEN_TOOLTIP_MAX_WIDTH = 286;
 const TOOLTIP_VIEWPORT_GUTTER = 8;
 
 function getTooltipViewportBounds() {
@@ -49,12 +50,10 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const text = useCallback((en, viText) => (vi ? viText : en), [vi]);
 
   const [tip, setTip] = useState({ show: false, content: '', kind: 'default', x: 0, y: 0 });
-  const [contextExclusions, setContextExclusions] = useState({});
   const [trimOpen, setTrimOpen] = useState(false);
   const [trimText, setTrimText] = useState(selection?.text || '');
 
   useEffect(() => {
-    setContextExclusions({});
     setTrimOpen(false);
     setTrimText(selection?.text || '');
   }, [selection?.captureId, selection?.text]);
@@ -76,7 +75,9 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const bounds = getTooltipViewportBounds();
     const kind = tooltipContent && typeof tooltipContent === 'object' ? tooltipContent.kind || 'default' : 'default';
-    const tooltipWidth = kind === 'preset' ? PRESET_TOOLTIP_MAX_WIDTH : TOOLTIP_MAX_WIDTH;
+    const tooltipWidth = kind === 'preset'
+      ? PRESET_TOOLTIP_MAX_WIDTH
+      : (kind === 'token' ? TOKEN_TOOLTIP_MAX_WIDTH : TOOLTIP_MAX_WIDTH);
     const rightCandidate = rect.right + TOOLTIP_GAP;
     const leftCandidate = rect.left - tooltipWidth - TOOLTIP_GAP;
     const x = rightCandidate + tooltipWidth <= bounds.right - TOOLTIP_VIEWPORT_GUTTER
@@ -110,7 +111,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     }
   }, [tip.show, tip.content, tip.kind, tip.x, tip.y]);
 
-  const colCount = useMemo(() => Math.max(1, config.cols || 4), [config.cols]);
+  const colCount = useMemo(() => Math.max(1, config.cols || 3), [config.cols]);
   const layoutColCount = useMemo(
     () => config.compact ? Math.min(colCount, 6) : Math.min(colCount, 4),
     [colCount, config.compact],
@@ -120,20 +121,14 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     .slice()
     .sort((a, b) => ((a.order || 0) - (b.order || 0)) || String(a.id).localeCompare(String(b.id))), [profiles]);
 
-  const activeRole = useRoleRadar(selection);
-
-  const rewriteSelection = useCallback(() => ({
-    ...selection,
-    contextExclusions: Object.keys(contextExclusions).filter((key) => contextExclusions[key]),
-  }), [contextExclusions, selection]);
+  const rewriteSelection = useCallback(() => ({ ...selection }), [selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
   const voiceIdentity = selection?.multiMessage ? null : (voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null);
   const autoProfile = voiceIdentity?.key && autoProfileBucket
     ? autoProfileBucket[voiceIdentity.key] || null
     : null;
-  const { radarText, radarColor, contextSources } = useContextPresentation({
-    activeRole,
+  const { contextSources } = useContextPresentation({
     config,
     tokenInfo,
     voiceIdentity,
@@ -150,6 +145,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     compact: config.compact,
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
+    contextOpen: true,
+    contextSummaryCount: contextSources.length,
   });
 
   const runProfile = useCallback((profile) => {
@@ -157,10 +154,26 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     onRewrite(profile, rewriteSelection());
   }, [hideTooltip, onRewrite, rewriteSelection]);
 
-  const toggleContextExclusion = useCallback((key) => {
-    setContextExclusions((current) => ({ ...current, [key]: !current[key] }));
+  const toggleContextSource = useCallback((key, enabled) => {
+    const value = !!enabled;
+    const patch = key === 'character'
+      ? { injectChar: value }
+      : key === 'persona'
+        ? { injectUser: value }
+        : key === 'lore'
+          ? { injectLorebook: value }
+          : key === 'surrounding'
+            ? { localContextEnabled: value }
+            : key === 'history'
+              ? {
+                  historyContextEnabled: value,
+                  ...(value && (Number(config.contextDepth) || 0) <= 0 ? { contextDepth: 1 } : {}),
+                }
+              : null;
+    if (!patch) return;
+    updateConfig(patch);
     keepFocus();
-  }, [keepFocus]);
+  }, [config.contextDepth, keepFocus, updateConfig]);
 
   const handlePinToggle = useCallback((event) => {
     event?.preventDefault?.();
@@ -219,11 +232,19 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           language={language}
           selection={selection}
           pinned={!!config.pinnedPos}
-          identityProfile={autoProfile} onRunIdentityProfile={runProfile}
-          onTooltip={showTooltip} onTooltipLeave={hideTooltip}
           onDragStart={handleDragStart}
           onTrim={openTrim}
           onPinToggle={handlePinToggle}
+          onClose={() => useRuntimeStore.getState().setPopupPosition(null)}
+        />
+
+        <IdentityStatusRow
+          language={language}
+          tokenInfo={tokenInfo}
+          voiceIdentity={voiceIdentity}
+          identityProfile={autoProfile}
+          onTooltip={showTooltip}
+          onTooltipLeave={hideTooltip}
         />
 
         <main className="rwa2-workbench">
@@ -233,7 +254,9 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
-            fastRewrite={config.fastRewrite !== false} liveStreaming={config.liveStreaming !== false} connectionMode={config.connMode}
+            config={config}
+            updateConfig={updateConfig}
+            keepFocus={keepFocus}
             selection={selection}
             mergeMultiMsg={config.mergeMultiMsg}
             onRun={runProfile}
@@ -241,20 +264,13 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             onTooltipLeave={hideTooltip}
           />
 
-          <ContextPanel
+          <ContextDeck
             language={language}
             config={config}
             updateConfig={updateConfig}
             keepFocus={keepFocus}
-            radarText={radarText}
-            radarColor={radarColor}
-            tokenInfo={tokenInfo}
-            voiceIdentity={voiceIdentity}
             contextSources={contextSources}
-            contextExclusions={contextExclusions}
-            onToggleContext={toggleContextExclusion}
-            onTooltip={showTooltip}
-            onTooltipLeave={hideTooltip}
+            onToggleContext={toggleContextSource}
           />
         </main>
 
@@ -272,46 +288,17 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
       </div>
 
       {trimOpen && (
-        <Modal title={text('Trim selection before sending', 'Cắt vùng chọn trước khi gửi')} onClose={() => setTrimOpen(false)} width="500px" zIndex={10004}>
-          <div className="rwa-plbl">{text('Captured text — remove only from the edges', 'Văn bản đã chọn — chỉ xóa từ hai đầu')}</div>
-          <textarea
-            className="rwa-inp"
-            value={trimText}
-            onChange={(event) => setTrimText(event.target.value)}
-            maxLength={Math.max(2, selection?.text?.length || 2)}
-            aria-label={text('Trimmed selection text', 'Văn bản vùng chọn đã cắt')}
-            style={{ minHeight: '140px', resize: 'vertical', fontSize: '12px' }}
-          />
-          <div style={{ fontSize: '10px', opacity: 0.65, marginBottom: '10px', lineHeight: 1.5 }}>
-            {text(
-              'Safety rule: this tool only accepts one unambiguous subspan of the captured selection. It cannot edit interior words.',
-              'Quy tắc an toàn: công cụ chỉ chấp nhận một đoạn con rõ ràng của vùng chọn đã chụp và không thể sửa các từ ở giữa.',
-            )}
-          </div>
-          <div className="rwa-foot">
-            <Button glow={false} onClick={() => setTrimOpen(false)} style={{ flex: 1 }}>{text('Cancel', 'Hủy')}</Button>
-            <Button glow={false} variant="rwa-accept" onClick={applyTrim} style={{ flex: 1 }}>{text('Use trimmed selection', 'Dùng vùng chọn đã cắt')}</Button>
-          </div>
-        </Modal>
+        <TrimSelectionModal
+          language={language}
+          selection={selection}
+          value={trimText}
+          onChange={setTrimText}
+          onCancel={() => setTrimOpen(false)}
+          onApply={applyTrim}
+        />
       )}
 
-      <div
-        ref={tooltipRef}
-        className={`rwa2-tooltip ${tip.kind === 'preset' ? 'rwa2-tooltip-preset' : ''} ${tip.show ? 'rwa2-tooltip-show' : ''}`.trim()}
-        role="tooltip"
-        aria-hidden={!tip.show}
-        style={{ left: tip.x, top: tip.y }}
-      >
-        {tip.kind === 'preset' && tip.content && typeof tip.content === 'object' ? (
-          <>
-            <div className="rwa2-tooltip-preset-head">
-              <span className="rwa2-tooltip-preset-name">{tip.content.title}</span>
-              <span className="rwa2-tooltip-preset-meta">{vi ? 'PROMPT THIẾT LẬP' : 'PRESET PROMPT'}</span>
-            </div>
-            <div className="rwa2-tooltip-preset-copy">{tip.content.prompt}</div>
-          </>
-        ) : String(tip.content || '')}
-      </div>
+      <PopupTooltip ref={tooltipRef} tip={tip} language={language} />
     </>
   );
 };

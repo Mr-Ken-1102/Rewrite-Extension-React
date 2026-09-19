@@ -119,7 +119,36 @@ export const TabContext = () => {
 
   return (
     <>
-      <div className="rwa-lbl">{text('CONTEXT BEHAVIOR', 'HÀNH VI NGỮ CẢNH')}</div>
+      <div className="rwa-lbl">{text('DEFAULT REWRITE SOURCES', 'NGUỒN VIẾT LẠI MẶC ĐỊNH')}</div>
+      <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
+        {text(
+          'These defaults are shared with the source switches in the popup. Changing either place is saved and applies to future rewrites.',
+          'Các mặc định này được dùng chung với các nút nguồn trong popup. Thay đổi ở một trong hai nơi sẽ được lưu và áp dụng cho các lần viết lại sau.',
+        )}
+      </div>
+      <Row title={text('Character', 'Nhân vật')} note={text('Include the resolved Character card when available.', 'Dùng Character card đã xác định khi có.')}>
+        <ToggleSwitch checked={config.injectChar} onChange={(value) => updateConfig({ injectChar: value })} />
+      </Row>
+      <Row title="Persona" note={text('Include the active Persona context when available.', 'Dùng ngữ cảnh Persona hiện tại khi có.')}>
+        <ToggleSwitch checked={config.injectUser} onChange={(value) => updateConfig({ injectUser: value })} />
+      </Row>
+      <Row title="Lore" note={text('Include relevant Lorebook context.', 'Dùng ngữ cảnh Lorebook phù hợp.')}>
+        <ToggleSwitch checked={config.injectLorebook} onChange={(value) => updateConfig({ injectLorebook: value })} />
+      </Row>
+      <Row title={text('Around', 'Xung quanh')} note={text('Include nearby prose around the selected text.', 'Dùng phần văn bản lân cận quanh vùng chọn.')}>
+        <ToggleSwitch checked={config.localContextEnabled} onChange={(value) => updateConfig({ localContextEnabled: value })} />
+      </Row>
+      <Row title={text('History', 'Lịch sử')} note={text('Include previous visible messages up to the History depth shown in the popup.', 'Dùng các tin nhắn hiển thị trước đó theo Độ sâu lịch sử trong popup.')}>
+        <ToggleSwitch
+          checked={config.historyContextEnabled !== false && (Number(config.contextDepth) || 0) > 0}
+          onChange={(value) => updateConfig({
+            historyContextEnabled: value,
+            ...(value && (Number(config.contextDepth) || 0) <= 0 ? { contextDepth: 1 } : {}),
+          })}
+        />
+      </Row>
+
+      <div className="rwa-lbl" style={{ marginTop: '22px' }}>{text('CONTEXT BEHAVIOR', 'HÀNH VI NGỮ CẢNH')}</div>
       <Row
         title={text('Speaker-aware editing', 'Chỉnh sửa theo vai người nói')}
         note={text('Adds a small role-derived reference note so user prose is not rewritten in character voice and character prose keeps its register.', 'Thêm một ghi chú ngắn theo vai để văn bản của người dùng không bị viết theo giọng nhân vật và văn bản nhân vật vẫn giữ đúng sắc thái.')}

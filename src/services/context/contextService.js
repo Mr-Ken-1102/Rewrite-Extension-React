@@ -413,13 +413,12 @@ export class ContextService {
 
   static async collectContext(savedSel, signal, options = {}) {
     const config = usePersistentStore.getState().config;
-    const exclusions = new Set(Array.isArray(savedSel?.contextExclusions) ? savedSel.contextExclusions : []);
-    const wantsHistory = config.contextDepth > 0 && !exclusions.has('history');
-    const wantsCharacter = !config.freeMode && config.injectChar && !exclusions.has('character');
-    const wantsPersona = !config.freeMode && config.injectUser && !exclusions.has('persona');
-    const wantsLore = !config.freeMode && config.injectLorebook && !exclusions.has('lore');
-    const wantsSurrounding = config.localContextEnabled && !exclusions.has('surrounding');
-    const wantsMemory = !config.freeMode && config.useExtenderMemory && !exclusions.has('memory');
+    const wantsHistory = config.historyContextEnabled !== false && config.contextDepth > 0;
+    const wantsCharacter = !config.freeMode && config.injectChar;
+    const wantsPersona = !config.freeMode && config.injectUser;
+    const wantsLore = !config.freeMode && config.injectLorebook;
+    const wantsSurrounding = config.localContextEnabled;
+    const wantsMemory = !config.freeMode && config.useExtenderMemory;
     const wantsSpeaker = !config.freeMode && config.speakerAware;
     const explicitCharacterIds = normalizeIdList(config.charCardIds);
     const needsMessageInfo = wantsHistory || wantsPersona || wantsSpeaker || (wantsCharacter && !explicitCharacterIds.length);
@@ -509,8 +508,7 @@ export class ContextService {
     const context = await this.collectContext(anchorSelection, signal, { messageInfo: { messages, index, message: firstMessage } });
 
     const config = usePersistentStore.getState().config;
-    const exclusions = new Set(Array.isArray(parentSelection?.contextExclusions) ? parentSelection.contextExclusions : []);
-    if (config.localContextEnabled && !exclusions.has('surrounding')) {
+    if (config.localContextEnabled) {
       const notes = segments.map((segment, segmentIndex) => {
         const selection = { ...parentSelection, ...segment, source: 'message', cid, segments: undefined, multiMessage: false };
         const local = extractSurroundingContext(selection, config.localContextWords);

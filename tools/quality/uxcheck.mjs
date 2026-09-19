@@ -178,21 +178,26 @@ ok('settings expose current-chat connection without duplicate model selection', 
   assert.match(api, /No separate model selection is required/);
 });
 
-ok('popup keeps explicit one-shot and token-estimate copy contracts', () => {
-  const source = read('./src/components/popup/ContextPanel.jsx');
-  assert.match(source, /This rewrite:/);
-  assert.match(source, /Selection \+ context ≈/);
-  assert.match(source, /rwa2-source-grid/);
-  assert.match(source, /rwa2-context-applied/);
+ok('popup keeps identity and token status on the approved row above modes and presets', () => {
+  const status = read('./src/components/popup/IdentityStatusRow.jsx');
+  const context = read('./src/components/popup/ContextDeck.jsx');
+  const tooltip = read('./src/components/popup/PopupTooltip.jsx');
+  assert.match(status, /rwa2-status-row/);
+  assert.match(status, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
+  assert.match(status, /kind: 'token'/);
+  assert.match(status, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.match(context, /rwa2-context-chip/);
+  assert.match(tooltip, /rwa2-tooltip-token/);
+  assert.doesNotMatch(context, /This rewrite|Input composition|rwa2-token-detail-grid|rwa2-token-popover/);
 });
 
-ok('context refresh keeps resolved identity and token text stable while toggles re-inspect', () => {
+ok('context refresh keeps resolved identity and token text stable while controls re-inspect', () => {
   const hook = read('./src/hooks/useContextInspector.js');
-  const panel = read('./src/components/popup/ContextPanel.jsx');
+  const status = read('./src/components/popup/IdentityStatusRow.jsx');
   assert.match(hook, /const sameSelection = current\.selectionKey === selectionKey/);
   assert.match(hook, /identities: sameSelection \? current\.identities : null/);
   assert.match(hook, /parts: sameSelection \? current\.parts : null/);
-  assert.match(panel, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.match(status, /tokenInfo\.loading && !tokenInfo\.parts/);
   assert.doesNotMatch(hook, /loading: true, identities: null/);
 });
 
@@ -207,7 +212,7 @@ ok('profile columns are configurable beyond two on the wide popup', () => {
   assert.doesNotMatch(settings, /Math\.min\(config\.cols \|\| 2, 2\)/);
 });
 
-ok('popup geometry is delegated to the rebalanced 620px isolated visual contract', () => {
+ok('popup geometry is delegated to the balanced 488px isolated visual contract', () => {
   const popup = read('./src/components/PopupMain.jsx');
   const position = read('./src/hooks/usePopupPosition.js');
   const geometry = read('./src/popupGeometry.js');
@@ -215,7 +220,7 @@ ok('popup geometry is delegated to the rebalanced 620px isolated visual contract
   assert.match(popup, /className="rwa2-popup"/);
   assert.match(popup, /rwa2-workbench/);
   assert.match(position, /POPUP_DESKTOP_WIDTH/);
-  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 620/);
+  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 488/);
   assert.match(geometry, /POPUP_GRID_COLUMNS = 12/);
   assert.match(css, /POPUP_DESKTOP_WIDTH/);
 });
@@ -242,7 +247,7 @@ ok('popup visual layer is loaded after the performance layer', () => {
 ok('popup visual system uses subdued amber and no blur paint tax', () => {
   const base = read('./src/styles-popup-base.js');
   const context = read('./src/styles-popup-context.js');
-  assert.match(base, /--rwa2-brand:\s*#d19a45/);
+  assert.match(base, /--rwa2-brand:\s*#e2a13b/);
   assert.doesNotMatch(`${base}\n${context}`, /backdrop-filter|filter:\s*blur/);
   assert.doesNotMatch(`${base}\n${context}`, /#ffb020/i);
 });

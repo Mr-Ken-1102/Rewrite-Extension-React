@@ -6,7 +6,7 @@ Rewrite Assistant uses natural Vietnamese UI copy rather than word-for-word tran
 
 | English concept | Preferred Vietnamese UI copy |
 | --- | --- |
-| Style preset / preset | Thiết lập sẵn |
+| Style preset / preset | Kiểu viết lại |
 | Custom Prompt | Yêu cầu tùy chỉnh |
 | Draft Reply | Soạn trả lời |
 | Persona Reply | Trả lời theo Persona |

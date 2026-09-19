@@ -389,9 +389,10 @@ ok('no persisted undo history in Zustand partialize', () => {
 
 ok('new installs use the requested layout and identity-assistance defaults without enabling broad context injection', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
-  assert.match(schema, /cols:\s*4/);
+  assert.match(schema, /cols:\s*3/);
   assert.match(schema, /rows:\s*5/);
   assert.match(schema, /historyDepth:\s*1/);
+  assert.match(schema, /historyContextEnabled:\s*true/);
   assert.match(schema, /contextDepth:\s*1/);
   assert.match(schema, /injectChar:\s*false/);
   assert.match(schema, /injectUser:\s*false/);
@@ -470,13 +471,14 @@ ok('Marinara v2.4.4 persona and lorebook contracts are pinned', () => {
 });
 
 ok('Fast Rewrite copy stays user-facing and accurately limited to Marinara connections', () => {
-  const contextPanel = readFileSync('./src/components/popup/ContextPanel.jsx', 'utf8');
+  const performanceStrip = readFileSync('./src/components/popup/PerformanceStrip.jsx', 'utf8');
+  const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
   const capabilities = readFileSync('./src/services/providers/providerCapabilities.js', 'utf8');
-  assert.match(contextPanel, /Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn/);
-  assert.match(contextPanel, /Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này/);
-  assert.match(contextPanel, /Hiện chỉ hỗ trợ kết nối Marinara/);
-  assert.match(contextPanel, /Fast Rewrite speeds up rewriting and returns results sooner/);
-  assert.match(contextPanel, /Currently supported only with Marinara connections/);
+  assert.match(performanceStrip, /Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn/);
+  assert.match(performanceStrip, /Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này/);
+  assert.match(performanceStrip, /Hiện chỉ hỗ trợ kết nối Marinara/);
+  assert.match(performanceStrip, /Fast Rewrite speeds up rewriting and returns results sooner/);
+  assert.match(performanceStrip, /Currently supported only with Marinara connections/);
   assert.match(capabilities, /marinara:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*true/);
   assert.match(capabilities, /sidecar:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
   assert.match(capabilities, /direct:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
@@ -705,12 +707,12 @@ ok('Draft Reply is preview-first, identity-safe with Persona or Generic mode, ca
   const popupHeader = readFileSync('./src/components/popup/PopupHeader.jsx', 'utf8');
   const popupFooter = readFileSync('./src/components/popup/PopupFooter.jsx', 'utf8');
   const localizationGuide = readFileSync('./docs/LOCALIZATION-VI.md', 'utf8');
-  assert.match(rewriteSection, /Thiết lập sẵn/);
-  assert.doesNotMatch(rewriteSection, /Chọn kiểu viết/);
+  assert.match(rewriteSection, /Kiểu viết lại/);
+  assert.doesNotMatch(rewriteSection, /Chọn kiểu viết|Thiết lập sẵn|13 styles|scroll or type/);
   assert.match(popupFooter, /Yêu cầu tùy chỉnh/);
   assert.match(modal, /Soạn trả lời/);
   assert.match(modal, /Hồ sơ giọng/);
-  assert.match(localizationGuide, /Style preset \/ preset \| Thiết lập sẵn/);
+  assert.match(localizationGuide, /Style preset \/ preset \| Kiểu viết lại/);
   assert.match(localizationGuide, /Persona Reply \| Trả lời theo Persona/);
   assert.match(session, /chatMode/);
   assert.match(session, /MutationObserver/);
@@ -805,7 +807,9 @@ ok('v2.4.4 sidecar prompt cap is enforced before request', () => {
 ok('persisted profile collection is bounded for Marinara private storage', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   assert.match(schema, /\.slice\(0, 64\)/);
-  assert.match(schema, /name:\s*profile\.name\.trim\(\)\.slice\(0, 80\)/);
+  assert.match(schema, /const rawName = profile\.name\.trim\(\)/);
+  assert.match(schema, /const normalizedName = builtInName && rawName === builtInName\.legacy/);
+  assert.match(schema, /name:\s*normalizedName\.slice\(0, 80\)/);
   assert.match(schema, /const rawPrompt = profile\.prompt\.trim\(\)\.slice\(0, 5000\)/);
   assert.match(schema, /let byteBudget = 500_000/);
   assert.match(schema, /truncateUtf8\(rawPrompt, byteBudget - baseBytes\)/);
@@ -1115,7 +1119,9 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
-  const contextPanel = readFileSync('./src/components/popup/ContextPanel.jsx', 'utf8');
+  const contextDeck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
+  const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
+  const performanceStrip = readFileSync('./src/components/popup/PerformanceStrip.jsx', 'utf8');
   const preview = readFileSync('./src/components/modals/PreviewModal.jsx', 'utf8');
   const profiles = readFileSync('./src/components/modals/settings/TabProfiles.jsx', 'utf8');
   const custom = readFileSync('./src/components/modals/CustomPromptModal.jsx', 'utf8');
@@ -1128,15 +1134,27 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(contextPolicy, /'history',[\s\S]{0,120}'memory',[\s\S]{0,120}'lore',[\s\S]{0,120}'character',[\s\S]{0,120}'persona',[\s\S]{0,120}'surrounding',[\s\S]{0,120}'ledger'/);
   assert.match(api, /droppedContext:\s*promptInfo\.dropped/);
   assert.match(api, /onContextTrim/);
-  assert.match(popup, /contextExclusions/);
+  assert.doesNotMatch(popup, /contextOverrides|setContextOverrides/);
+  assert.match(popup, /historyContextEnabled: value/);
   assert.match(popup, /selection\?\.captureId/);
   assert.match(popup, /deriveTrimmedSelection/);
   assert.match(popup, /pinnedPos/);
-  assert.match(contextPanel, /This rewrite:/);
-  assert.match(contextPanel, /rwa2-context-applied/);
+  assert.match(contextDeck, /rwa2-context-chip/);
+  const identityStatus = readFileSync('./src/components/popup/IdentityStatusRow.jsx', 'utf8');
+  assert.match(identityStatus, /kind: 'token'/);
+  assert.doesNotMatch(contextDeck, /Persistent context sources/);
+  assert.match(contextTab, /DEFAULT REWRITE SOURCES/);
+  assert.match(contextTab, /config\.injectChar/);
+  assert.match(contextTab, /config\.injectUser/);
+  assert.match(contextTab, /config\.injectLorebook/);
+  assert.match(contextTab, /config\.localContextEnabled/);
+  assert.doesNotMatch(contextDeck, /This rewrite/);
+  assert.match(performanceStrip, /key:\s*'FREE MODE'/);
+  assert.match(performanceStrip, /key:\s*'FAST REWRITE'/);
+  assert.match(performanceStrip, /key:\s*'STREAM'/);
   const contextPresentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
-  assert.match(contextPresentation, /Char: \$\{characterNameText\}/);
-  assert.match(contextPresentation, /Persona: \$\{personaNameText\}/);
+  assert.match(contextPresentation, /'Char: ' \+ characterNameText/);
+  assert.match(contextPresentation, /'Persona: ' \+ personaNameText/);
   assert.match(preview, /Rewrite again/);
   assert.match(preview, /Viết lại lần nữa/);
   assert.match(preview, /Copied result to clipboard/);
@@ -1144,6 +1162,28 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(profiles, /profile\.hidden/);
   assert.match(custom, /Save as Profile/);
   assert.match(dom, /captureId: nextSelectionCaptureId\(\)/);
+});
+
+ok('popup source switches directly update persistent defaults used by later rewrites', () => {
+  const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
+  const presentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
+  const context = readFileSync('./src/services/context/contextService.js', 'utf8');
+  const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
+  assert.doesNotMatch(popup, /contextOverrides|setContextOverrides/);
+  assert.match(popup, /injectChar: value/);
+  assert.match(popup, /injectUser: value/);
+  assert.match(popup, /injectLorebook: value/);
+  assert.match(popup, /localContextEnabled: value/);
+  assert.match(popup, /historyContextEnabled: value/);
+  assert.doesNotMatch(presentation, /effectiveSource|hasOverride|contextOverrides/);
+  assert.match(presentation, /config\.historyContextEnabled !== false/);
+  assert.doesNotMatch(context, /oneShotSourceEnabled|contextOverrides|contextExclusions/);
+  assert.match(context, /const wantsCharacter = !config\.freeMode && config\.injectChar/);
+  assert.match(context, /const wantsPersona = !config\.freeMode && config\.injectUser/);
+  assert.match(context, /const wantsLore = !config\.freeMode && config\.injectLorebook/);
+  assert.match(context, /const wantsSurrounding = config\.localContextEnabled/);
+  assert.match(context, /const wantsHistory = config\.historyContextEnabled !== false && config\.contextDepth > 0/);
+  assert.match(schema, /historyContextEnabled:\s*true/);
 });
 
 ok('parity part 2 adds context management with requested identity-assistance defaults without weakening provider trust', () => {
@@ -1197,6 +1237,17 @@ ok('release pipeline runs dependency-free preflights before package-dependent bu
   const ciInstall = ci.indexOf('run: npm ci');
   assert.ok(ciSource >= 0 && ciSelf > ciSource && ciFailure > ciSelf && ciManifest > ciFailure && ciInstall > ciManifest);
   assert.doesNotMatch(ci, /npm ci --ignore-scripts/);
+});
+
+ok('built-in preset title refresh preserves ids, prompts, and user-customized names', () => {
+  const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
+  assert.match(schema, /expand:\s*Object\.freeze\(\{ legacy: 'Expand', current: 'Elaborate' \}\)/);
+  assert.match(schema, /compress:\s*Object\.freeze\(\{ legacy: 'Compress', current: 'Tighten' \}\)/);
+  assert.match(schema, /grammar:\s*Object\.freeze\(\{ legacy: 'Grammar Fix', current: 'Polish' \}\)/);
+  assert.match(schema, /name:\s*'Naturalize'/);
+  assert.match(schema, /rawName === builtInName\.legacy/);
+  assert.match(schema, /builtInName\.current/);
+  assert.match(schema, /prompt:\s*'Remove formulaic AI-writing patterns/);
 });
 
 ok('store schema v6 keeps bounded context defaults and identity-scoped Voice Profiles', () => {
@@ -1261,17 +1312,24 @@ ok('debug logging is opt-in, bounded, session-only, and metadata-owned by the se
   assert.match(dataTab, /Debug logging is opt-in/);
 });
 
-ok('token preview is explicitly labeled Selection + context and snapshots selection once', () => {
-  const panel = readFileSync('./src/components/popup/ContextPanel.jsx', 'utf8');
+ok('token preview stays compact beside identity and uses the shared right-side hover tooltip', () => {
+  const status = readFileSync('./src/components/popup/IdentityStatusRow.jsx', 'utf8');
+  const deck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
+  const tooltip = readFileSync('./src/components/popup/PopupTooltip.jsx', 'utf8');
   const hook = readFileSync('./src/hooks/useContextInspector.js', 'utf8');
-  assert.match(panel, /Selection \+ context ≈/);
-  assert.match(panel, /not a provider billing\/tokenizer count/);
+  assert.match(status, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
+  assert.match(status, /Show token estimate details/);
+  assert.match(status, /kind: 'token'/);
+  assert.match(status, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.match(status, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
+  assert.doesNotMatch(deck, /rwa2-token-popover|rwa2-context-toggle|rwa2-context-collapse/);
+  assert.match(tooltip, /rwa2-tooltip-token/);
   assert.match(hook, /const oneShot = rewriteSelection\(\)/);
   assert.match(hook, /APIService\.inspectContext\(oneShot/);
   assert.match(hook, /sameSelection \? current\.parts : null/);
   assert.match(hook, /sameSelection \? current\.identities : null/);
   assert.match(hook, /tokenInfo\.selectionKey !== selectionKey/);
-  assert.match(panel, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.match(status, /tokenInfo\.loading && !tokenInfo\.parts/);
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /characterNames:\s*extractIdentityNames\(context\.character\)/);
   assert.match(context, /personaNames:\s*extractIdentityNames\(context\.persona\)/);
@@ -1562,9 +1620,12 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(hook, /setRetryTick\(\(value\) => value \+ 1\)/);
   assert.match(popup, /autoProfileBucket\[voiceIdentity\.key\]/);
   assert.match(popup, /identityProfile=\{autoProfile\}/);
-  assert.match(popupHeader, /identityKind === 'persona'/);
-  assert.match(popupHeader, /rwa2-identity-chip/);
-  assert.doesNotMatch(rewriteSection, /autoProfile|rwa2-auto-profile/);
+  assert.match(popup, /voiceIdentity=\{voiceIdentity\}/);
+  assert.doesNotMatch(popupHeader, /identityProfile|voiceIdentity|rwa2-identity-chip/);
+  assert.doesNotMatch(rewriteSection, /featuredProfile|featuredLabel/);
+  const identityStatus = readFileSync('./src/components/popup/IdentityStatusRow.jsx', 'utf8');
+  assert.match(identityStatus, /rwa2-identity-profile-ready/);
+  assert.match(identityStatus, /identityKind === 'persona'/);
   assert.match(contextTab, /Automatic Character \/ Persona voice profiles/);
   assert.match(contextTab, /Generate for selected identity/);
   assert.match(identity, /persona:\$\{source\}:/);
