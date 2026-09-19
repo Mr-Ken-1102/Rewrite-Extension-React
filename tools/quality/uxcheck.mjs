@@ -17,11 +17,12 @@ ok('popup drag has pointer cancel, blur and visibility fail-safe cleanup', () =>
   assert.match(source, /setDragging\(false\)/);
 });
 
-ok('popup drag uses a minimal transform-only hot path', () => {
+ok('popup drag batches compositor-only writes to one animation frame', () => {
   const source = read('./src/hooks/usePopupDrag.js');
   assert.match(source, /setPointerCapture/);
   assert.match(source, /translate3d\(/);
-  assert.doesNotMatch(source, /requestAnimationFrame/);
+  assert.match(source, /requestAnimationFrame\(flushVisual\)/);
+  assert.match(source, /cancelAnimationFrame\(frameId\)/);
   assert.doesNotMatch(source, /document\.body\.style/);
   assert.doesNotMatch(source, /classList\.add\('rwa-dragging-active'\)/);
 
@@ -29,9 +30,12 @@ ok('popup drag uses a minimal transform-only hot path', () => {
   assert.ok(moveMatch, 'onPointerMove handler must be present');
   const moveBody = moveMatch[1];
   assert.doesNotMatch(moveBody, /getBoundingClientRect|offsetWidth|offsetHeight/);
-  assert.doesNotMatch(moveBody, /setPopupPosition|updateConfig|setDragging/);
-  assert.doesNotMatch(moveBody, /requestAnimationFrame|setTimeout/);
-  assert.match(moveBody, /style\.transform = `translate3d/);
+  assert.doesNotMatch(moveBody, /setPopupPosition|updateConfig|setDragging|setTimeout/);
+  assert.match(moveBody, /requestAnimationFrame\(flushVisual\)/);
+
+  const flushMatch = source.match(/const flushVisual = \(\) => \{([\s\S]*?)\n    \};/);
+  assert.ok(flushMatch, 'drag visual flush must be present');
+  assert.match(flushMatch[1], /style\.transform = `translate3d/);
 });
 
 ok('popup drag CSS avoids descendant-wide drag invalidation', () => {
