@@ -633,7 +633,7 @@ ok('modeless Draft Reply geometry stays inside the visual viewport', () => {
   assert.deepEqual(resizedDefault, { left: 40, top: 76 });
 });
 
-ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-sends', () => {
+ok('Draft Reply is preview-first, identity-safe with Persona or Generic mode, cancellable, and never auto-sends', () => {
   const app = readFileSync('./src/App.jsx', 'utf8');
   const service = readFileSync('./src/services/draftReplyService.js', 'utf8');
   const session = readFileSync('./src/hooks/useDraftReplySession.js', 'utf8');
@@ -650,6 +650,8 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(app, /<DraftReplyModal/);
   assert.match(app, /draftUiOpen \|\| !!popupPosition/);
   assert.match(service, /CURRENT USER PERSONA/);
+  assert.match(service, /Generic user reply — no active Persona is selected/);
+  assert.match(service, /expectNoPersona/);
   assert.match(service, /Never write, invent, or continue dialogue/);
   assert.match(service, /ProviderService\.runInference/);
   assert.match(service, /draftReplyHistoryDepth/);
@@ -668,6 +670,7 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(launcher, /data-rwa-feature="draft-reply-settings"/);
   assert.match(launcher, /onClick=\{onOpenSettings\}/);
   assert.match(launcher, /Mở cài đặt Rewrite Assistant/);
+  assert.ok(launcher.indexOf('data-rwa-feature="draft-reply-settings"') < launcher.indexOf('data-rwa-feature="draft-reply"'));
   assert.match(launcher, /data-rwa-chat-mode/);
   assert.match(launcher, /draftReplyLauncherPlacement/);
   assert.match(launcher, /draftReplyLauncherPositions/);
@@ -701,12 +704,18 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(session, /activeChatId !== current\.chatId/);
   assert.match(session, /DraftReplyService\.resolveActivePersona\(chatId/);
   assert.match(session, /personaResolving: true/);
-  assert.match(session, /expectedPersonaKey: current\.persona\.key/);
+  assert.match(session, /expectedPersonaKey: current\.persona\?\.key \|\| ''/);
+  assert.match(session, /expectNoPersona: current\.genericMode === true/);
+  assert.match(session, /genericMode: true/);
   assert.match(session, /expectedPersonaFingerprint: current\.personaSourceFingerprint/);
   assert.match(session, /resolved\.identity\.key !== current\.persona\.key/);
   assert.match(session, /resolved\.sourceFingerprint !== current\.personaSourceFingerprint/);
   assert.match(modal, /Resolving Persona/);
-  assert.match(modal, /disabled=\{isPersonaResolving \|\| !state\.persona\?\.key\}/);
+  assert.match(modal, /Generic reply|Trả lời chung/);
+  assert.match(modal, /Chế độ chung|Generic mode/);
+  assert.match(modal, /disabled=\{isPersonaResolving \|\| \(!isGenericMode && !state\.persona\?\.key\)\}/);
+  assert.match(modal, /rwa-waiting-dots/);
+  assert.match(modal, /rwar-working-rail/);
   assert.match(modal, /useFloatingPanelDrag/);
   assert.match(modal, /draftReplyPanelPositions/);
   assert.match(modal, /draftReplyPanelPositionResetVersion/);
@@ -717,6 +726,7 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(modal, /panel\.dataset\.rwaDragging === 'true'/);
   assert.match(draftStyles, /\.rwa-draft-launcher-cluster/);
   assert.match(draftStyles, /\.rwa-draft-settings-button/);
+  assert.match(draftStyles, /\.rwa-draft-persona-chip-generic/);
   assert.match(modal, /aria-modal="false"/);
   assert.match(modal, /data-rwa-feature="draft-reply-window"/);
   assert.match(modal, /rwa-draft-header/);
