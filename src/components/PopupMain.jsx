@@ -2,8 +2,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePersistentStore } from '../store/usePersistentStore';
 import { useRuntimeStore } from '../store/useRuntimeStore';
 import { useToastStore } from '../store/useToastStore';
-import { Button } from './ui/Button';
-import { Modal } from './ui/Modal';
 import { makeHistoryKey } from '../utils/historyKey';
 import { deriveTrimmedSelection } from '../utils/selectionContext';
 import { useContextInspector } from '../hooks/useContextInspector';
@@ -15,6 +13,8 @@ import { RewriteSection } from './popup/RewriteSection';
 import { LiveRail } from './popup/LiveRail';
 import { RecipeBar } from './popup/RecipeBar';
 import { RequestInspector } from './popup/RequestInspector';
+import { TrimSelectionModal } from './popup/TrimSelectionModal';
+import { PopupTooltip } from './popup/PopupTooltip';
 import { PopupFooter } from './popup/PopupFooter';
 import { voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
 
@@ -292,46 +292,17 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
       </div>
 
       {trimOpen && (
-        <Modal title={text('Trim selection before sending', 'Cắt vùng chọn trước khi gửi')} onClose={() => setTrimOpen(false)} width="500px" zIndex={10004}>
-          <div className="rwa-plbl">{text('Captured text — remove only from the edges', 'Văn bản đã chọn — chỉ xóa từ hai đầu')}</div>
-          <textarea
-            className="rwa-inp"
-            value={trimText}
-            onChange={(event) => setTrimText(event.target.value)}
-            maxLength={Math.max(2, selection?.text?.length || 2)}
-            aria-label={text('Trimmed selection text', 'Văn bản vùng chọn đã cắt')}
-            style={{ minHeight: '140px', resize: 'vertical', fontSize: '12px' }}
-          />
-          <div style={{ fontSize: '10px', opacity: 0.65, marginBottom: '10px', lineHeight: 1.5 }}>
-            {text(
-              'Safety rule: this tool only accepts one unambiguous subspan of the captured selection. It cannot edit interior words.',
-              'Quy tắc an toàn: công cụ chỉ chấp nhận một đoạn con rõ ràng của vùng chọn đã chụp và không thể sửa các từ ở giữa.',
-            )}
-          </div>
-          <div className="rwa-foot">
-            <Button glow={false} onClick={() => setTrimOpen(false)} style={{ flex: 1 }}>{text('Cancel', 'Hủy')}</Button>
-            <Button glow={false} variant="rwa-accept" onClick={applyTrim} style={{ flex: 1 }}>{text('Use trimmed selection', 'Dùng vùng chọn đã cắt')}</Button>
-          </div>
-        </Modal>
+        <TrimSelectionModal
+          language={language}
+          selection={selection}
+          value={trimText}
+          onChange={setTrimText}
+          onCancel={() => setTrimOpen(false)}
+          onApply={applyTrim}
+        />
       )}
 
-      <div
-        ref={tooltipRef}
-        className={`rwa2-tooltip ${tip.kind === 'preset' ? 'rwa2-tooltip-preset' : ''} ${tip.show ? 'rwa2-tooltip-show' : ''}`.trim()}
-        role="tooltip"
-        aria-hidden={!tip.show}
-        style={{ left: tip.x, top: tip.y }}
-      >
-        {tip.kind === 'preset' && tip.content && typeof tip.content === 'object' ? (
-          <>
-            <div className="rwa2-tooltip-preset-head">
-              <span className="rwa2-tooltip-preset-name">{tip.content.title}</span>
-              <span className="rwa2-tooltip-preset-meta">{vi ? 'PROMPT THIẾT LẬP' : 'PRESET PROMPT'}</span>
-            </div>
-            <div className="rwa2-tooltip-preset-copy">{tip.content.prompt}</div>
-          </>
-        ) : String(tip.content || '')}
-      </div>
+      <PopupTooltip ref={tooltipRef} tip={tip} language={language} />
     </>
   );
 };
