@@ -39,7 +39,7 @@ export function PerformanceStrip({
 
   const items = [
     {
-      key: 'FREE',
+      key: 'FREE MODE',
       state: config.freeMode ? text('On', 'Bật') : text('Off', 'Tắt'),
       active: !!config.freeMode,
       disabled: false,
@@ -47,7 +47,7 @@ export function PerformanceStrip({
       toggle: () => updateConfig({ freeMode: !config.freeMode }),
     },
     {
-      key: 'FAST',
+      key: 'FAST REWRITE',
       state: capabilities.fastRewrite
         ? (config.fastRewrite !== false ? text('On', 'Bật') : text('Off', 'Tắt'))
         : text('Unavailable', 'Không hỗ trợ'),
@@ -90,8 +90,9 @@ export function PerformanceStrip({
           onBlur={onTooltipLeave}
           aria-description={item.help}
         >
+          <span className="rwa2-performance-dot" aria-hidden="true"></span>
           <span className="rwa2-performance-key">{item.key}</span>
-          <span className="rwa2-performance-meta" data-short={item.state}>{item.state}</span>
+          <span className="rwa2-performance-meta">{item.state}</span>
           {index < items.length - 1 && <span className="rwa2-performance-divider" aria-hidden="true"></span>}
         </button>
       ))}
