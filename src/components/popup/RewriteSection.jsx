@@ -36,16 +36,24 @@ export function RewriteSection({
         </div>
       </div>
 
-      {fastRewrite && (
-        <div className="rwa2-fast-strip" role="status" aria-label={text('Fast Rewrite enabled with live SSE streaming', 'Viết lại nhanh đang bật với SSE streaming trực tiếp')}>
-          <div className="rwa2-fast-copy">
-            <span className="rwa2-fast-title">{text('Fast Rewrite', 'Viết lại nhanh')}</span>
-            <span className="rwa2-fast-meta">{text('Fast path · SSE live', 'Đường nhanh · SSE trực tiếp')}</span>
-          </div>
-          <span className="rwa2-fast-live">{text('LIVE', 'NHANH')}</span>
-          <span className="rwa2-fast-rail" aria-hidden="true"><span></span></span>
+      <div
+        className={`rwa2-fast-strip ${fastRewrite ? 'rwa2-fast-strip-active' : 'rwa2-fast-strip-idle'}`}
+        role="status"
+        aria-label={fastRewrite
+          ? text('Fast Rewrite enabled with live SSE streaming', 'Viết lại nhanh đang bật với SSE streaming trực tiếp')
+          : text('Standard rewrite path active', 'Đang dùng luồng viết lại tiêu chuẩn')}
+      >
+        <div className="rwa2-fast-copy">
+          <span className="rwa2-fast-title">{text('Fast Rewrite', 'Viết lại nhanh')}</span>
+          <span className="rwa2-fast-meta">
+            {fastRewrite
+              ? text('Fast path · SSE live', 'Đường nhanh · SSE trực tiếp')
+              : text('Standard path', 'Luồng tiêu chuẩn')}
+          </span>
         </div>
-      )}
+        <span className="rwa2-fast-live">{fastRewrite ? text('LIVE', 'NHANH') : text('STD', 'CHUẨN')}</span>
+        <span className="rwa2-fast-rail" aria-hidden="true"><span></span></span>
+      </div>
 
       {autoProfile && (
         <Button
@@ -76,8 +84,6 @@ export function RewriteSection({
         rows={rows}
         compact={compact}
         onRun={onRun}
-        onTooltip={onTooltip}
-        onTooltipLeave={onTooltipLeave}
       />
     </section>
   );
