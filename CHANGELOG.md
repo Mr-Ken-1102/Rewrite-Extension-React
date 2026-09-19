@@ -30,9 +30,10 @@
 - New installs show five profile rows, keep Speaker-aware editing and Persona Reply enabled, keep Extender memory disabled, and keep automatic Character / Persona Voice Profile generation OFF as an explicit opt-in.
 - Simplified Fast Rewrite guidance around the user-visible speed/quality trade-off and made its current Marinara-only support explicit.
 - Moved transient success/warning/error feedback into a top-center notification stack so confirmations are visible without scanning the bottom edge of the browser.
-- Refined the main popup around the proven original layout: a compact three-mode FREE / FAST / STREAM strip stays with the rewrite presets, while the lower context half is collapsed by default and expands only when detailed controls are needed.
-- New installs use a 3-column × 5-row preset grid for a more compact, balanced popup; wider column counts remain configurable.
-- The collapsed lower row always shows what applies to this rewrite, while token breakdown, persistent context sources, History depth, and Length live in the expandable Context details area.
+- Refined the main popup around the proven original layout: the redundant style heading/count row is removed, and a flat FREE MODE / FAST REWRITE / STREAM rail is visually separated from the preset grid.
+- New installs use a 3-column × 5-row preset grid and a 488px desktop target for a more compact, balanced popup; wider column counts remain configurable.
+- The collapsed request row keeps semantic context chips visible without a "This rewrite" label. Token count opens its own lightweight breakdown popover, while a separate chevron controls the lower Sources / History depth / Length drawer.
+- Compacted the footer by keeping Custom Prompt as the wide primary action and replacing the Settings text button with a named gear icon.
 - Reduced Character/Persona name repetition by keeping the full detected identity in the popup header while the current-request chips use semantic source labels.
 - Refreshed built-in preset titles (for example Elaborate, Tighten, Inner Voice, Naturalize, and Polish) without changing preset IDs or prompts; legacy default names migrate only when the user has not renamed them.
 
