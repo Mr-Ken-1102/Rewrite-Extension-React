@@ -2,6 +2,7 @@ export function PopupHeader({
   language = 'en',
   selection,
   pinned,
+  voiceIdentity = null,
   identityProfile = null,
   onRunIdentityProfile,
   onTooltip,
@@ -13,12 +14,19 @@ export function PopupHeader({
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const multiCount = Array.isArray(selection?.segments) ? selection.segments.length : 0;
-  const identityLabel = identityProfile
-    ? `${identityProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${identityProfile.identityName || identityProfile.name}`
+  const identityKind = voiceIdentity?.kind || identityProfile?.identityKind || '';
+  const identityName = String(voiceIdentity?.name || identityProfile?.identityName || identityProfile?.name || '').trim();
+  const identityLabel = identityName
+    ? `${identityKind === 'persona' ? 'Persona' : 'Char'}: ${identityName}`
     : '';
   const identityTooltip = identityProfile
-    ? `${identityLabel} · ${identityProfile.name}: ${identityProfile.prompt}`
-    : '';
+    ? `${identityLabel}\nVoice Profile: ${identityProfile.name}\n${identityProfile.prompt}`
+    : identityLabel
+      ? text(
+          `${identityLabel}\nDetected rewrite identity. No reusable Voice Profile is active for this identity.`,
+          `${identityLabel}\nDanh tính viết lại đã được nhận diện. Chưa có Hồ sơ giọng tái sử dụng đang hoạt động cho danh tính này.`,
+        )
+      : '';
   const iconProps = {
     width: 14,
     height: 14,
@@ -31,6 +39,13 @@ export function PopupHeader({
     'aria-hidden': true,
   };
 
+  const identityContents = identityLabel ? (
+    <>
+      <span className="rwa2-identity-chip-mark" aria-hidden="true">{identityProfile ? '✦' : '•'}</span>
+      <span className="rwa2-identity-chip-text">{identityLabel}</span>
+    </>
+  ) : null;
+
   return (
     <header className="rwa2-toolbar" onPointerDown={onDragStart}>
       <div className="rwa2-brand">
@@ -39,25 +54,36 @@ export function PopupHeader({
       </div>
 
       <div className="rwa2-toolbar-actions">
-        {identityProfile && (
-          <button
-            type="button"
-            data-rwa-no-drag="true"
-            className="rwa2-identity-chip"
-            aria-label={identityLabel}
-            aria-description={identityProfile.prompt}
-            onMouseEnter={(event) => onTooltip?.(event, identityTooltip)}
-            onMouseLeave={onTooltipLeave}
-            onFocus={(event) => onTooltip?.(event, identityTooltip)}
-            onBlur={onTooltipLeave}
-            onClick={(event) => {
-              event.stopPropagation();
-              onRunIdentityProfile?.(identityProfile);
-            }}
-          >
-            <span className="rwa2-identity-chip-mark" aria-hidden="true">✦</span>
-            <span className="rwa2-identity-chip-text">{identityLabel}</span>
-          </button>
+        {identityLabel && (
+          identityProfile ? (
+            <button
+              type="button"
+              data-rwa-no-drag="true"
+              className="rwa2-identity-chip rwa2-identity-chip-profile"
+              aria-label={identityLabel}
+              aria-description={identityProfile.prompt}
+              onMouseEnter={(event) => onTooltip?.(event, identityTooltip)}
+              onMouseLeave={onTooltipLeave}
+              onFocus={(event) => onTooltip?.(event, identityTooltip)}
+              onBlur={onTooltipLeave}
+              onClick={(event) => {
+                event.stopPropagation();
+                onRunIdentityProfile?.(identityProfile);
+              }}
+            >
+              {identityContents}
+            </button>
+          ) : (
+            <div
+              data-rwa-no-drag="true"
+              className="rwa2-identity-chip rwa2-identity-chip-static"
+              aria-label={identityLabel}
+              onMouseEnter={(event) => onTooltip?.(event, identityTooltip)}
+              onMouseLeave={onTooltipLeave}
+            >
+              {identityContents}
+            </div>
+          )
         )}
         <button
           type="button"
