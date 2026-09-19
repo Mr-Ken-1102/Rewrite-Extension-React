@@ -8,10 +8,12 @@ export const POPUP_COMPACT_MIN_CELL = 100;
 export const POPUP_PROFILE_ROW_HEIGHT = 30;
 export const POPUP_COMPACT_ROW_HEIGHT = 27;
 export const POPUP_PROFILE_ROW_GAP = 5;
-export const POPUP_FIXED_HEIGHT = 270;
+export const POPUP_FIXED_HEIGHT = 145;
 export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
-export const POPUP_PERFORMANCE_STRIP_HEIGHT = 35;
-export const POPUP_STACKED_CONTEXT_EXTRA = 78;
+export const POPUP_LIVE_RAIL_HEIGHT = 34;
+export const POPUP_RECIPE_BAR_HEIGHT = 42;
+export const POPUP_INSPECTOR_HEIGHT = 178;
+export const POPUP_NARROW_CONTROL_EXTRA = 42;
 export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 36;
 
 export const POPUP_NORMAL_BREAKPOINTS = Object.freeze({
@@ -36,7 +38,7 @@ export function getProfileViewportHeight(rows, compact = false) {
 
 export function getResponsivePopupExtra(viewportWidth) {
   const width = Number(viewportWidth) || POPUP_DESKTOP_WIDTH;
-  return (width <= 459 ? POPUP_STACKED_CONTEXT_EXTRA : 0)
+  return (width <= 459 ? POPUP_NARROW_CONTROL_EXTRA : 0)
     + (width <= 419 ? POPUP_WRAPPED_ACTIONBAR_EXTRA : 0);
 }
 
@@ -44,12 +46,14 @@ export function estimatePopupHeight({
   visibleRows,
   compact = false,
   multiMessage = false,
+  inspectorOpen = false,
   viewportWidth = POPUP_DESKTOP_WIDTH,
 }) {
   return POPUP_FIXED_HEIGHT
     + getProfileViewportHeight(visibleRows, compact)
     + (multiMessage ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
-    // Performance status keeps a permanent row so Fast Rewrite / Streaming toggles never change popup geometry.
-    + POPUP_PERFORMANCE_STRIP_HEIGHT
+    + POPUP_LIVE_RAIL_HEIGHT
+    + POPUP_RECIPE_BAR_HEIGHT
+    + (inspectorOpen ? POPUP_INSPECTOR_HEIGHT : 0)
     + getResponsivePopupExtra(viewportWidth);
 }
