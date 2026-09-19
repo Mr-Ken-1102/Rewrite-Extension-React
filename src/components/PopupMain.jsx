@@ -128,7 +128,9 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   }), [contextExclusions, selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
-  const voiceIdentity = voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null;
+  const voiceIdentity = selection?.multiMessage
+    ? null
+    : (voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null);
   const autoProfile = voiceIdentity?.key && autoProfileBucket
     ? autoProfileBucket[voiceIdentity.key] || null
     : null;
@@ -150,7 +152,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     compact: config.compact,
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
-    hasAutoProfile: !!autoProfile,
   });
 
   const runProfile = useCallback((profile) => {
@@ -220,6 +221,10 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           language={language}
           selection={selection}
           pinned={!!config.pinnedPos}
+          identityProfile={autoProfile}
+          onRunIdentityProfile={runProfile}
+          onTooltip={showTooltip}
+          onTooltipLeave={hideTooltip}
           onDragStart={handleDragStart}
           onTrim={openTrim}
           onPinToggle={handlePinToggle}
@@ -232,7 +237,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
-            autoProfile={autoProfile}
             fastRewrite={config.fastRewrite !== false} liveStreaming={config.liveStreaming !== false} connectionMode={config.connMode}
             selection={selection}
             mergeMultiMsg={config.mergeMultiMsg}
