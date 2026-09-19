@@ -6,6 +6,7 @@ import { makeHistoryKey } from '../../src/utils/historyKey.js';
 import { unwrapMatchingOuterQuotes } from '../../src/utils/textSanitizers.js';
 import { normalizeRewriteResult } from '../../src/services/prompt/promptService.js';
 import { DOMUtils } from '../../src/utils/domUtils.js';
+import { decodeMarinaraCharacter } from '../../src/services/context/marinaraEntityAdapter.js';
 import { readMessageDomIdentity } from '../../src/utils/messageDomIdentity.js';
 import {
   detectMarinaraChatMode,
@@ -73,6 +74,26 @@ function spliceMapped(rendered, raw, start, end, replacement) {
   const span = mapRenderedSpanToRaw(rendered, raw, start, end);
   return span ? raw.slice(0, span.as) + replacement + raw.slice(span.ae) : null;
 }
+
+ok('Marinara Character adapter decodes raw storage rows and Conversation display names', () => {
+  const character = decodeMarinaraCharacter({
+    id: 'char-contract',
+    data: JSON.stringify({
+      name: 'Canonical Character',
+      personality: 'measured',
+      extensions: {
+        convoDisplayName: 'Conversation Alias',
+        nameAliases: ['Alias One', 'Alias Two'],
+      },
+    }),
+  });
+
+  assert.equal(character.id, 'char-contract');
+  assert.equal(character.name, 'Canonical Character');
+  assert.equal(character.convoDisplayName, 'Conversation Alias');
+  assert.deepEqual(character.aliases, ['Alias One', 'Alias Two']);
+  assert.equal(character.data.personality, 'measured');
+});
 
 ok('history is scoped by chat + message', () => {
   assert.equal(makeHistoryKey('chat-a', '7'), 'chat-a::7');
