@@ -31,7 +31,6 @@ export const RWA_POPUP_A11Y_CSS = `
 
 .rwa2-popup :is(
   .rwa2-icon-button,
-  .rwa2-identity-chip-profile,
   .rwa2-profile-btn,
   .rwa2-performance-item,
   .rwa2-context-chip,
