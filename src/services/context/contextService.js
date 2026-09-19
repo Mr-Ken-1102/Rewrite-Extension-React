@@ -27,7 +27,7 @@ function safeObject(value) {
   return {};
 }
 
-export function normalizeIdList(value) {
+export function normalizeIdList(value, maxItems = 8) {
   let list = value;
   if (typeof list === 'string') {
     const trimmed = list.trim();
@@ -36,7 +36,9 @@ export function normalizeIdList(value) {
     } else list = trimmed ? [trimmed] : [];
   }
   if (!Array.isArray(list)) list = list ? [list] : [];
-  return [...new Set(list.map((item) => String(item?.id || item || '').trim()).filter(Boolean))].slice(0, 8);
+  const unique = [...new Set(list.map((item) => String(item?.id || item || '').trim()).filter(Boolean))];
+  if (!Number.isFinite(maxItems)) return unique;
+  return unique.slice(0, Math.max(0, Math.trunc(Number(maxItems) || 0)));
 }
 
 function extenderRoot(value) {
@@ -130,7 +132,9 @@ export class ContextService {
       try { ids = JSON.parse(ids); } catch { ids = []; }
     }
     if (!Array.isArray(ids)) return [];
-    const uniqueIds = normalizeIdList(ids.map((item) => String(item?.id || item || '')));
+    // Identity discovery must inspect the full active-chat roster. Prompt and
+    // memory consumers keep their own bounded defaults through normalizeIdList.
+    const uniqueIds = normalizeIdList(ids.map((item) => String(item?.id || item || '')), Number.POSITIVE_INFINITY);
     return Promise.all(uniqueIds.map(async (id) => {
       try {
         const char = await MarinaraHost.apiFetch(`${ENDPOINTS.chars}/${encodeURIComponent(id)}`, { signal }, 15000);
