@@ -471,6 +471,7 @@ ok('Marinara v2.4.4 persona and lorebook contracts are pinned', () => {
 
 ok('Fast Rewrite copy stays user-facing and accurately limited to Marinara connections', () => {
   const performanceStrip = readFileSync('./src/components/popup/PerformanceStrip.jsx', 'utf8');
+  const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
   const capabilities = readFileSync('./src/services/providers/providerCapabilities.js', 'utf8');
   assert.match(performanceStrip, /Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn/);
   assert.match(performanceStrip, /Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này/);
