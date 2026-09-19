@@ -77,6 +77,17 @@ ok('profile grid derives viewport height from shared geometry and exposes determ
   assert.doesNotMatch(source, /gridTemplateColumns:/);
 });
 
+ok('profile prompts use a persistent readable inspector instead of transient hover-only tooltips', () => {
+  const source = read('./src/components/popup/ProfileGrid.jsx');
+  const base = read('./src/styles-popup-base.js');
+  assert.match(source, /rwa2-preset-inspector/);
+  assert.match(source, /rwa2-preset-inspector-prompt/);
+  assert.match(source, /setInspectedIndex\(index\)/);
+  assert.match(base, /\.rwa2-preset-inspector\s*\{/);
+  assert.match(base, /\.rwa2-preset-inspector-prompt\s*\{[\s\S]*font-size:\s*11\.5px/s);
+  assert.match(base, /\.rwa2-profile-btn-inspected/);
+});
+
 ok('normal profile grid degrades before cells become narrower than the 140px contract', () => {
   const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /POPUP_NORMAL_MIN_CELL/);
@@ -118,7 +129,7 @@ ok('popup placement reacts to viewport resizing and responsive height changes', 
   assert.match(source, /viewport\.height/);
 });
 
-ok('popup positioning consumes shared geometry and accounts for transient rows', () => {
+ok('popup positioning consumes shared geometry and reserves stable visual rows', () => {
   const source = read('./src/hooks/usePopupPosition.js');
   const geometry = read('./src/popupGeometry.js');
   assert.match(source, /POPUP_DESKTOP_WIDTH/);
@@ -129,7 +140,10 @@ ok('popup positioning consumes shared geometry and accounts for transient rows',
   assert.match(source, /fastRewrite/);
   assert.match(source, /compact/);
   assert.match(geometry, /POPUP_FAST_REWRITE_HEIGHT\s*=\s*35/);
-  assert.match(geometry, /fastRewrite \? POPUP_FAST_REWRITE_HEIGHT : 0/);
+  assert.match(geometry, /POPUP_PRESET_INSPECTOR_HEIGHT\s*=\s*76/);
+  assert.match(geometry, /\+ POPUP_FAST_REWRITE_HEIGHT/);
+  assert.match(geometry, /\+ POPUP_PRESET_INSPECTOR_HEIGHT/);
+  assert.doesNotMatch(geometry, /fastRewrite \? POPUP_FAST_REWRITE_HEIGHT : 0/);
 });
 
 ok('popup main passes geometry-relevant state without changing rewrite semantics', () => {
@@ -149,16 +163,20 @@ ok('responsive context geometry stacks deliberately on narrow viewports', () => 
   assert.match(css, /\.rwa2-context-sources,[\s\S]*\.rwa2-context-modifiers\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
 });
 
-ok('Fast Rewrite is visible without changing rewrite semantics', () => {
+ok('Fast Rewrite keeps stable geometry while exposing active and standard states', () => {
   const main = read('./src/components/PopupMain.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   const base = read('./src/styles-popup-base.js');
   const responsive = read('./src/styles-popup-responsive.js');
   assert.match(main, /fastRewrite=\{config\.connMode === 'marinara' && config\.fastRewrite !== false\}/);
-  assert.match(rewrite, /rwa2-fast-strip/);
+  assert.match(rewrite, /rwa2-fast-strip-active/);
+  assert.match(rewrite, /rwa2-fast-strip-idle/);
   assert.match(rewrite, /Fast path · SSE live/);
+  assert.match(rewrite, /Standard path/);
   assert.match(rewrite, /Đường nhanh · SSE trực tiếp/);
+  assert.match(rewrite, /Luồng tiêu chuẩn/);
   assert.match(base, /@keyframes rwa2-fast-sweep/);
+  assert.match(base, /\.rwa2-fast-strip-idle/);
   assert.match(base, /\.rwa2-fast-rail/);
   assert.match(responsive, /\.rwa2-fast-rail > span/);
 });
