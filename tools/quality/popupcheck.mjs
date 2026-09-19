@@ -89,6 +89,7 @@ ok('profile grid derives viewport height from shared geometry and exposes determ
 ok('profile prompts use a prominent floating hover/focus preview without consuming popup space', () => {
   const source = read('./src/components/popup/ProfileGrid.jsx');
   const popup = read('./src/components/PopupMain.jsx');
+  const tooltip = read('./src/components/popup/PopupTooltip.jsx');
   const base = read('./src/styles-popup-base.js');
   assert.match(source, /onMouseEnter=\{\(event\) => onTooltip\(event, \{/);
   assert.match(source, /kind:\s*'preset'/);
@@ -96,9 +97,10 @@ ok('profile prompts use a prominent floating hover/focus preview without consumi
   assert.match(source, /prompt:\s*profile\.prompt/);
   assert.match(source, /onMouseLeave=\{onTooltipLeave\}/);
   assert.doesNotMatch(source, /rwa2-preset-inspector/);
-  assert.match(popup, /rwa2-tooltip-preset/);
-  assert.match(popup, /rwa2-tooltip-preset-name/);
-  assert.match(popup, /rwa2-tooltip-preset-copy/);
+  assert.match(popup, /<PopupTooltip ref=\{tooltipRef\}/);
+  assert.match(tooltip, /rwa2-tooltip-preset/);
+  assert.match(tooltip, /rwa2-tooltip-preset-name/);
+  assert.match(tooltip, /rwa2-tooltip-preset-copy/);
   assert.match(base, /\.rwa2-tooltip-preset\s*\{/);
   assert.match(base, /\.rwa2-tooltip-preset-copy\s*\{[\s\S]*font-size:\s*11\.5px/s);
 });
