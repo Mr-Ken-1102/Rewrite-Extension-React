@@ -373,8 +373,8 @@ export const RWA_POPUP_BASE_CSS = `
   min-width: 0;
   overflow: hidden;
   color: var(--rwa2-brand);
-  font-size: 10.5px;
-  line-height: 1.1;
+  font-size: 11.2px;
+  line-height: 1.15;
   font-weight: 760;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -393,8 +393,8 @@ export const RWA_POPUP_BASE_CSS = `
   overscroll-behavior: contain;
   padding-right: 4px;
   color: rgba(255,255,255,.78);
-  font-size: 10.5px;
-  line-height: 1.45;
+  font-size: 11.5px;
+  line-height: 1.48;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.12) transparent;
 }
