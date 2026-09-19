@@ -24,7 +24,9 @@ export function useAutoVoiceProfileCoordinator() {
   const selectionKey = selection?.cid && selection?.mid
     ? `${selection.cid}\u0000${selection.mid}\u0000${selectionCaptureKey}`
     : '';
-  const domIdentity = voiceIdentityFromSelection(selection);
+  const isMultiMessageSelection = selection?.multiMessage === true
+    || (Array.isArray(selection?.segments) && selection.segments.length > 1);
+  const domIdentity = isMultiMessageSelection ? null : voiceIdentityFromSelection(selection);
   const resolvedIdentity = resolved.selectionKey === selectionKey ? resolved.identity : null;
   const resolvedMessage = resolved.selectionKey === selectionKey ? resolved.targetMessage : null;
   const identity = domIdentity || resolvedIdentity;
@@ -39,7 +41,7 @@ export function useAutoVoiceProfileCoordinator() {
     : resolvedMessage;
 
   useEffect(() => {
-    if (!config.autoProfileEnabled || !selection?.cid || !selection?.mid) {
+    if (!config.autoProfileEnabled || !selection?.cid || !selection?.mid || isMultiMessageSelection) {
       setResolved({ selectionKey: '', identity: null, targetMessage: null });
       return undefined;
     }
@@ -80,7 +82,7 @@ export function useAutoVoiceProfileCoordinator() {
       alive = false;
       controller.abort();
     };
-  }, [config.autoProfileEnabled, selection, selectionKey]);
+  }, [config.autoProfileEnabled, isMultiMessageSelection, selection, selectionKey]);
 
   const profile = identity?.key && bucket ? bucket[identity.key] || null : null;
 
