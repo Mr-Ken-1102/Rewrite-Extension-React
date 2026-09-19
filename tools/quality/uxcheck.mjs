@@ -193,7 +193,7 @@ ok('popup keeps identity and token status on the approved row above modes and pr
 
 ok('context refresh keeps resolved identity and token text stable while controls re-inspect', () => {
   const hook = read('./src/hooks/useContextInspector.js');
-  const context = read('./src/components/popup/ContextDeck.jsx');
+  const status = read('./src/components/popup/IdentityStatusRow.jsx');
   assert.match(hook, /const sameSelection = current\.selectionKey === selectionKey/);
   assert.match(hook, /identities: sameSelection \? current\.identities : null/);
   assert.match(hook, /parts: sameSelection \? current\.parts : null/);
