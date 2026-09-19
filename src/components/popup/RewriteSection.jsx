@@ -1,4 +1,5 @@
 import { MultiMessageNotice } from './MultiMessageNotice';
+import { PerformanceStrip } from './PerformanceStrip';
 import { ProfileGrid } from './ProfileGrid';
 
 export function RewriteSection({
@@ -7,6 +8,9 @@ export function RewriteSection({
   colCount,
   rows,
   compact,
+  config,
+  updateConfig,
+  keepFocus,
   selection,
   mergeMultiMsg,
   onRun,
@@ -29,6 +33,15 @@ export function RewriteSection({
             : `${profiles.length} ${profiles.length === 1 ? 'style' : 'styles'} · scroll or type`}
         </div>
       </div>
+
+      <PerformanceStrip
+        language={language}
+        config={config}
+        updateConfig={updateConfig}
+        keepFocus={keepFocus}
+        onTooltip={onTooltip}
+        onTooltipLeave={onTooltipLeave}
+      />
 
       <MultiMessageNotice language={language} selection={selection} mergeMultiMsg={mergeMultiMsg} />
 
