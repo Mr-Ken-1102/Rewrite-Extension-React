@@ -209,19 +209,6 @@ export function DraftReplyLauncher({ onOpen, onOpenSettings, hidden = false }) {
     >
       <button
         type="button"
-        className={'rwa-draft-launcher ' + (draggable ? 'rwa-draft-launcher-draggable' : '')}
-        data-rwa-feature="draft-reply"
-        onPointerDown={draggable ? handleDragStart : undefined}
-        onClick={handleClick}
-        title={title}
-        aria-label={title}
-      >
-        <span className="rwa-draft-launcher-icon" aria-hidden="true">✦</span>
-        <span>{language === 'vi' ? 'Trả lời theo Persona' : 'Persona Reply'}</span>
-      </button>
-
-      <button
-        type="button"
         className="rwa-draft-settings-button"
         data-rwa-feature="draft-reply-settings"
         data-rwa-no-drag="true"
@@ -231,6 +218,19 @@ export function DraftReplyLauncher({ onOpen, onOpenSettings, hidden = false }) {
         aria-label={settingsTitle}
       >
         <SettingsGlyph />
+      </button>
+
+      <button
+        type="button"
+        className={'rwa-draft-launcher ' + (draggable ? 'rwa-draft-launcher-draggable' : '')}
+        data-rwa-feature="draft-reply"
+        onPointerDown={draggable ? handleDragStart : undefined}
+        onClick={handleClick}
+        title={title}
+        aria-label={title}
+      >
+        <span className="rwa-draft-launcher-icon" aria-hidden="true">✦</span>
+        <span>{language === 'vi' ? 'Trả lời theo Persona' : 'Persona Reply'}</span>
       </button>
     </div>
   );
