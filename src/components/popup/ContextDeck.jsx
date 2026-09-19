@@ -111,19 +111,21 @@ export function ContextDeck({
             );
           })}
 
-          <button
-            type="button"
-            className="rwa2-context-chip rwa2-context-param-chip"
-            title={text('Open Length controls', 'Mở điều chỉnh độ dài')}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setTokenOpen(false);
-              if (!open) onToggleOpen();
-            }}
-          >
-            {lengthLabel}
-          </button>
+          {config.lengthEnabled && (
+            <button
+              type="button"
+              className="rwa2-context-chip rwa2-context-param-chip"
+              title={text('Open Length controls', 'Mở điều chỉnh độ dài')}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                setTokenOpen(false);
+                if (!open) onToggleOpen();
+              }}
+            >
+              {lengthLabel}
+            </button>
+          )}
         </div>
 
         <div className="rwa2-context-summary-actions">
@@ -199,55 +201,47 @@ export function ContextDeck({
       <div id="rwa2-context-detail" className="rwa2-context-collapse" inert={open ? undefined : true}>
         <div className="rwa2-context-detail">
           <div className="rwa2-context-control-grid">
-            <div className="rwa2-context-control-block">
-              <div className="rwa2-context-detail-label">{text('Sources', 'Nguồn')}</div>
-              <div className="rwa2-context-source-grid" role="group" aria-label={text('Persistent context sources', 'Nguồn ngữ cảnh mặc định')}>
-                <ToggleSwitch label={text('Character', 'Nhân vật')} checked={config.injectChar} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectChar: value }); keepFocus(); }} />
-                <ToggleSwitch label="Persona" checked={config.injectUser} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectUser: value }); keepFocus(); }} />
-                <ToggleSwitch label="Lore" checked={config.injectLorebook} disabled={config.freeMode} onChange={(value) => { updateConfig({ injectLorebook: value }); keepFocus(); }} />
-                <ToggleSwitch label={text('Around', 'Xung quanh')} checked={config.localContextEnabled} onChange={(value) => { updateConfig({ localContextEnabled: value }); keepFocus(); }} />
-              </div>
-            </div>
-
             <div className="rwa2-context-control-block rwa2-context-adjust">
               <div className="rwa2-context-detail-label">{text('Adjust', 'Điều chỉnh')}</div>
-              <label className="rwa2-context-depth">
-                <span>{text('History depth', 'Độ sâu lịch sử')}</span>
-                <input
-                  type="number"
-                  className="rwa2-depth-input"
-                  min="0"
-                  max="20"
-                  value={config.contextDepth !== undefined ? config.contextDepth : 0}
-                  aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
-                  onChange={(event) => updateConfig({ contextDepth: Math.max(0, parseInt(event.target.value, 10) || 0) })}
-                />
-              </label>
-
-              <div className="rwa2-context-length">
-                <div className="rwa2-context-length-head">
-                  <ToggleSwitch
-                    label={text('Length', 'Độ dài')}
-                    checked={config.lengthEnabled}
-                    onChange={(value) => {
-                      updateConfig({ lengthEnabled: value, lengthPct: value ? config.lengthPct : 0 });
-                      keepFocus();
-                    }}
+              <div className="rwa2-context-adjust-row">
+                <label className="rwa2-context-depth">
+                  <span>{text('History depth', 'Độ sâu lịch sử')}</span>
+                  <input
+                    type="number"
+                    className="rwa2-depth-input"
+                    min="0"
+                    max="20"
+                    value={config.contextDepth !== undefined ? config.contextDepth : 0}
+                    aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
+                    onChange={(event) => updateConfig({ contextDepth: Math.max(0, parseInt(event.target.value, 10) || 0) })}
                   />
-                  <span>{config.lengthEnabled ? `${config.lengthPct >= 0 ? '+' : ''}${config.lengthPct}%` : text('Auto', 'Auto')}</span>
+                </label>
+
+                <div className="rwa2-context-length">
+                  <div className="rwa2-context-length-head">
+                    <ToggleSwitch
+                      label={text('Length', 'Độ dài')}
+                      checked={config.lengthEnabled}
+                      onChange={(value) => {
+                        updateConfig({ lengthEnabled: value, lengthPct: value ? config.lengthPct : 0 });
+                        keepFocus();
+                      }}
+                    />
+                    <span>{config.lengthEnabled ? `${config.lengthPct >= 0 ? '+' : ''}${config.lengthPct}%` : text('Auto', 'Auto')}</span>
+                  </div>
+                  <input
+                    className="rwa2-range"
+                    type="range"
+                    min="-99"
+                    max="200"
+                    value={config.lengthPct || 0}
+                    disabled={!config.lengthEnabled}
+                    aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
+                    onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
+                    onMouseUp={keepFocus}
+                    onTouchEnd={keepFocus}
+                  />
                 </div>
-                <input
-                  className="rwa2-range"
-                  type="range"
-                  min="-99"
-                  max="200"
-                  value={config.lengthPct || 0}
-                  disabled={!config.lengthEnabled}
-                  aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
-                  onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
-                  onMouseUp={keepFocus}
-                  onTouchEnd={keepFocus}
-                />
               </div>
             </div>
           </div>
