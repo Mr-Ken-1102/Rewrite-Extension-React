@@ -3,11 +3,11 @@ export const RWA_POPUP_A11Y_CSS = `
    Loaded after popup layout/context so these cross-cutting rules stay authoritative. */
 
 .rwa2-version,
-.rwa2-section-meta,
-.rwa2-context-title,
 .rwa2-context-chip,
 .rwa2-token-trigger,
-.rwa2-context-detail-total,
+.rwa2-token-popover-row,
+.rwa2-token-popover-note,
+.rwa2-token-popover-empty,
 .rwa2-context-depth,
 .rwa2-context-length-head > span {
   font-size: 11px !important;
@@ -16,9 +16,6 @@ export const RWA_POPUP_A11Y_CSS = `
 .rwa2-performance-key { font-size: 10px; }
 .rwa2-performance-meta { font-size: 11px; }
 .rwa2-profile-name { font-size: 13px; }
-.rwa2-token-detail-item { font-size: 11px; }
-.rwa2-token-detail-note,
-.rwa2-token-detail-empty { font-size: 11px; }
 .rwa2-context-detail-label { font-size: 10px; }
 
 .rwa2-context-chip {
@@ -27,7 +24,6 @@ export const RWA_POPUP_A11Y_CSS = `
 }
 
 .rwa2-brand-title { font-size: 12.5px; }
-.rwa2-section-title { font-size: 12.5px; }
 .rwa2-popup .rwa2-auto-profile,
 .rwa2-popup .rwa2-action { font-size: 11.5px !important; }
 .rwa2-multi-notice { font-size: 11px; }
@@ -40,6 +36,7 @@ export const RWA_POPUP_A11Y_CSS = `
   .rwa2-performance-item,
   .rwa2-context-chip,
   .rwa2-token-trigger,
+  .rwa2-context-toggle,
   .rwa2-action,
   .rwa2-depth-input
 ):focus-visible {
