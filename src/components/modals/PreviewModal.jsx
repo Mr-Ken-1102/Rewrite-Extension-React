@@ -103,8 +103,8 @@ export const PreviewModal = ({
     const copied = await DOMUtils.safeCopy(result || '');
     showToast(
       copied
-        ? text('✓ Copied result to clipboard', '✓ Đã sao chép kết quả vào clipboard')
-        : text('✕ Clipboard copy failed. The raw result remains selectable below and can also be saved as .txt.', '✕ Không thể sao chép vào clipboard. Kết quả thô bên dưới vẫn có thể chọn và lưu thành .txt.'),
+        ? text('Copied result to clipboard', 'Đã sao chép kết quả vào clipboard')
+        : text('Clipboard copy failed. The raw result remains selectable below and can also be saved as .txt.', 'Không thể sao chép vào clipboard. Kết quả thô bên dưới vẫn có thể chọn và lưu thành .txt.'),
       copied ? 'ok' : 'warn',
     );
   };
@@ -114,7 +114,7 @@ export const PreviewModal = ({
     const saved = DOMUtils.saveTextFile(result || '', `rewrite-${mid}.txt`);
     showToast(
       saved
-        ? text('✓ Saved rewrite result as a .txt file', '✓ Đã lưu kết quả viết lại thành file .txt')
+        ? text('Saved rewrite result as a .txt file', 'Đã lưu kết quả viết lại thành file .txt')
         : text('Could not create the .txt download. The result remains selectable in this window.', 'Không thể tạo file .txt. Kết quả vẫn có thể chọn trực tiếp trong cửa sổ này.'),
       saved ? 'ok' : 'warn',
     );
@@ -126,7 +126,7 @@ export const PreviewModal = ({
       const fullSel = { ...selection, source: 'textarea', text: ta.value, originalValue: ta.value, start: 0, end: ta.value.length, el: ta };
       onReplaceAll?.(result, fullSel);
     } else {
-      showToast(text('⚠️ Replace All is available only while the original edit box is still open.', '⚠️ Chỉ có thể Thay thế toàn bộ khi ô chỉnh sửa gốc vẫn đang mở.'), 'warn');
+      showToast(text('Replace All is available only while the original edit box is still open.', 'Chỉ có thể Thay thế toàn bộ khi ô chỉnh sửa gốc vẫn đang mở.'), 'warn');
     }
   };
 
@@ -142,11 +142,11 @@ export const PreviewModal = ({
       title={modalTitle}
       onClose={isApplying ? () => {} : onClose}
       width="600px"
-      className="rwar-window"
+      className={`rwar-window ${!isLoading ? 'rwar-window-ready' : ''}`.trim()}
       bodyClassName="rwar-body"
     >
       {isLoading ? (
-        <div className="rwar-loading">
+        <div className="rwar-loading rwa-waiting-surface">
           {progress ? <div className="rwa-prev rwar-progress">{progress}</div> : null}
           <section className="rwar-section">
             <div className="rwa-plbl rwar-label">{text('Selected Passage', 'Đoạn đã chọn')}</div>
@@ -159,10 +159,13 @@ export const PreviewModal = ({
             </div>
           ) : null}
           <div className="rwar-writing" aria-live="polite">
-            <div className="rwa-pulse" />
-            <div className="rwar-writing-copy">{partialResult
-              ? text('Receiving result…', 'Đang nhận kết quả…')
-              : text('Writing with Intelligence…', 'Đang viết lại…')}</div>
+            <div className="rwar-working-rail" aria-hidden="true"><span></span></div>
+            <div className="rwar-writing-copy" role="status" aria-live="polite">
+              <span>{partialResult
+                ? text('Receiving result', 'Đang nhận kết quả')
+                : text('Writing with Intelligence', 'Đang viết lại')}</span>
+              <span className="rwa-waiting-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            </div>
           </div>
           {partialResult ? (
             <section className="rwar-section rwar-streaming-section" aria-label={text('Live generated text', 'Văn bản đang được tạo')}>
@@ -176,6 +179,7 @@ export const PreviewModal = ({
         </div>
       ) : (
         <>
+          <div className="rwar-ready-rail" aria-hidden="true"><span></span></div>
           {progress ? <div className="rwa-prev rwar-progress rwar-progress-active">{progress}</div> : null}
           {applyReport ? <div role="status" className="rwa-prev rwar-apply-report">{applyReport}</div> : null}
 
@@ -253,6 +257,18 @@ export const PreviewModal = ({
                       ? text('✓ Accept All', '✓ Chấp nhận tất cả')
                       : text('✓ Accept', '✓ Chấp nhận')}
               </Button>
+              <Button
+                glow={false}
+                className="rwar-rewrite-again"
+                onClick={onRetry}
+                disabled={isApplying || nativeEditorPrepared}
+                title={text(
+                  'Generate another version from the same original selection with the same rewrite style.',
+                  'Tạo thêm một phiên bản mới từ đúng đoạn gốc với cùng kiểu viết lại.',
+                )}
+              >
+                {text('↻ Rewrite again', '↻ Viết lại lần nữa')}
+              </Button>
               {!isMerged && onManualSave ? (
                 <Button
                   glow={false}
@@ -270,18 +286,6 @@ export const PreviewModal = ({
             <div className="rwar-actions-tools">
               <Button glow={false} onClick={handleCopy} disabled={isApplying || !result}>{text('Copy', 'Sao chép')}</Button>
               <Button glow={false} onClick={handleSaveFile} disabled={isApplying || !result}>{text('Save .txt', 'Lưu .txt')}</Button>
-              <Button
-                glow={false}
-                className="rwar-rewrite-again"
-                onClick={onRetry}
-                disabled={isApplying || nativeEditorPrepared}
-                title={text(
-                  'Generate another version from the same original selection with the same rewrite style.',
-                  'Tạo thêm một phiên bản mới từ đúng đoạn gốc với cùng kiểu viết lại.',
-                )}
-              >
-                {text('↻ Rewrite again', '↻ Viết lại lần nữa')}
-              </Button>
               <Button glow={false} onClick={onClose} disabled={isApplying}>{text('Close', 'Đóng')}</Button>
             </div>
           </div>

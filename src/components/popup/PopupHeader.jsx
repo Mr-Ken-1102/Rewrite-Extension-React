@@ -1,7 +1,24 @@
-export function PopupHeader({ language = 'en', selection, pinned, onDragStart, onTrim, onPinToggle }) {
+export function PopupHeader({
+  language = 'en',
+  selection,
+  pinned,
+  identityProfile = null,
+  onRunIdentityProfile,
+  onTooltip,
+  onTooltipLeave,
+  onDragStart,
+  onTrim,
+  onPinToggle,
+}) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const multiCount = Array.isArray(selection?.segments) ? selection.segments.length : 0;
+  const identityLabel = identityProfile
+    ? `${identityProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${identityProfile.identityName || identityProfile.name}`
+    : '';
+  const identityTooltip = identityProfile
+    ? `${identityLabel} · ${identityProfile.name}: ${identityProfile.prompt}`
+    : '';
   const iconProps = {
     width: 14,
     height: 14,
@@ -18,12 +35,33 @@ export function PopupHeader({ language = 'en', selection, pinned, onDragStart, o
     <header className="rwa2-toolbar" onPointerDown={onDragStart}>
       <div className="rwa2-brand">
         <span className="rwa2-brand-title">Rewrite Assistant</span>
-        <span className="rwa2-version">V3.0.2</span>
+        <span className="rwa2-version">V3.0.3</span>
       </div>
 
-      <div className="rwa2-toolbar-actions" onPointerDown={(event) => event.stopPropagation()}>
+      <div className="rwa2-toolbar-actions">
+        {identityProfile && (
+          <button
+            type="button"
+            data-rwa-no-drag="true"
+            className="rwa2-identity-chip"
+            aria-label={identityLabel}
+            aria-description={identityProfile.prompt}
+            onMouseEnter={(event) => onTooltip?.(event, identityTooltip)}
+            onMouseLeave={onTooltipLeave}
+            onFocus={(event) => onTooltip?.(event, identityTooltip)}
+            onBlur={onTooltipLeave}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRunIdentityProfile?.(identityProfile);
+            }}
+          >
+            <span className="rwa2-identity-chip-mark" aria-hidden="true">✦</span>
+            <span className="rwa2-identity-chip-text">{identityLabel}</span>
+          </button>
+        )}
         <button
           type="button"
+          data-rwa-no-drag="true"
           className="rwa2-icon-button"
           onClick={onTrim}
           disabled={multiCount > 1}
@@ -42,6 +80,7 @@ export function PopupHeader({ language = 'en', selection, pinned, onDragStart, o
         </button>
         <button
           type="button"
+          data-rwa-no-drag="true"
           className={`rwa2-icon-button ${pinned ? 'rwa2-icon-button-active' : ''}`}
           onClick={onPinToggle}
           title={pinned ? text('Unpin popup', 'Bỏ ghim popup') : text('Pin popup here', 'Ghim popup tại đây')}

@@ -145,11 +145,19 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
             tabIndex={index === activeIndex ? 0 : -1}
             aria-label={displayName}
             aria-description={profile.prompt}
-            onMouseEnter={(event) => onTooltip(event, `${displayName}: ${profile.prompt}`)}
+            onMouseEnter={(event) => onTooltip(event, {
+              kind: 'preset',
+              title: displayName,
+              prompt: profile.prompt,
+            })}
             onMouseLeave={onTooltipLeave}
             onFocus={(event) => {
               setActiveIndex(index);
-              onTooltip(event, `${displayName}: ${profile.prompt}`);
+              onTooltip(event, {
+                kind: 'preset',
+                title: displayName,
+                prompt: profile.prompt,
+              });
             }}
             onBlur={onTooltipLeave}
             onClick={(event) => {
@@ -164,5 +172,6 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
         );
       })}
     </div>
+
   );
 }

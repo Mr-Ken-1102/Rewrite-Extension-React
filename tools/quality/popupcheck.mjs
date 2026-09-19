@@ -19,7 +19,7 @@ ok('popup geometry constants encode the rebalanced 620px / 12-column contract', 
   assert.match(source, /POPUP_NORMAL_MIN_CELL = 140/);
   assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 30/);
   assert.match(source, /POPUP_PROFILE_ROW_GAP = 5/);
-  assert.match(source, /POPUP_FIXED_HEIGHT = 266/);
+  assert.match(source, /POPUP_FIXED_HEIGHT = 270/);
 });
 
 ok('popup geometry accounts for responsive context stacking and wrapped actions', () => {
@@ -77,6 +77,23 @@ ok('profile grid derives viewport height from shared geometry and exposes determ
   assert.doesNotMatch(source, /gridTemplateColumns:/);
 });
 
+ok('profile prompts use a prominent floating hover/focus preview without consuming popup space', () => {
+  const source = read('./src/components/popup/ProfileGrid.jsx');
+  const popup = read('./src/components/PopupMain.jsx');
+  const base = read('./src/styles-popup-base.js');
+  assert.match(source, /onMouseEnter=\{\(event\) => onTooltip\(event, \{/);
+  assert.match(source, /kind:\s*'preset'/);
+  assert.match(source, /title:\s*displayName/);
+  assert.match(source, /prompt:\s*profile\.prompt/);
+  assert.match(source, /onMouseLeave=\{onTooltipLeave\}/);
+  assert.doesNotMatch(source, /rwa2-preset-inspector/);
+  assert.match(popup, /rwa2-tooltip-preset/);
+  assert.match(popup, /rwa2-tooltip-preset-name/);
+  assert.match(popup, /rwa2-tooltip-preset-copy/);
+  assert.match(base, /\.rwa2-tooltip-preset\s*\{/);
+  assert.match(base, /\.rwa2-tooltip-preset-copy\s*\{[\s\S]*font-size:\s*11\.5px/s);
+});
+
 ok('normal profile grid degrades before cells become narrower than the 140px contract', () => {
   const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /POPUP_NORMAL_MIN_CELL/);
@@ -118,23 +135,47 @@ ok('popup placement reacts to viewport resizing and responsive height changes', 
   assert.match(source, /viewport\.height/);
 });
 
-ok('popup positioning consumes shared geometry and accounts for transient rows', () => {
+ok('popup positioning consumes shared geometry and reserves stable visual rows', () => {
   const source = read('./src/hooks/usePopupPosition.js');
+  const geometry = read('./src/popupGeometry.js');
   assert.match(source, /POPUP_DESKTOP_WIDTH/);
   assert.match(source, /POPUP_VIEWPORT_GUTTER/);
   assert.match(source, /estimatePopupHeight/);
-  assert.match(source, /hasAutoProfile/);
+  assert.doesNotMatch(source, /hasAutoProfile/);
   assert.match(source, /multiMessage/);
   assert.match(source, /compact/);
+  assert.doesNotMatch(source, /fastRewrite/);
+  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*35/);
+  assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
+  assert.doesNotMatch(geometry, /POPUP_PRESET_INSPECTOR_HEIGHT/);
 });
 
 ok('popup main passes geometry-relevant state without changing rewrite semantics', () => {
   const source = read('./src/components/PopupMain.jsx');
   assert.match(source, /compact:\s*config\.compact/);
-  assert.match(source, /hasAutoProfile:\s*!!autoProfile/);
+  assert.match(source, /identityProfile=\{autoProfile\}/);
   assert.match(source, /<RewriteSection/);
   assert.match(source, /<ContextPanel/);
   assert.match(source, /<PopupFooter/);
+});
+
+ok('active Character or Persona profile lives in the right side of the popup header', () => {
+  const main = read('./src/components/PopupMain.jsx');
+  const header = read('./src/components/popup/PopupHeader.jsx');
+  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const base = read('./src/styles-popup-base.js');
+  const responsive = read('./src/styles-popup-responsive.js');
+  assert.match(main, /identityProfile=\{autoProfile\}/);
+  assert.match(main, /onRunIdentityProfile=\{runProfile\}/);
+  assert.match(header, /rwa2-toolbar-actions/);
+  assert.match(header, /rwa2-identity-chip/);
+  assert.match(header, /identityKind === 'persona'/);
+  assert.match(header, /onRunIdentityProfile\?\.\(identityProfile\)/);
+  assert.doesNotMatch(rewrite, /rwa2-auto-profile|autoProfile/);
+  assert.match(base, /\.rwa2-toolbar-actions\s*\{[\s\S]*justify-content:\s*flex-end/s);
+  assert.match(base, /\.rwa2-identity-chip\s*\{/);
+  assert.match(base, /text-overflow:\s*ellipsis/);
+  assert.match(responsive, /\.rwa2-identity-chip\s*\{\s*max-width:\s*128px/);
 });
 
 ok('responsive context geometry stacks deliberately on narrow viewports', () => {
@@ -143,6 +184,26 @@ ok('responsive context geometry stacks deliberately on narrow viewports', () => 
   assert.match(css, /\.rwa2-source-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(css, /@media \(max-width: 459px\)/);
   assert.match(css, /\.rwa2-context-sources,[\s\S]*\.rwa2-context-modifiers\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
+});
+
+ok('performance strip separates Fast Rewrite acceleration from Live Streaming', () => {
+  const main = read('./src/components/PopupMain.jsx');
+  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const base = read('./src/styles-popup-base.js');
+  assert.match(main, /fastRewrite=\{config\.fastRewrite !== false\}/);
+  assert.match(main, /liveStreaming=\{config\.liveStreaming !== false\}/);
+  assert.match(main, /connectionMode=\{config\.connMode\}/);
+  assert.match(rewrite, /getProviderCapabilities/);
+  assert.match(rewrite, /rwa2-performance-strip/);
+  assert.match(rewrite, /rwa2-performance-key">FAST/);
+  assert.match(rewrite, /rwa2-performance-key">STREAM/);
+  assert.match(rewrite, /Reasoning reduced/);
+  assert.match(rewrite, /Live output/);
+  assert.match(rewrite, /Unavailable/);
+  assert.doesNotMatch(rewrite, /SSE live|Fast path · SSE|Compact prompt · local path/);
+  assert.match(base, /\.rwa2-performance-strip\s*\{/);
+  assert.match(base, /\.rwa2-performance-item\s*\{/);
+  assert.doesNotMatch(base, /rwa2-fast-sweep|rwa2-fast-rail|rwa2-fast-strip/);
 });
 
 ok('popup visual layer is low-paint and uses subdued amber', () => {
@@ -185,7 +246,7 @@ ok('main-popup buttons disable cursor-following glow work', () => {
   const footer = read('./src/components/popup/PopupFooter.jsx');
   assert.match(button, /glow = true/);
   assert.match(button, /if \(glow && btnRef\.current/);
-  assert.match(rewrite, /glow=\{false\}/);
+  assert.doesNotMatch(rewrite, /<Button|glow=/);
   assert.match(grid, /glow=\{false\}/);
   assert.equal((footer.match(/glow=\{false\}/g) || []).length, 4);
 });

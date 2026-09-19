@@ -51,6 +51,7 @@ async function loadApiHarness() {
   await writeFile(join(dir, 'voiceProfileIdentity.mjs'), voiceIdentitySource);
   await mkdir(join(dir, 'policies'), { recursive: true });
   await mkdir(join(dir, 'context'), { recursive: true });
+  await copyFile('./src/services/context/marinaraEntityAdapter.js', join(dir, 'context', 'marinaraEntityAdapter.js'));
   await mkdir(join(dir, 'providers'), { recursive: true });
   await mkdir(join(dir, 'prompt'), { recursive: true });
 
@@ -126,11 +127,14 @@ export const MarinaraHost = {
   contextSource = replaceImport(contextSource, '../voiceProfileIdentity.js', '../voiceProfileIdentity.mjs');
   await writeFile(join(dir, 'context', 'contextService.mjs'), contextSource);
 
+  await copyFile('./src/services/providers/providerCapabilities.js', join(dir, 'providers', 'providerCapabilities.mjs'));
+
   let providerSource = await readFile('./src/services/providers/providerService.js', 'utf8');
   providerSource = replaceImport(providerSource, '../../store/usePersistentStore', '../mockStore.mjs');
   providerSource = replaceImport(providerSource, '../marinaraHost', '../mockHost.mjs');
   providerSource = replaceImport(providerSource, '../debugLogService', '../mockDebug.mjs');
   providerSource = replaceImport(providerSource, '../policies/providerPolicy.js', '../policies/providerPolicy.mjs');
+  providerSource = replaceImport(providerSource, './providerCapabilities.js', './providerCapabilities.mjs');
   await writeFile(join(dir, 'providers', 'providerService.mjs'), providerSource);
 
   let voiceProfileSource = await readFile('./src/services/voiceProfileService.js', 'utf8');
@@ -219,6 +223,310 @@ await ok('selected assistant Character outranks stale manual and API Character m
 
     assert.match(context.character, /Name: Sami 1\.17/);
     assert.deepEqual(requested, ['/chats/chat-group/messages', '/characters/char-new']);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('grouped Conversation selection resolves the visible speaker instead of parent/API/manual Character metadata', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      injectChar: true,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: ['char-sami-2'],
+    };
+    const requested = [];
+    h.host.control.apiHandler = async (path) => {
+      requested.push(path);
+      if (path === '/chats/chat-group') {
+        return {
+          id: 'chat-group',
+          characterIds: ['char-sami-2', 'char-sami-117'],
+        };
+      }
+      if (path === '/characters/char-sami-2') {
+        return {
+          id: 'char-sami-2',
+          data: {
+            name: 'Hương Sami 2.0',
+            convoDisplayName: 'Sami 2.0',
+            personality: 'older voice',
+          },
+        };
+      }
+      if (path === '/characters/char-sami-117') {
+        return {
+          id: 'char-sami-117',
+          data: {
+            name: 'Sami 1.17',
+            personality: 'current selected speaker',
+          },
+        };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    const context = await h.context.ContextService.collectContext({
+      cid: 'chat-group',
+      mid: 'm-grouped',
+      text: 'selected text',
+      detectedRole: 'assistant',
+      detectedCharacterId: null,
+      detectedName: 'Sami 1.17',
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: false,
+    }, new AbortController().signal);
+
+    assert.match(context.character, /Name: Sami 1\.17/);
+    assert.match(context.character, /current selected speaker/);
+    assert.doesNotMatch(context.character, /Hương Sami 2\.0|older voice/);
+    assert.ok(requested.includes('/chats/chat-group'));
+    assert.ok(requested.filter((path) => path === '/characters/char-sami-117').length >= 1);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('grouped Character resolution scales to arbitrary chat cardinality and never selects by list position', async () => {
+  const h = await loadApiHarness();
+  try {
+    const characters = Array.from({ length: 17 }, (_, index) => ({
+      id: `char-${index + 1}`,
+      name: `Character ${index + 1}`,
+      convoDisplayName: index % 4 === 0 ? `Display ${index + 1}` : '',
+    }));
+    const selected = characters[13];
+    const selectedDisplay = selected.convoDisplayName || selected.name;
+
+    h.store.control.state.config = {
+      injectChar: true,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: [characters[0].id],
+    };
+
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/chat-many') {
+        return { id: 'chat-many', characterIds: characters.map((character) => character.id) };
+      }
+      const match = path.match(/^\/characters\/(char-\d+)$/);
+      if (match) {
+        const character = characters.find((item) => item.id === match[1]);
+        if (!character) throw new Error(`unknown Character endpoint: ${path}`);
+        return {
+          id: character.id,
+          data: JSON.stringify({
+            name: character.name,
+            personality: character.id === selected.id ? 'selected voice evidence' : 'other voice evidence',
+            extensions: {
+              convoDisplayName: character.convoDisplayName,
+            },
+          }),
+        };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    const context = await h.context.ContextService.collectContext({
+      cid: 'chat-many',
+      mid: 'grouped-message',
+      text: 'selected segment',
+      detectedRole: 'assistant',
+      detectedCharacterId: null,
+      detectedName: selectedDisplay,
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: false,
+    }, new AbortController().signal);
+
+    assert.ok(context.character.includes(`Name: ${selected.name}`));
+    assert.match(context.character, /selected voice evidence/);
+    assert.equal(context.character.includes('Name: Character 1\n'), false);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Persona identity stays message-scoped regardless of Character count', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      injectChar: false,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: [],
+    };
+
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/persona-many/messages') {
+        return [{
+          id: 'user-message',
+          role: 'user',
+          content: 'selected user text',
+          extra: {
+            personaSnapshot: {
+              personaId: 'persona-current',
+              name: 'Current Persona',
+              source: 'persona',
+            },
+          },
+        }];
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    const inspected = await h.context.ContextService.inspectContext({
+      cid: 'persona-many',
+      mid: 'user-message',
+      text: 'selected user text',
+      detectedRole: 'user',
+      detectedCharacterId: null,
+      detectedName: null,
+    }, new AbortController().signal);
+
+    assert.equal(inspected.voiceIdentity?.kind, 'persona');
+    assert.equal(inspected.voiceIdentity?.key, 'persona:persona:persona-current');
+    assert.equal(inspected.voiceIdentity?.name, 'Current Persona');
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('manual and automatic Character profile scans share the exact grouped speaker target', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'sidecar',
+      maxPromptChars: 32000,
+      requestTimeoutMs: 45000,
+      charCardIds: ['char-parent'],
+    };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/chat-profile/messages') {
+        return [{
+          id: 'm-grouped',
+          role: 'assistant',
+          characterId: 'char-parent',
+          characterName: 'Parent Character',
+          content: 'grouped content',
+          extra: {},
+        }];
+      }
+      if (path === '/chats/chat-profile') {
+        return {
+          id: 'chat-profile',
+          characterIds: ['char-parent', 'char-selected'],
+        };
+      }
+      if (path === '/characters/char-parent') {
+        return {
+          id: 'char-parent',
+          data: JSON.stringify({
+            name: 'Parent Character',
+            personality: 'parent style evidence',
+            extensions: { convoDisplayName: 'Parent Display' },
+          }),
+        };
+      }
+      if (path === '/characters/char-selected') {
+        return {
+          id: 'char-selected',
+          data: JSON.stringify({
+            name: 'Selected Character',
+            personality: 'selected style evidence',
+            mes_example: 'Selected example dialogue.',
+            extensions: { convoDisplayName: 'Selected Display' },
+          }),
+        };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async (_system, user) => {
+      assert.match(user, /Selected Character|selected style evidence|Selected example dialogue/);
+      assert.doesNotMatch(user, /parent style evidence/);
+      return { result: '{"name":"Selected Voice","prompt":"Preserve the selected speaker cadence."}' };
+    };
+
+    const selection = {
+      cid: 'chat-profile',
+      mid: 'm-grouped',
+      text: 'selected segment text',
+      detectedRole: 'assistant',
+      detectedCharacterId: null,
+      detectedName: 'Selected Display',
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: false,
+    };
+    const target = await h.api.APIService.resolveVoiceProfileTarget(selection, new AbortController().signal);
+
+    assert.equal(target.identity?.key, 'character:char-selected');
+    assert.equal(target.targetMessage?.characterId, 'char-selected');
+    assert.equal(target.targetMessage?.id, 'm-grouped');
+
+    const result = await h.api.APIService.generateAutoProfile('chat-profile', new AbortController().signal, {
+      messageId: selection.mid,
+      targetMessage: target.targetMessage,
+      expectedIdentityKey: target.identity.key,
+      preferredCharacterIds: ['char-parent'],
+      force: true,
+    });
+
+    assert.equal(result.profile?.identityKey, 'character:char-selected');
+    assert.equal(result.profile?.identityName, 'Selected Character');
+    assert.ok(h.store.control.state.autoProfiles['chat-profile']['character:char-selected']);
+    assert.equal(h.store.control.state.autoProfiles['chat-profile']['character:char-parent'], undefined);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('ambiguous grouped speaker never falls back to a stale manual Character profile', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      injectChar: true,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: ['char-sami-2'],
+    };
+    h.host.control.apiHandler = async (path) => {
+      throw new Error(`grouped ambiguity must fail closed without fetching a fallback Character: ${path}`);
+    };
+
+    const context = await h.context.ContextService.collectContext({
+      cid: 'chat-group',
+      mid: 'm-grouped',
+      text: 'cross-speaker selection',
+      detectedRole: 'assistant',
+      detectedCharacterId: null,
+      detectedName: null,
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: true,
+    }, new AbortController().signal);
+
+    assert.equal(context.character, '');
+    assert.equal(h.host.control.calls.length, 0);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
@@ -317,6 +625,91 @@ await ok('Draft Reply writes only the active Persona and preserves named multi-c
     assert.equal(captured.override.chatId, 'chat-draft');
     assert.equal(result.result, 'Em hiểu rồi, để em thử nói theo cách của mình nhé.');
     assert.equal(meta.at(-1).persona.name, 'Current Ken');
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Draft Reply uses explicit Generic mode when the chat has no active Persona', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/generic-draft') return {
+        id: 'generic-draft',
+        personaId: null,
+        personaCharacterId: null,
+        characterIds: ['char-a'],
+      };
+      if (path === '/characters/char-a') return { id: 'char-a', data: { name: 'Alice', personality: 'calm' } };
+      if (path === '/chats/generic-draft/messages') return [
+        { id: 'u', role: 'user', content: 'Mình đang suy nghĩ.', extra: {} },
+        { id: 'a', role: 'assistant', characterId: 'char-a', content: 'Cậu muốn nói gì?', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    let captured = null;
+    h.provider.ProviderService.runInference = async (systemPrompt, userPrompt) => {
+      captured = { systemPrompt, userPrompt };
+      return { result: 'Mình muốn nói rõ hơn một chút.', streamed: false };
+    };
+
+    const meta = [];
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'generic-draft',
+      direction: 'trả lời tự nhiên',
+      mode: 'idea',
+      expectNoPersona: true,
+      signal: new AbortController().signal,
+      onMeta: (value) => meta.push(value),
+    });
+
+    assert.equal(result.genericMode, true);
+    assert.equal(result.persona, null);
+    assert.equal(result.voiceProfile, null);
+    assert.equal(result.result, 'Mình muốn nói rõ hơn một chút.');
+    assert.match(captured.systemPrompt, /without assuming a Persona card/);
+    assert.match(captured.systemPrompt, /Do not invent a Persona name, biography, memories, traits/);
+    assert.match(captured.userPrompt, /WRITING IDENTITY\nGeneric user reply/);
+    assert.doesNotMatch(captured.userPrompt, /ACTIVE PERSONA/);
+    assert.match(captured.userPrompt, /Alice: Cậu muốn nói gì\?/);
+    assert.equal(meta.at(-1).genericMode, true);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Generic Draft is discarded if a Persona becomes active during generation', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    let chatReads = 0;
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/generic-race') {
+        chatReads += 1;
+        return chatReads <= 2
+          ? { id: 'generic-race', personaId: null, personaCharacterId: null, characterIds: [] }
+          : { id: 'generic-race', personaId: 'p-new', personaCharacterId: null, characterIds: [] };
+      }
+      if (path === '/chats/generic-race/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: 'Generic reply.', streamed: false });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'generic-race',
+      direction: 'reply',
+      mode: 'idea',
+      expectNoPersona: true,
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /Persona became active while Generic Draft was generating/i);
+    assert.equal(result.result, undefined);
+    assert.equal(chatReads, 3);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
@@ -721,6 +1114,196 @@ await ok('Marinara rewrites stream the active chat connection without a client-s
     assert.ok(statuses.some((item) => item.status === 'connecting'));
     assert.ok(statuses.some((item) => item.status === 'streaming'));
     assert.ok(statuses.some((item) => item.status === 'done'));
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Live Streaming streams Direct OpenAI-compatible output independently from Fast Rewrite', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'direct',
+      ollamaUrl: 'http://127.0.0.1:11434/v1',
+      ollamaModel: 'local-model',
+      directTemp: 0.7,
+      requestTimeoutMs: 45000,
+      fastRewrite: false,
+      liveStreaming: true,
+    };
+    let requestBody = null;
+    h.host.control.fetchHandler = async (url, options) => {
+      assert.equal(url, 'http://127.0.0.1:11434/v1/chat/completions');
+      requestBody = JSON.parse(options.body);
+      const chunks = [
+        'data: {"choices":[{"delta":{"content":"hel"},"finish_reason":null}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"lo"},"finish_reason":"stop"}]}\n\n',
+        'data: [DONE]\n\n',
+      ];
+      return new Response(new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
+          controller.close();
+        },
+      }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    };
+
+    const progress = [];
+    const statuses = [];
+    const result = await h.api.APIService.runInference(
+      'system',
+      'user',
+      new AbortController().signal,
+      {
+        rewriteRequest: true,
+        onProgress: (value) => progress.push(value),
+        onStreamStatus: (value) => statuses.push(value),
+      },
+    );
+
+    assert.deepEqual(result, { result: 'hello', streamed: true });
+    assert.equal(requestBody.stream, true);
+    assert.equal(requestBody.model, 'local-model');
+    assert.equal(Object.hasOwn(requestBody, 'reasoning_effort'), false);
+    assert.equal(Object.hasOwn(requestBody, 'reasoningEffort'), false);
+    assert.equal(progress.at(-1), 'hello');
+    assert.ok(statuses.some((item) => item.status === 'connecting'));
+    assert.ok(statuses.some((item) => item.status === 'streaming'));
+    assert.ok(statuses.some((item) => item.status === 'done'));
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Fast Rewrite does not masquerade as streaming on Direct when Live Streaming is off', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'direct',
+      ollamaUrl: 'http://127.0.0.1:11434/v1',
+      ollamaModel: 'local-model',
+      directTemp: 0.7,
+      requestTimeoutMs: 45000,
+      fastRewrite: true,
+      liveStreaming: false,
+    };
+    let requestBody = null;
+    h.host.control.fetchHandler = async (url, options) => {
+      assert.equal(url, 'http://127.0.0.1:11434/v1/chat/completions');
+      requestBody = JSON.parse(options.body);
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: 'complete direct' } }],
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    };
+
+    const result = await h.api.APIService.runInference(
+      'system',
+      'user',
+      new AbortController().signal,
+      { rewriteRequest: true },
+    );
+
+    assert.deepEqual(result, { result: 'complete direct' });
+    assert.equal(requestBody.stream, false);
+    assert.equal(Object.hasOwn(requestBody, 'reasoning_effort'), false);
+    assert.equal(Object.hasOwn(requestBody, 'reasoningEffort'), false);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Live Streaming streams Extender output independently from Fast Rewrite', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'extender',
+      extenderUrl: 'http://127.0.0.1:3001',
+      directTemp: 0.7,
+      requestTimeoutMs: 45000,
+      fastRewrite: false,
+      liveStreaming: true,
+    };
+    let requestBody = null;
+    h.host.control.fetchHandler = async (url, options) => {
+      assert.equal(url, 'http://127.0.0.1:3001/v1/chat/completions');
+      requestBody = JSON.parse(options.body);
+      const chunks = [
+        'data: {"choices":[{"delta":{"content":"live "},"finish_reason":null}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"extender"},"finish_reason":"stop"}]}\n\n',
+        'data: [DONE]\n\n',
+      ];
+      return new Response(new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
+          controller.close();
+        },
+      }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    };
+
+    const progress = [];
+    const result = await h.api.APIService.runInference(
+      'system',
+      'user',
+      new AbortController().signal,
+      {
+        rewriteRequest: true,
+        onProgress: (value) => progress.push(value),
+      },
+    );
+
+    assert.deepEqual(result, { result: 'live extender', streamed: true });
+    assert.equal(requestBody.stream, true);
+    assert.equal(progress.at(-1), 'live extender');
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Live Streaming uses Marinara raw SSE for Sidecar without mutating the rewrite prompt', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'sidecar',
+      fastRewrite: true,
+      liveStreaming: true,
+      conciseSysPrompt: false,
+      maxPromptChars: 32000,
+      requestTimeoutMs: 45000,
+      lengthEnabled: false,
+      lengthPct: 0,
+    };
+    let requestBody = null;
+    h.host.control.fetchHandler = async (url, options) => {
+      assert.equal(url, '/api/generate/raw');
+      requestBody = JSON.parse(options.body);
+      const chunks = [
+        'data: {"type":"raw_started","data":{"runId":"sidecar-run"}}\n\n',
+        'data: {"type":"token","data":"Side"}\n\n',
+        'data: {"type":"token","data":"car"}\n\n',
+        'data: {"type":"result","data":{"content":"Sidecar"}}\n\n',
+        'data: {"type":"done","data":""}\n\n',
+      ];
+      return new Response(new ReadableStream({
+        start(controller) {
+          for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
+          controller.close();
+        },
+      }), { status: 200, headers: { 'content-type': 'text/event-stream' } });
+    };
+
+    const result = await h.api.APIService.fetchAIResponse(
+      { id: 'compress', name: 'Compress', prompt: 'Make it shorter.' },
+      { cid: 'chat-sidecar', mid: 'm1', text: 'A longer line.' },
+      new AbortController().signal,
+      { context: {}, onProgress: () => {} },
+    );
+
+    assert.equal(result.result, 'Sidecar');
+    assert.equal(requestBody.connectionId, '__local_sidecar__');
+    assert.equal(requestBody.streaming, true);
+    assert.equal(requestBody.messages[0].content, h.api.REWRITE_SYSTEM_PROMPT);
+    assert.notEqual(requestBody.messages[0].content, h.api.REWRITE_SYSTEM_PROMPT_CONCISE);
+    assert.equal(requestBody.parameters, undefined);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }

@@ -3,7 +3,7 @@ import { usePersistentStore } from '../store/usePersistentStore';
 import { useRuntimeStore } from '../store/useRuntimeStore';
 import { useToastStore } from '../store/useToastStore';
 import { APIService } from '../services/apiService';
-import { voiceIdentityFromMessage, voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
+import { voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
 import { useAutoProfileGeneration } from './useAutoProfileGeneration';
 
 export function useAutoVoiceProfileCoordinator() {
@@ -15,8 +15,18 @@ export function useAutoVoiceProfileCoordinator() {
   ));
   const showToast = useToastStore((state) => state.showToast);
   const [resolved, setResolved] = useState({ selectionKey: '', identity: null, targetMessage: null });
-  const selectionKey = selection?.cid && selection?.mid ? `${selection.cid}\u0000${selection.mid}` : '';
-  const domIdentity = voiceIdentityFromSelection(selection);
+  const selectionCaptureKey = selection?.captureId
+    || [
+      selection?.detectedGroupedSpeaker === true ? 'grouped' : 'message',
+      selection?.detectedCharacterId || '',
+      selection?.detectedName || '',
+    ].join(':');
+  const selectionKey = selection?.cid && selection?.mid
+    ? `${selection.cid}\u0000${selection.mid}\u0000${selectionCaptureKey}`
+    : '';
+  const isMultiMessageSelection = selection?.multiMessage === true
+    || (Array.isArray(selection?.segments) && selection.segments.length > 1);
+  const domIdentity = isMultiMessageSelection ? null : voiceIdentityFromSelection(selection);
   const resolvedIdentity = resolved.selectionKey === selectionKey ? resolved.identity : null;
   const resolvedMessage = resolved.selectionKey === selectionKey ? resolved.targetMessage : null;
   const identity = domIdentity || resolvedIdentity;
@@ -31,34 +41,35 @@ export function useAutoVoiceProfileCoordinator() {
     : resolvedMessage;
 
   useEffect(() => {
-    if (!config.autoProfileEnabled || !selection?.cid || !selection?.mid) {
+    if (!config.autoProfileEnabled || !selection?.cid || !selection?.mid || isMultiMessageSelection) {
       setResolved({ selectionKey: '', identity: null, targetMessage: null });
       return undefined;
     }
 
     let alive = true;
     const controller = new AbortController();
-    APIService.getMessageInfo(selection.cid, selection.mid, controller.signal)
-      .then((info) => {
-        if (!alive || controller.signal.aborted) return;
-        const message = info?.message || null;
-        setResolved({
-          selectionKey,
-          identity: voiceIdentityFromMessage(message),
-          targetMessage: message,
-        });
-      })
-      .catch(() => {
-        if (alive && !controller.signal.aborted) {
-          setResolved({ selectionKey, identity: null, targetMessage: null });
-        }
+
+    const resolve = async () => {
+      const target = await APIService.resolveVoiceProfileTarget(selection, controller.signal);
+      if (!alive || controller.signal.aborted) return;
+      setResolved({
+        selectionKey,
+        identity: target?.identity || null,
+        targetMessage: target?.targetMessage || null,
       });
+    };
+
+    resolve().catch(() => {
+      if (alive && !controller.signal.aborted) {
+        setResolved({ selectionKey, identity: null, targetMessage: null });
+      }
+    });
 
     return () => {
       alive = false;
       controller.abort();
     };
-  }, [config.autoProfileEnabled, selection?.cid, selection?.mid, selectionKey]);
+  }, [config.autoProfileEnabled, isMultiMessageSelection, selection, selectionKey]);
 
   const profile = identity?.key && bucket ? bucket[identity.key] || null : null;
 

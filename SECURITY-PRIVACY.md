@@ -14,7 +14,7 @@ Legacy compressed localStorage is decoded only for migration. Because the old co
 
 ## Network behavior
 
-Marinara connection mode uses `/api/generate/raw`. Sidecar mode uses `/api/sidecar/tracker`. Direct mode accepts only `http://` or `https://` URLs and rejects embedded credentials, query strings, and fragments so secrets cannot be smuggled through a persisted/base endpoint.
+Marinara connection mode uses `/api/generate/raw`. Sidecar inference also uses `/api/generate/raw`, addressed through Marinara Engine's stable synthetic connection `__local_sidecar__`; the extension retains its conservative 16,000-character-per-prompt Sidecar ceiling. Direct mode accepts only `http://` or `https://` URLs and rejects embedded credentials, query strings, and fragments so secrets cannot be smuggled through a persisted/base endpoint.
 
 The extension prefers `marinara.fetch()` so Personal Extension traffic is attributed by Marinara. Unsafe same-origin requests add `x-marinara-csrf: 1`.
 
@@ -24,9 +24,9 @@ Selected text and optional Character, Persona, history, and Lorebook context are
 
 ## Draft Reply identity and privacy
 
-Draft Reply is preview-first and writes only for the active user Persona. The active Persona is resolved when the session opens and is bound to both an identity key and a source fingerprint. The same identity/source is revalidated after model generation and immediately before composer insertion. If the user changes chat, switches Persona, or edits the Persona card in between, the draft is rejected or kept out of the composer.
+Draft Reply is preview-first. When a Persona is active, it writes only for that user Persona: the Persona is resolved when the session opens and bound to both an identity key and a source fingerprint, then revalidated after model generation and immediately before composer insertion. If no Persona is active, the UI enters explicit Generic Draft mode and uses recent chat plus the user's direction without inventing Persona-specific biography, memories, or traits and without applying a Persona Voice Profile. A Generic Draft is discarded if a Persona becomes active during generation or before insertion.
 
-Draft Reply never presses Send. Composer insertion only dispatches the normal input event after exact chat/Persona verification, leaving the final edit and send action to the user.
+Draft Reply never presses Send. Composer insertion only dispatches the normal input event after exact chat and identity-mode verification, leaving the final edit and send action to the user.
 
 Recent Draft Reply history excludes globally hidden messages and treats per-Character hidden metadata conservatively when there is no single Character audience. System/unsupported roles are not forwarded. Conversation-start boundaries stop backfilling older history. Historical user messages are attributed to a named Persona only when Marinara supplied a Persona snapshot; otherwise they remain labeled generically as User.
 

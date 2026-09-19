@@ -8,7 +8,7 @@ Rewrite Assistant is a client-side Personal Extension cross-checked against **Ma
 - Personal Extension runtime: `client`
 - Required capability: `full_page_access`
 - Node for development/build: `^20.19.0 || >=22.12.0`
-- Package version: `3.0.2`
+- Package version: `3.0.3`
 
 `full_page_access` is intentionally required because the extension maps rendered selections back to stored message content and integrates with Marinara's page APIs. Only install code you trust and review the permission warning shown by Marinara.
 
@@ -22,13 +22,13 @@ Undo/redo message bodies are kept in memory only. Persisted settings use Marinar
 
 ## Privacy defaults
 
-New installs start with Character, Persona, Lorebook, and previous-message context disabled (`contextDepth: 0`). Users opt in to context explicitly. Direct API mode sends selected text and enabled context to the configured endpoint; the UI warns when a remote endpoint is used.
+New installs keep Character-card, Persona-card, Lorebook, nearby-prose, Extender-memory, and automatic Voice Profile generation disabled. Speaker-aware editing is enabled, and rewrite history depth defaults to one previous visible message (`contextDepth: 1`). Direct API mode sends the selected text plus whichever context is enabled by these settings to the configured endpoint; the UI warns when a remote endpoint is used.
 
 No telemetry, remote scripts, cookies, `eval`, or `new Function` are used by this project.
 
 ## Reference parity status
 
-The React product remains the authority for its UX and safety model; `Marinara-Rewrite` is a behavior reference, not a codebase transplanted wholesale. v3.0.2 contains the verified Part 1 foundation, Part 2 context/management parity, and the identity/Draft Reply hardening certified against Marinara Engine v2.4.4 and v2.4.6.
+The React product remains the authority for its UX and safety model; `Marinara-Rewrite` is a behavior reference, not a codebase transplanted wholesale. v3.0.3 retains the v3.0.2 identity/Draft Reply safety model and adds mode-aware Persona Reply anchoring, modeless draggable reply UX, explicit Generic Draft fallback when no Persona is active, stronger waiting-state motion, and independent Fast Rewrite / live-streaming controls certified against Marinara Engine v2.4.4 and v2.4.6.
 
 Part 1 adds explicit context priority and pre-inference drop notices, one-shot source exclusions, captured-snapshot surrounding prose, safe trim-before-send, Preview Copy, Custom Prompt → Profile, profile search/hide, concise instructions, and popup pinning.
 
@@ -42,6 +42,16 @@ Part 2 adds:
 - chat-specific auto-profiles, **OFF by default**, with explicit/manual generation;
 - selective portable export/import that deliberately excludes provider-routing fields; and
 - bounded session-only debug logs that store metadata rather than prompt/reply bodies.
+
+v3.0.3 Persona Reply UX adds:
+
+- mode-aware quick-launcher anchoring across Marinara Roleplay, Conversation, and Game layouts, including the v2.4.6 Game composer that does not expose `data-chat-composer`;
+- a modeless draggable Draft Reply popup so the conversation behind it remains readable and scrollable;
+- a slimmer main-popup-aligned shell with equal-height header/footer and the active Persona in the header;
+- simple launcher positioning controls: Auto, Remember dragged position, and Reset; and
+- safe per-mode remembered launcher positions with viewport clamping and drag-vs-click protection;
+- Generic Draft mode when no Persona is active, without inventing Persona-specific identity or reusing a Persona Voice Profile; and
+- an adjacent Settings launcher plus stronger continuous waiting-state feedback with reduced-motion fallback.
 
 v3.0.2 identity and Draft Reply hardening adds:
 
@@ -63,6 +73,34 @@ Advanced editing is now implemented behind the same fail-closed safety model:
 - every completed result remains recoverable through a selectable raw-result field, robust clipboard fallback, or `.txt` download even when Apply is blocked.
 
 Merge Part 3 hardens these paths further: automatic message writes now stop if the active chat changes during generation; Ledger resume identity includes the source fingerprint plus inference-affecting profile/provider/context settings and freezes one prompt-context snapshot for a consistent run; merged partial applies resume only the uncommitted messages; message-edge whitespace is normalized at the Ledger/guarded-commit boundary; and manual-save prefers Marinara's `marinara:start-edit-message` event with a localized Pencil-icon fallback. Optimization hardening additionally makes Ledger cuts Unicode-scalar safe and, when `Intl.Segmenter` is available, grapheme-boundary aware; bounds hung Diff Worker requests with synchronous fallback; scans every duplicate message wrapper for the exact native editor; and adds deterministic property/fuzz coverage for span mapping, fingerprints, Ledger split/assemble/subdivide, and merged markers.
+
+
+## What changed since the first React build
+
+Baseline: **`cf21c62` — `Rewrite-Extension-React`, June 21, 2026**. The first React upload already contained the basic React/Zustand shell, rewrite popup, Preview flow, Settings, Custom Prompt, profile editing, AI Architect, Undo/Redo, and a basic AI request path. The major product layers added after that baseline include:
+
+- certified Marinara Engine v2.4.4–v2.4.6 integration, private extension storage, safer host APIs, and mode-aware Roleplay / Conversation / Game composer handling;
+- stable Marinara Connections, Sidecar, Extender, direct OpenAI-compatible endpoints, and local Ollama workflows;
+- context-aware rewriting with Character, Persona, Lore, Memory, nearby context, token estimates, one-shot exclusions, and hidden-from-AI handling;
+- exact selection mapping, fail-closed writes, multi-message rewriting, merged passes, Ledger handling for large selections, resumable flows, and stronger result recovery;
+- searchable/reorderable presets, Custom Prompt → Profile, AI Architect improvements, compact layouts, and bilingual UI controls;
+- SSE streaming, real cancellation, Fast Rewrite, bounded diagnostics, and LAN/local-endpoint guidance;
+- exact Character targeting in group chats plus identity-scoped Character/Persona Voice Profiles with source-fingerprint revalidation;
+- active-Persona Draft Reply with suggestions, Continue Draft, alternatives, shorter/longer variants, streaming preview, safe composer insertion, modeless dragging, and per-mode launcher positioning; and
+- expanded security/release engineering: privacy-safe defaults, stale-result rejection, deterministic regression/failure/property gates, dependency audits, Engine compatibility checks, and verified installable artifacts.
+
+## Credits
+
+### TCLowe1982 / HolyKnight3
+
+I started this project with almost no programming experience and, at the time, could not afford access to AI tools powerful enough to reliably help me write and debug code. Whenever I got stuck on a bug I did not know how to fix, TCLowe1982 / HolyKnight3 was always generous with his time and guidance, even though we live in Vietnam and the United States, twelve time zones apart. At times he was even willing to use his own Claude Code just to help me track down a bug. His help and encouragement were an important part of what kept me going and helped me bring Rewrite Assistant to completion.
+
+### Beoopo — Marinara Rewrite
+
+Rewrite Assistant began from the inspiration and practical experience I found in **Beoopo’s Marinara Rewrite** extension. I especially appreciate the idea and the work that demonstrated how useful an AI-assisted rewriting workflow could be inside Marinara.
+
+Rewrite Assistant was later rebuilt independently in React and has grown in a different technical direction with its own architecture, safety model, context system, provider routing, Voice Profiles, and Persona Draft Reply workflow. **Marinara Rewrite remains an important origin of the idea and deserves explicit credit for that inspiration.**
+
 
 ## Development
 

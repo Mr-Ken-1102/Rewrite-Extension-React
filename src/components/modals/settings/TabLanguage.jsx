@@ -24,7 +24,7 @@ export const TabLanguage = () => {
       <div className="rwa-lbl">{vi ? 'NGÔN NGỮ GIAO DIỆN' : 'INTERFACE LANGUAGE'}</div>
       <div className="rwa-prev" style={{ fontSize: '10.5px', lineHeight: 1.55, marginBottom: '14px', resize: 'none' }}>
         {vi
-          ? 'Thay đổi ngôn ngữ có hiệu lực ngay và được lưu cùng cấu hình của Rewrite Assistant. Tên style tùy chỉnh, prompt tùy chỉnh và nội dung do bạn tạo sẽ không bị dịch tự động.'
+          ? 'Thay đổi ngôn ngữ có hiệu lực ngay và được lưu cùng cấu hình Rewrite Assistant. Tên thiết lập tùy chỉnh, yêu cầu tùy chỉnh và nội dung bạn tạo sẽ luôn được giữ nguyên.'
           : 'Language changes take effect immediately and are saved with Rewrite Assistant settings. Custom style names, custom prompts, and user-authored content are never translated automatically.'}
       </div>
 
@@ -72,7 +72,7 @@ export const TabLanguage = () => {
 
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginTop: '14px', marginBottom: 0, resize: 'none' }}>
         {vi
-          ? 'Ghi chú: nhãn hiển thị của preset mặc định có thể được dịch sang tiếng Việt, nhưng ID, prompt và dữ liệu preset gốc vẫn giữ nguyên. Style do bạn tự tạo luôn giữ nguyên tên và prompt.'
+          ? 'Ghi chú: nhãn của các thiết lập sẵn mặc định có thể được Việt hóa cho giao diện, nhưng ID, yêu cầu gốc và dữ liệu lưu trữ vẫn giữ nguyên. Thiết lập do bạn tự tạo luôn giữ nguyên tên và nội dung.'
           : 'Note: built-in preset display labels may be translated for the interface, but their IDs, prompts, and stored preset data remain unchanged. User-created styles always keep their original names and prompts.'}
       </div>
     </>

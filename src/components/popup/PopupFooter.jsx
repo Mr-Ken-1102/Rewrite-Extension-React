@@ -12,7 +12,7 @@ export function PopupFooter({ language = 'en', msgHistory, onUndo, onRedo, onCus
       <Button glow={false} className="rwa2-action rwa2-redo" title={text('Redo', 'Làm lại')} aria-label={text('Redo', 'Làm lại')} onClick={onRedo} disabled={!msgHistory.redo || msgHistory.redo.length === 0}>
         <span className="rwa2-action-icon" aria-hidden="true">↻</span>
       </Button>
-      <Button glow={false} className="rwa2-action rwa2-custom" onClick={onCustom}>{text('Custom Prompt', 'Prompt tùy chỉnh')}</Button>
+      <Button glow={false} className="rwa2-action rwa2-custom" onClick={onCustom}>{text('Custom Prompt', 'Yêu cầu tùy chỉnh')}</Button>
       <Button glow={false} className="rwa2-action rwa2-settings" onClick={onSettings}>{text('Settings', 'Cài đặt')}</Button>
     </footer>
   );

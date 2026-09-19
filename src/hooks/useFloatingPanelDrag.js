@@ -1,24 +1,25 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useRuntimeStore } from '../store/useRuntimeStore';
+import {
+  clampFloatingPanelPosition,
+  getVisualViewportBounds,
+} from '../utils/floatingPanelGeometry.js';
 
-const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
-
-export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
+export function useFloatingPanelDrag({ panelRef, onPositionChange, allowInteractiveRoot = false }) {
   const setDragging = useRuntimeStore((state) => state.setDragging);
   const cleanupRef = useRef(null);
   const releaseTimerRef = useRef(0);
 
   const handleDragStart = useCallback((event) => {
     if (event.button !== undefined && event.button !== 0) return;
-    const eventTarget = event.target instanceof Element ? event.target : null;
-    if (eventTarget?.closest?.('[data-rwa-no-drag="true"], button, input, textarea, select, a, [role="button"]')) return;
-
-    const el = popupRef.current;
-    if (!el) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const target = event.target;
+    const interactive = target?.closest?.('button, input, textarea, select, a, [role="button"]');
+    if (interactive && (!allowInteractiveRoot || interactive !== event.currentTarget)) return;
 
     event.preventDefault();
     cleanupRef.current?.(false);
-
     if (releaseTimerRef.current) {
       window.clearTimeout(releaseTimerRef.current);
       releaseTimerRef.current = 0;
@@ -26,32 +27,19 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
 
     const pointerId = event.pointerId;
     const captureTarget = event.currentTarget;
-    const startRect = el.getBoundingClientRect();
-    const startLeft = startRect.left;
-    const startTop = startRect.top;
-    const width = startRect.width;
-    const height = startRect.height;
+    const startRect = panel.getBoundingClientRect();
     const originX = event.clientX;
     const originY = event.clientY;
-
-    let latestLeft = startLeft;
-    let latestTop = startTop;
-    let pendingDx = 0;
-    let pendingDy = 0;
-    let frameId = 0;
+    let latest = { left: startRect.left, top: startRect.top };
+    let moved = false;
     let finished = false;
 
     try { captureTarget?.setPointerCapture?.(pointerId); } catch { /* best effort */ }
 
     setDragging(true);
+    panel.dataset.rwaDragging = 'true';
+    panel.style.willChange = 'transform';
     captureTarget.style.cursor = 'grabbing';
-    el.style.willChange = 'transform';
-    el.style.transform = 'translate3d(0, 0, 0)';
-
-    const flushVisual = () => {
-      frameId = 0;
-      el.style.transform = `translate3d(${pendingDx}px, ${pendingDy}px, 0)`;
-    };
 
     const onPointerMove = (moveEvent) => {
       if (pointerId !== undefined && moveEvent.pointerId !== pointerId) return;
@@ -59,36 +47,26 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
         cleanup(true);
         return;
       }
-
       moveEvent.preventDefault();
       const samples = moveEvent.getCoalescedEvents?.();
-      const latest = samples?.length ? samples[samples.length - 1] : moveEvent;
-
-      latestLeft = clamp(
-        startLeft + latest.clientX - originX,
-        8,
-        Math.max(8, window.innerWidth - width - 8),
+      const sample = samples?.length ? samples[samples.length - 1] : moveEvent;
+      latest = clampFloatingPanelPosition(
+        {
+          left: startRect.left + sample.clientX - originX,
+          top: startRect.top + sample.clientY - originY,
+        },
+        { width: startRect.width, height: startRect.height },
+        getVisualViewportBounds(window),
       );
-      latestTop = clamp(
-        startTop + latest.clientY - originY,
-        8,
-        Math.max(8, window.innerHeight - height - 8),
-      );
-
-      pendingDx = Math.round(latestLeft - startLeft);
-      pendingDy = Math.round(latestTop - startTop);
-      if (!frameId) frameId = window.requestAnimationFrame(flushVisual);
+      const dx = latest.left - startRect.left;
+      const dy = latest.top - startRect.top;
+      if (Math.hypot(dx, dy) >= 3) moved = true;
+      panel.style.transform = `translate3d(${Math.round(dx)}px, ${Math.round(dy)}px, 0)`;
     };
 
     const cleanup = (commit) => {
       if (finished) return;
       finished = true;
-
-      if (frameId) {
-        window.cancelAnimationFrame(frameId);
-        frameId = 0;
-      }
-
       captureTarget?.removeEventListener?.('pointermove', onPointerMove);
       captureTarget?.removeEventListener?.('pointerup', onPointerUp);
       captureTarget?.removeEventListener?.('pointercancel', onPointerCancel);
@@ -102,34 +80,28 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
         }
       } catch { /* best effort */ }
 
-      el.style.transform = '';
-      el.style.willChange = '';
+      panel.style.willChange = '';
       captureTarget.style.cursor = '';
 
-      if (commit && el.isConnected) {
-        const left = Math.round(latestLeft);
-        const top = Math.round(latestTop);
-
-        el.style.left = `${left}px`;
-        el.style.top = `${top}px`;
-
-        useRuntimeStore.getState().setPopupPosition({
-          ...useRuntimeStore.getState().popupPosition,
-          left,
-          top,
-          isDragged: true,
-        });
-
-        if (pinnedPos) updateConfig({ pinnedPos: { left, top } });
-
+      if (commit && panel.isConnected && moved) {
+        const committed = { left: Math.round(latest.left), top: Math.round(latest.top) };
+        // Commit the final DOM position before removing the transient transform.
+        // This avoids a one-frame snap back to the old React left/top while the
+        // state update is still being scheduled.
+        panel.style.left = `${committed.left}px`;
+        panel.style.top = `${committed.top}px`;
+        panel.style.transform = '';
+        delete panel.dataset.rwaDragging;
+        onPositionChange?.(committed);
         releaseTimerRef.current = window.setTimeout(() => {
           releaseTimerRef.current = 0;
           useRuntimeStore.getState().setDragging(false);
         }, 64);
       } else {
+        panel.style.transform = '';
+        delete panel.dataset.rwaDragging;
         useRuntimeStore.getState().setDragging(false);
       }
-
       cleanupRef.current = null;
     };
 
@@ -138,9 +110,9 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
       cleanup(true);
     };
     const onPointerCancel = () => cleanup(false);
+    const onLostPointerCapture = () => cleanup(false);
     const onWindowBlur = () => cleanup(false);
     const onVisibilityChange = () => { if (document.hidden) cleanup(false); };
-    const onLostPointerCapture = () => cleanup(false);
 
     cleanupRef.current = cleanup;
     captureTarget?.addEventListener?.('pointermove', onPointerMove, { passive: false });
@@ -149,7 +121,7 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
     captureTarget?.addEventListener?.('lostpointercapture', onLostPointerCapture, { once: true });
     window.addEventListener('blur', onWindowBlur);
     document.addEventListener('visibilitychange', onVisibilityChange);
-  }, [pinnedPos, popupRef, setDragging, updateConfig]);
+  }, [allowInteractiveRoot, onPositionChange, panelRef, setDragging]);
 
   useEffect(() => () => {
     cleanupRef.current?.(false);

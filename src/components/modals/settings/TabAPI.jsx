@@ -4,12 +4,40 @@ import { useToastStore } from '../../../store/useToastStore';
 import { APIService } from '../../../services/apiService';
 import { MarinaraHost } from '../../../services/marinaraHost';
 import { isLikelyLocalNetworkUrl } from '../../../services/policies/providerPolicy';
+import { getProviderCapabilities } from '../../../services/providers/providerCapabilities.js';
 import { DOMUtils } from '../../../utils/domUtils';
 import { Button } from '../../ui/Button';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
 
 const t = (language, en, vi) => (language === 'vi' ? vi : en);
 const connectionLabel = (connection) => connection?.name || connection?.label || connection?.provider || connection?.id || 'Unknown connection';
+
+function fastRewriteDescription(mode, language) {
+  if (mode === 'marinara') {
+    return t(language,
+      'Reduces or disables reasoning only for rewrite requests when the selected Marinara provider supports it. Model, context, preset, and saved connection settings stay unchanged.',
+      'Giảm hoặc tắt reasoning chỉ cho request viết lại khi provider Marinara đang chọn hỗ trợ. Model, context, preset và cấu hình connection đã lưu không thay đổi.');
+  }
+  return t(language,
+    'This backend does not expose a safe acceleration control that Rewrite Assistant can use. The global preference is preserved, but Fast Rewrite is unavailable in this mode.',
+    'Backend này chưa expose cơ chế tăng tốc an toàn mà Rewrite Assistant có thể điều khiển. Tùy chọn toàn cục vẫn được giữ nhưng Fast Rewrite không khả dụng ở mode này.');
+}
+
+function liveStreamingDescription(mode, language) {
+  if (mode === 'marinara') {
+    return t(language,
+      'Streams rewrite output through Marinara /generate/raw SSE. This improves time-to-first-text but does not reduce model compute.',
+      'Stream kết quả viết lại qua SSE của Marinara /generate/raw. Cơ chế này giúp thấy chữ sớm hơn nhưng không làm giảm compute của model.');
+  }
+  if (mode === 'sidecar') {
+    return t(language,
+      'Streams the built-in local Sidecar through Marinara /generate/raw using its stable local-sidecar connection. This is real SSE, not a typewriter simulation.',
+      'Stream model Sidecar cục bộ qua Marinara /generate/raw bằng local-sidecar connection ổn định. Đây là SSE thật, không phải hiệu ứng typewriter giả.');
+  }
+  return t(language,
+    'Uses OpenAI-compatible streaming on this endpoint and progressively displays supported output as tokens arrive.',
+    'Dùng OpenAI-compatible streaming trên endpoint này và hiển thị dần kết quả khi token được trả về.');
+}
 
 const PresetItem = ({ name, url, updateConfig, showToast, language }) => (
   <button
@@ -63,10 +91,21 @@ export const TabAPI = () => {
   const [busy, setBusy] = useState(false);
   const [refreshSeq, setRefreshSeq] = useState(0);
   const [lanDiagnostic, setLanDiagnostic] = useState(null);
+  const [connectionTest, setConnectionTest] = useState({ status: 'idle', message: '' });
   const actionControllerRef = useRef(null);
 
   useEffect(() => () => actionControllerRef.current?.abort(), []);
   useEffect(() => { setLanDiagnostic(null); }, [config.ollamaUrl]);
+  useEffect(() => {
+    setConnectionTest({ status: 'idle', message: '' });
+  }, [
+    config.connMode,
+    config.marinaraRouting,
+    config.connectionId,
+    config.ollamaUrl,
+    config.ollamaModel,
+    config.extenderUrl,
+  ]);
 
   useEffect(() => {
     let alive = true;
@@ -110,6 +149,7 @@ export const TabAPI = () => {
     () => config.connMode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl),
     [config.connMode, config.ollamaUrl],
   );
+  const capabilities = getProviderCapabilities(config.connMode);
   const browserOrigin = globalThis.location?.origin || t(language, 'Unavailable in this host', 'Không xác định trong host này');
 
   const directUrlAdvisory = useMemo(() => {
@@ -142,6 +182,10 @@ export const TabAPI = () => {
     const controller = new AbortController();
     actionControllerRef.current = controller;
     setBusy(true);
+    setConnectionTest({
+      status: 'testing',
+      message: t(language, 'Testing the effective connection…', 'Đang kiểm tra kết nối hiện dùng…'),
+    });
     try {
       const response = await APIService.runInference(
         'You are a connection test. Output only the word ok.',
@@ -155,19 +199,28 @@ export const TabAPI = () => {
       );
       if (controller.signal.aborted) return;
       if (response?.aborted) {
-        showToast(t(language, '⚠️ The provider aborted the connection test before completion.', '⚠️ Provider đã hủy bài kiểm tra kết nối trước khi hoàn tất.'), 'warn');
+        setConnectionTest({
+          status: 'warn',
+          message: t(language, 'The provider aborted the connection test before completion.', 'Provider đã hủy bài kiểm tra kết nối trước khi hoàn tất.'),
+        });
         return;
       }
       if (response?.error) throw new Error(response.error);
       const suffix = config.connMode === 'marinara' && effectiveConnection ? ` via ${connectionLabel(effectiveConnection)}` : '';
-      showToast(t(
-        language,
-        `✓ Connected${suffix}${response?.result ? `: ${String(response.result).slice(0, 40)}` : ''}`,
-        `✓ Đã kết nối${suffix}${response?.result ? `: ${String(response.result).slice(0, 40)}` : ''}`,
-      ), 'ok');
+      setConnectionTest({
+        status: 'ok',
+        message: t(
+          language,
+          `Connected${suffix}${response?.result ? ` · ${String(response.result).slice(0, 40)}` : ''}`,
+          `Đã kết nối${suffix}${response?.result ? ` · ${String(response.result).slice(0, 40)}` : ''}`,
+        ),
+      });
     } catch (err) {
       if (!controller.signal.aborted && !MarinaraHost.isAbortError(err)) {
-        showToast(t(language, `✕ Connection failed: ${err?.message || String(err)}`, `✕ Kết nối thất bại: ${err?.message || String(err)}`), 'err');
+        setConnectionTest({
+          status: 'error',
+          message: t(language, `Connection failed: ${err?.message || String(err)}`, `Kết nối thất bại: ${err?.message || String(err)}`),
+        });
       }
     } finally {
       if (actionControllerRef.current === controller) {
@@ -231,14 +284,66 @@ export const TabAPI = () => {
     <>
       <div className="rwa-lbl rwa-settings-section-title">{t(language, 'MODEL SOURCE', 'NGUỒN MODEL')}</div>
 
-      <div className="rwa-form-row">
-        <span>{t(language, 'Connection mode', 'Chế độ kết nối')}</span>
-        <select className="rwa-inp" value={config.connMode || 'marinara'} onChange={(event) => updateConfig({ connMode: event.target.value })}>
-          <option value="marinara">{t(language, 'Marinara connection (recommended)', 'Kết nối Marinara (khuyến nghị)')}</option>
-          <option value="sidecar">{t(language, 'Marinara local sidecar model', 'Model Sidecar cục bộ của Marinara')}</option>
-          <option value="direct">Direct OpenAI-compatible API</option>
-          <option value="extender">Marinara Extender</option>
-        </select>
+      <div className="rwa-connection-hub">
+        <div className="rwa-form-row rwa-connection-mode-row">
+          <span>{t(language, 'Connection mode', 'Chế độ kết nối')}</span>
+          <div className="rwa-connection-mode-control">
+            <select className="rwa-inp" value={config.connMode || 'marinara'} onChange={(event) => updateConfig({ connMode: event.target.value })}>
+              <option value="marinara">{t(language, 'Marinara connection (recommended)', 'Kết nối Marinara (khuyến nghị)')}</option>
+              <option value="sidecar">{t(language, 'Marinara local sidecar model', 'Model Sidecar cục bộ của Marinara')}</option>
+              <option value="direct">Direct OpenAI-compatible API</option>
+              <option value="extender">Marinara Extender</option>
+            </select>
+            <Button glow={false} className="rwa-connection-test" onClick={handleTest} disabled={busy}>
+              {busy ? t(language, 'Testing…', 'Đang kiểm tra…') : t(language, '⚡ Test connection', '⚡ Kiểm tra kết nối')}
+            </Button>
+          </div>
+        </div>
+
+        <div
+          className={`rwa-connection-test-status rwa-connection-test-status-${connectionTest.status}`}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="rwa-connection-test-dot" aria-hidden="true"></span>
+          <span>{connectionTest.message || t(
+            language,
+            'Test results for the selected route will appear here.',
+            'Kết quả kiểm tra của kết nối đang chọn sẽ hiển thị tại đây.',
+          )}</span>
+        </div>
+
+        <div className="rwa-performance-settings">
+          <div className="rwa-setting-toggle-row rwa-fast-rewrite-setting rwa-fast-rewrite-global">
+            <div>
+              <div>
+                {t(language, 'Fast rewrite', 'Viết lại nhanh')}
+                {!capabilities.fastRewrite ? <span className="rwa-capability-badge">{t(language, 'Unavailable', 'Không hỗ trợ')}</span> : null}
+              </div>
+              <small>{fastRewriteDescription(config.connMode, language)}</small>
+            </div>
+            <ToggleSwitch
+              checked={config.fastRewrite !== false}
+              disabled={!capabilities.fastRewrite}
+              onChange={(value) => updateConfig({ fastRewrite: value })}
+            />
+          </div>
+
+          <div className="rwa-setting-toggle-row rwa-live-streaming-setting">
+            <div>
+              <div>
+                {t(language, 'Live streaming', 'Streaming trực tiếp')}
+                <span className="rwa-capability-badge rwa-capability-badge-live">SSE</span>
+              </div>
+              <small>{liveStreamingDescription(config.connMode, language)}</small>
+            </div>
+            <ToggleSwitch
+              checked={config.liveStreaming !== false}
+              disabled={!capabilities.liveStreaming}
+              onChange={(value) => updateConfig({ liveStreaming: value })}
+            />
+          </div>
+        </div>
       </div>
 
       {config.connMode === 'marinara' && (
@@ -318,17 +423,6 @@ export const TabAPI = () => {
             </div>
           </div>
 
-          <div className="rwa-setting-toggle-row rwa-fast-rewrite-setting">
-            <div>
-              <div>{t(language, 'Fast rewrite', 'Viết lại nhanh')}</div>
-              <small>{t(
-                language,
-                'Disables model reasoning only for rewrite requests when the provider supports it. The chat model and its saved settings are unchanged. Marinara rewrites are delivered through live SSE streaming.',
-                'Chỉ tắt reasoning cho request viết lại khi provider hỗ trợ. Model của chat và thiết lập đã lưu không thay đổi. Kết quả viết lại qua Marinara được nhận trực tiếp bằng SSE streaming.',
-              )}</small>
-            </div>
-            <ToggleSwitch checked={config.fastRewrite !== false} onChange={(value) => updateConfig({ fastRewrite: value })} />
-          </div>
         </div>
       )}
 
@@ -448,9 +542,6 @@ export const TabAPI = () => {
         <div className="rwa-request-note">{t(language, 'Normal Marinara rewrites do not use a client-side deadline: the active chat provider is allowed to finish, while Cancel aborts the actual Marinara generation. The timeout field remains applicable to Direct API, Extender, Sidecar, and the connection test.', 'Rewrite bình thường qua Marinara không bị cắt bởi deadline phía extension: provider của chat được phép chạy đến khi hoàn tất, còn nút Hủy sẽ dừng generation thật trong Marinara. Trường timeout vẫn áp dụng cho Direct API, Extender, Sidecar và bài kiểm tra kết nối.')}</div>
       )}
 
-      <Button glow={false} className="rwa-full-width" variant="rwa-accept" onClick={handleTest} disabled={busy}>
-        {busy ? t(language, 'Testing…', 'Đang kiểm tra…') : t(language, '⚡ Test effective connection', '⚡ Kiểm tra kết nối hiện dùng')}
-      </Button>
     </>
   );
 };

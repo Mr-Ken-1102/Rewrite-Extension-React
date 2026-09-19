@@ -17,11 +17,12 @@ ok('popup drag has pointer cancel, blur and visibility fail-safe cleanup', () =>
   assert.match(source, /setDragging\(false\)/);
 });
 
-ok('popup drag uses a minimal transform-only hot path', () => {
+ok('popup drag batches compositor-only writes to one animation frame', () => {
   const source = read('./src/hooks/usePopupDrag.js');
   assert.match(source, /setPointerCapture/);
   assert.match(source, /translate3d\(/);
-  assert.doesNotMatch(source, /requestAnimationFrame/);
+  assert.match(source, /requestAnimationFrame\(flushVisual\)/);
+  assert.match(source, /cancelAnimationFrame\(frameId\)/);
   assert.doesNotMatch(source, /document\.body\.style/);
   assert.doesNotMatch(source, /classList\.add\('rwa-dragging-active'\)/);
 
@@ -29,9 +30,12 @@ ok('popup drag uses a minimal transform-only hot path', () => {
   assert.ok(moveMatch, 'onPointerMove handler must be present');
   const moveBody = moveMatch[1];
   assert.doesNotMatch(moveBody, /getBoundingClientRect|offsetWidth|offsetHeight/);
-  assert.doesNotMatch(moveBody, /setPopupPosition|updateConfig|setDragging/);
-  assert.doesNotMatch(moveBody, /requestAnimationFrame|setTimeout/);
-  assert.match(moveBody, /style\.transform = `translate3d/);
+  assert.doesNotMatch(moveBody, /setPopupPosition|updateConfig|setDragging|setTimeout/);
+  assert.match(moveBody, /requestAnimationFrame\(flushVisual\)/);
+
+  const flushMatch = source.match(/const flushVisual = \(\) => \{([\s\S]*?)\n    \};/);
+  assert.ok(flushMatch, 'drag visual flush must be present');
+  assert.match(flushMatch[1], /style\.transform = `translate3d/);
 });
 
 ok('popup drag CSS avoids descendant-wide drag invalidation', () => {
@@ -119,16 +123,33 @@ ok('Marinara routing makes chat-following and fixed connection selection explici
   assert.match(settings, /Use a specific Marinara connection/);
 });
 
-ok('Marinara streaming preserves empty-output recovery without duplicating fast rewrites', () => {
+ok('Marinara raw transport preserves empty-output recovery with independent streaming', () => {
   const source = read('./src/services/providers/providerService.js');
-  assert.match(source, /const requestRaw = async \(parameters = null\) =>/);
-  assert.match(source, /streaming:\s*true/);
-  assert.match(source, /runId,/);
-  assert.match(source, /readRawStream\(response, signal, override\.onProgress, override\.onStreamStatus\)/);
+  assert.match(source, /const requestRaw = \(parameters = null\) => requestEngineRaw\(/);
+  assert.match(source, /streaming:\s*liveStreaming/);
+  assert.match(source, /Accept:\s*streaming \? 'text\/event-stream' : 'application\/json'/);
   assert.match(source, /requestRaw\(\{ reasoningEffort: null \}\)/);
   assert.match(source, /if \(!content\.trim\(\) && !fastRewrite\)/);
   assert.match(source, /inference\.empty_response/);
   assert.match(source, /RWA_PROVIDER_EMPTY_RESPONSE/);
+});
+
+ok('Fast Rewrite and Live Streaming have separate provider capability contracts', () => {
+  const provider = read('./src/services/providers/providerService.js');
+  const caps = read('./src/services/providers/providerCapabilities.js');
+  const api = read('./src/services/apiService.js');
+  const settings = read('./src/components/modals/settings/TabAPI.jsx');
+  assert.match(provider, /const fastRewrite = override\.rewriteRequest === true && config\.fastRewrite !== false && capabilities\.fastRewrite/);
+  assert.match(provider, /const liveStreaming = config\.liveStreaming !== false/);
+  assert.match(provider, /stream:\s*liveStreaming/g);
+  assert.match(provider, /LOCAL_SIDECAR_CONNECTION_ID/);
+  assert.match(provider, /readOpenAICompatibleStream/);
+  assert.doesNotMatch(api, /providerPromptConfig|config\.connMode === 'sidecar' && config\.fastRewrite/);
+  assert.match(caps, /fastRewriteStrategy:\s*'reasoning-override'/);
+  assert.match(caps, /liveStreamingStrategy:\s*'marinara-raw-sse'/);
+  assert.match(caps, /liveStreamingStrategy:\s*'openai-compatible-sse'/);
+  assert.match(settings, /fastRewriteDescription\(config\.connMode, language\)/);
+  assert.match(settings, /liveStreamingDescription\(config\.connMode, language\)/);
 });
 
 ok('rewrite and auto-profile inference carry chat identity to the provider', () => {
@@ -244,7 +265,7 @@ ok('main-popup buttons opt out of cursor-following glow layout reads', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
   const footer = read('./src/components/popup/PopupFooter.jsx');
   assert.match(button, /if \(glow && btnRef\.current/);
-  assert.match(rewrite, /glow=\{false\}/);
+  assert.doesNotMatch(rewrite, /<Button|glow=/);
   assert.match(grid, /glow=\{false\}/);
   assert.equal((footer.match(/glow=\{false\}/g) || []).length, 4);
 });

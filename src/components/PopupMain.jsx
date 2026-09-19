@@ -20,6 +20,7 @@ import { voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js'
 const EMPTY_HISTORY = Object.freeze({ undo: [], redo: [] });
 const TOOLTIP_GAP = 10;
 const TOOLTIP_MAX_WIDTH = 240;
+const PRESET_TOOLTIP_MAX_WIDTH = 320;
 const TOOLTIP_VIEWPORT_GUTTER = 8;
 
 function getTooltipViewportBounds() {
@@ -47,7 +48,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const vi = language === 'vi';
   const text = useCallback((en, viText) => (vi ? viText : en), [vi]);
 
-  const [tip, setTip] = useState({ show: false, text: '', x: 0, y: 0 });
+  const [tip, setTip] = useState({ show: false, content: '', kind: 'default', x: 0, y: 0 });
   const [contextExclusions, setContextExclusions] = useState({});
   const [trimOpen, setTrimOpen] = useState(false);
   const [trimText, setTrimText] = useState(selection?.text || '');
@@ -71,15 +72,17 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     });
   }, [selection]);
 
-  const showTooltip = useCallback((event, tooltipText) => {
+  const showTooltip = useCallback((event, tooltipContent) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const bounds = getTooltipViewportBounds();
+    const kind = tooltipContent && typeof tooltipContent === 'object' ? tooltipContent.kind || 'default' : 'default';
+    const tooltipWidth = kind === 'preset' ? PRESET_TOOLTIP_MAX_WIDTH : TOOLTIP_MAX_WIDTH;
     const rightCandidate = rect.right + TOOLTIP_GAP;
-    const leftCandidate = rect.left - TOOLTIP_MAX_WIDTH - TOOLTIP_GAP;
-    const x = rightCandidate + TOOLTIP_MAX_WIDTH <= bounds.right - TOOLTIP_VIEWPORT_GUTTER
+    const leftCandidate = rect.left - tooltipWidth - TOOLTIP_GAP;
+    const x = rightCandidate + tooltipWidth <= bounds.right - TOOLTIP_VIEWPORT_GUTTER
       ? rightCandidate
       : leftCandidate;
-    setTip({ show: true, text: tooltipText, x, y: rect.top });
+    setTip({ show: true, content: tooltipContent, kind, x, y: rect.top });
   }, []);
 
   const hideTooltip = useCallback(() => {
@@ -105,7 +108,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     if (Math.abs(nextX - tip.x) > 0.5 || Math.abs(nextY - tip.y) > 0.5) {
       setTip((current) => current.show ? { ...current, x: nextX, y: nextY } : current);
     }
-  }, [tip.show, tip.text, tip.x, tip.y]);
+  }, [tip.show, tip.content, tip.kind, tip.x, tip.y]);
 
   const colCount = useMemo(() => Math.max(1, config.cols || 4), [config.cols]);
   const layoutColCount = useMemo(
@@ -125,7 +128,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   }), [contextExclusions, selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
-  const voiceIdentity = voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null;
+  const voiceIdentity = selection?.multiMessage ? null : (voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null);
   const autoProfile = voiceIdentity?.key && autoProfileBucket
     ? autoProfileBucket[voiceIdentity.key] || null
     : null;
@@ -147,7 +150,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     compact: config.compact,
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
-    hasAutoProfile: !!autoProfile,
   });
 
   const runProfile = useCallback((profile) => {
@@ -217,6 +219,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           language={language}
           selection={selection}
           pinned={!!config.pinnedPos}
+          identityProfile={autoProfile} onRunIdentityProfile={runProfile}
+          onTooltip={showTooltip} onTooltipLeave={hideTooltip}
           onDragStart={handleDragStart}
           onTrim={openTrim}
           onPinToggle={handlePinToggle}
@@ -229,7 +233,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
-            autoProfile={autoProfile}
+            fastRewrite={config.fastRewrite !== false} liveStreaming={config.liveStreaming !== false} connectionMode={config.connMode}
             selection={selection}
             mergeMultiMsg={config.mergeMultiMsg}
             onRun={runProfile}
@@ -293,12 +297,20 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
 
       <div
         ref={tooltipRef}
-        className={`rwa2-tooltip ${tip.show ? 'rwa2-tooltip-show' : ''}`}
+        className={`rwa2-tooltip ${tip.kind === 'preset' ? 'rwa2-tooltip-preset' : ''} ${tip.show ? 'rwa2-tooltip-show' : ''}`.trim()}
         role="tooltip"
         aria-hidden={!tip.show}
         style={{ left: tip.x, top: tip.y }}
       >
-        {tip.text}
+        {tip.kind === 'preset' && tip.content && typeof tip.content === 'object' ? (
+          <>
+            <div className="rwa2-tooltip-preset-head">
+              <span className="rwa2-tooltip-preset-name">{tip.content.title}</span>
+              <span className="rwa2-tooltip-preset-meta">{vi ? 'PROMPT THIẾT LẬP' : 'PRESET PROMPT'}</span>
+            </div>
+            <div className="rwa2-tooltip-preset-copy">{tip.content.prompt}</div>
+          </>
+        ) : String(tip.content || '')}
       </div>
     </>
   );

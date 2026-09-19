@@ -8,8 +8,9 @@ export const POPUP_COMPACT_MIN_CELL = 100;
 export const POPUP_PROFILE_ROW_HEIGHT = 30;
 export const POPUP_COMPACT_ROW_HEIGHT = 27;
 export const POPUP_PROFILE_ROW_GAP = 5;
-export const POPUP_FIXED_HEIGHT = 266;
+export const POPUP_FIXED_HEIGHT = 270;
 export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
+export const POPUP_PERFORMANCE_STRIP_HEIGHT = 35;
 export const POPUP_STACKED_CONTEXT_EXTRA = 78;
 export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 36;
 
@@ -42,13 +43,13 @@ export function getResponsivePopupExtra(viewportWidth) {
 export function estimatePopupHeight({
   visibleRows,
   compact = false,
-  hasAutoProfile = false,
   multiMessage = false,
   viewportWidth = POPUP_DESKTOP_WIDTH,
 }) {
   return POPUP_FIXED_HEIGHT
     + getProfileViewportHeight(visibleRows, compact)
-    + (hasAutoProfile ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
     + (multiMessage ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
+    // Performance status keeps a permanent row so Fast Rewrite / Streaming toggles never change popup geometry.
+    + POPUP_PERFORMANCE_STRIP_HEIGHT
     + getResponsivePopupExtra(viewportWidth);
 }

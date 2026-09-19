@@ -1,5 +1,34 @@
 # Changelog
 
+## 3.0.3 — Persona Reply UX and three-mode anchoring
+
+### Marinara layout integration
+- Persona Reply quick-launch anchoring is now mode-aware across Roleplay, Conversation, and Game.
+- Roleplay/Conversation continue to use Marinara's explicit `data-chat-composer` hook.
+- Game uses a strictly scoped fallback inside the visible `data-chat-mode="game"` resource-exclusion input region because Marinara Engine v2.4.6 GameInput does not expose `data-chat-composer`.
+- Engine compatibility checks now pin all three mode contracts so future DOM drift fails CI.
+
+### Draft Reply popup
+- Replaced the blocking overlay modal with a modeless draggable floating popup so users can keep reading and scrolling previous chat turns.
+- Moved the active Persona chip into the right side of the header.
+- Header and footer now share the same compact 36px height and reuse the main Rewrite popup's visual tokens.
+- Primary actions remain in the stable footer; alternative/shorter/longer/copy actions stay in the body.
+- Floating-panel geometry uses the visual viewport, re-clamps on resize/content changes, and never requires page-wide focus trapping.
+
+### Quick launcher positioning
+- Added simple settings for Auto, Remember dragged position, and Reset.
+- Remember mode stores separate positions for Roleplay, Conversation, and Game and re-clamps them to the current viewport.
+- Dragging the launcher uses a movement threshold and post-drag click suppression so repositioning cannot accidentally open Draft Reply.
+- Persisted launcher data is sanitized to supported modes and finite bounded coordinates only.
+
+### Final v3.0.3 polish and public defaults
+- Added explicit Generic Draft mode when no Persona is active; it uses recent chat plus the user's direction without inventing Persona-specific identity, and stale generic output is rejected if a Persona becomes active mid-run.
+- Fixed grouped Conversation Character identity resolution to use the exact visible speaker segment and unique current-chat Character mapping instead of the parent message Character id.
+- Separated Fast Rewrite from live streaming; Marinara rewrite requests can disable reasoning without changing model/context, while unsupported connection modes show Fast Rewrite as unavailable rather than pretending acceleration occurred.
+- Added real SSE progress for Marinara/Sidecar and OpenAI-compatible streaming for Direct/Extender, with stronger continuous waiting-state feedback and reduced-motion fallback.
+- Added the adjacent Settings launcher and polished default viewport placement for Persona Reply.
+- New installs show five profile rows, keep Speaker-aware editing and Persona Reply enabled, keep Extender memory disabled, and keep automatic Character / Persona Voice Profile generation OFF as an explicit opt-in.
+
 ## 3.0.2 — Identity-safe Draft Reply and release certification
 
 ### Exact Character / Voice Profile identity

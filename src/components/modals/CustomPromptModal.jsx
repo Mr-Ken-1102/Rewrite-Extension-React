@@ -5,6 +5,8 @@ import { usePersistentStore } from '../../store/usePersistentStore';
 import { useToastStore } from '../../store/useToastStore';
 import { APIService } from '../../services/apiService';
 import { unwrapMatchingOuterQuotes } from '../../utils/textSanitizers';
+import { DOMUtils } from '../../utils/domUtils';
+import { useRuntimeStore } from '../../store/useRuntimeStore';
 
 const REFINE_SYSTEM = 'Turn a rough rewrite request into one clear, specific editing instruction. Preserve the user intent. Start with a verb. Output only one instruction sentence or short paragraph, with no quotes, preamble, markdown fence, or alternatives.';
 
@@ -26,7 +28,7 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
   const handleRun = () => {
     const v = promptValue.trim();
     if (!v) {
-      showToast('⚠️ Please enter your custom prompt first!', 'warn');
+      showToast('Please enter your custom prompt first!', 'warn');
       textareaRef.current?.focus();
       return;
     }
@@ -45,7 +47,7 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
   const handleSaveAsProfile = () => {
     const value = promptValue.trim();
     if (!value) {
-      showToast('⚠️ Please enter a custom prompt first!', 'warn');
+      showToast('Please enter a custom prompt first!', 'warn');
       textareaRef.current?.focus();
       return;
     }
@@ -71,19 +73,21 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
     refineControllerRef.current = controller;
     setIsRefining(true);
     try {
+      const chatId = DOMUtils.getChatId() || useRuntimeStore.getState().selection?.cid || '';
       const response = await APIService.runInference(
         REFINE_SYSTEM,
         `Rough rewrite request:\n<request>\n${rough.replace(/<\/?request>/gi, '[request]')}\n</request>`,
         controller.signal,
+        { chatId },
       );
       if (controller.signal.aborted || response?.aborted) return;
       if (response?.error) throw new Error(response.error);
       const refined = unwrapMatchingOuterQuotes(response?.result).slice(0, 5000);
       if (!refined) throw new Error('The model returned an empty refinement.');
       setPromptValue(refined);
-      showToast('✓ Custom prompt refined', 'ok');
+      showToast('Custom prompt refined', 'ok');
     } catch (err) {
-      if (!controller.signal.aborted) showToast(`✕ Refine failed: ${err?.message || String(err)}`, 'err');
+      if (!controller.signal.aborted) showToast(`Refine failed: ${err?.message || String(err)}`, 'err');
     } finally {
       if (refineControllerRef.current === controller) refineControllerRef.current = null;
       if (!controller.signal.aborted) setIsRefining(false);
@@ -119,6 +123,15 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
           {isRefining ? 'Refining…' : '✨ Refine with AI'}
         </Button>
       </div>
+
+      {isRefining && (
+        <div className="rwa-refine-status" role="status" aria-live="polite">
+          <div className="rwa-activity-rail" aria-hidden="true">
+            <span className="rwa-activity-runner"></span>
+          </div>
+          <span>Refining the instruction with the current model…</span>
+        </div>
+      )}
 
       {customs.length > 0 && (
         <>
