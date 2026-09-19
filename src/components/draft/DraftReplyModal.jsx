@@ -120,16 +120,21 @@ export function DraftReplyModal({
   const isSuccess = state.status === 'success';
   const isError = state.status === 'error';
   const isPersonaResolving = state.personaResolving === true;
-  const personaLabel = state.persona?.name
-    ? 'Persona: ' + state.persona.name
-    : isPersonaResolving
-      ? text('Resolving Persona…', 'Đang tải Persona…')
-      : text('Persona unavailable', 'Chưa có Persona');
+  const isGenericMode = state.genericMode === true;
+  const personaLabel = isGenericMode
+    ? text('Generic reply', 'Trả lời chung')
+    : state.persona?.name
+      ? 'Persona: ' + state.persona.name
+      : isPersonaResolving
+        ? text('Resolving Persona…', 'Đang tải Persona…')
+        : text('Persona unavailable', 'Chưa có Persona');
   const profileLabel = isPersonaResolving
     ? text('Checking Persona card and Voice Profile…', 'Đang tải Persona và hồ sơ giọng…')
-    : state.voiceProfile?.name
-      ? (vi ? 'Hồ sơ giọng: ' : 'Voice Profile: ') + state.voiceProfile.name
-      : text('Using current Persona card/style data', 'Theo hồ sơ Persona hiện tại');
+    : isGenericMode
+      ? text('Generic mode · recent chat + your direction', 'Chế độ chung · hội thoại gần đây + chỉ dẫn của bạn')
+      : state.voiceProfile?.name
+        ? (vi ? 'Hồ sơ giọng: ' : 'Voice Profile: ') + state.voiceProfile.name
+        : text('Using current Persona card/style data', 'Theo hồ sơ Persona hiện tại');
 
   const streamText = state.streamStatus === 'connecting'
     ? text('SSE · connecting…', 'SSE · đang kết nối…')
@@ -142,7 +147,7 @@ export function DraftReplyModal({
           : '';
 
   const submit = () => {
-    if (isPersonaResolving || !state.persona?.key) return;
+    if (isPersonaResolving || (!isGenericMode && !state.persona?.key)) return;
     onUpdateInput?.({ direction, mode });
     onGenerate?.({ direction, mode });
   };
@@ -179,7 +184,7 @@ export function DraftReplyModal({
           <span className="rwa-draft-title">{text('Draft Reply', 'Soạn trả lời')}</span>
         </div>
         <div className="rwa-draft-header-right">
-          <span className="rwa-draft-persona-chip" title={profileLabel}>✦ {personaLabel}</span>
+          <span className={'rwa-draft-persona-chip ' + (isGenericMode ? 'rwa-draft-persona-chip-generic' : '')} title={profileLabel}>✦ {personaLabel}</span>
           <button
             type="button"
             className="rwa-draft-close"
@@ -239,27 +244,39 @@ export function DraftReplyModal({
               maxLength={6000}
             />
             <div className="rwa-draft-hint">
-              {text(
-                'Draft Reply writes only the active Persona’s turn. The chat behind this popup remains readable and scrollable.',
-                'Chỉ soạn lượt của Persona hiện tại. Bạn vẫn có thể đọc và cuộn cuộc trò chuyện phía sau.',
-              )}
+              {isGenericMode
+                ? text(
+                    'No Persona is selected. Generic mode writes only your turn from recent chat and your direction, without inventing Persona-specific traits.',
+                    'Chưa chọn Persona. Chế độ chung chỉ soạn lượt của bạn từ hội thoại gần đây và chỉ dẫn, không tự bịa đặc điểm Persona.',
+                  )
+                : text(
+                    'Draft Reply writes only the active Persona’s turn. The chat behind this popup remains readable and scrollable.',
+                    'Chỉ soạn lượt của Persona hiện tại. Bạn vẫn có thể đọc và cuộn cuộc trò chuyện phía sau.',
+                  )}
             </div>
           </div>
         )}
 
         {isLoading && (
-          <div className="rwa-draft-generation">
+          <div className="rwa-draft-generation rwa-waiting-surface">
+            <div className="rwar-working-rail" aria-hidden="true"><span></span></div>
             {streamText ? (
               <div className="rwar-stream-status" role="status" aria-live="polite">
                 <span className="rwar-stream-dot" aria-hidden="true"></span>
                 <span>{streamText}</span>
               </div>
             ) : null}
-            <div className="rwa-pulse"></div>
-            <div className="rwa-draft-loading-copy">
-              {state.partialResult
-                ? text('Receiving Persona reply…', 'Đang nhận bản trả lời…')
-                : text('Drafting the Persona reply…', 'Đang soạn trả lời…')}
+            <div className="rwa-draft-loading-copy" role="status" aria-live="polite">
+              <span>
+                {state.partialResult
+                  ? (isGenericMode
+                      ? text('Receiving generic reply', 'Đang nhận trả lời chung')
+                      : text('Receiving Persona reply', 'Đang nhận bản trả lời Persona'))
+                  : (isGenericMode
+                      ? text('Drafting a generic reply', 'Đang soạn trả lời chung')
+                      : text('Drafting the Persona reply', 'Đang soạn trả lời Persona'))}
+              </span>
+              <span className="rwa-waiting-dots" aria-hidden="true"><i></i><i></i><i></i></span>
             </div>
             {state.partialResult ? (
               <div className="rwa-prev rwa-draft-live" aria-live="polite">{state.partialResult}</div>
@@ -307,10 +324,10 @@ export function DraftReplyModal({
               variant="rwa-accept"
               className="rwa-draft-footer-btn"
               onClick={submit}
-              disabled={isPersonaResolving || !state.persona?.key}
+              disabled={isPersonaResolving || (!isGenericMode && !state.persona?.key)}
             >
               {isPersonaResolving
-                ? text('Resolving Persona…', 'Đang tải Persona…')
+                ? text('Resolving identity…', 'Đang xác định danh tính…')
                 : direction.trim()
                   ? text('✦ Draft reply', '✦ Soạn trả lời')
                   : text('✦ Suggest a reply', '✦ Gợi ý trả lời')}
@@ -330,7 +347,7 @@ export function DraftReplyModal({
         {isError && (
           state.personaResolutionFailed ? (
             <Button glow={false} className="rwa-draft-footer-btn rwa-draft-footer-full" onClick={onClose}>
-              {text('Close and choose a Persona', 'Đóng để chọn Persona')}
+              {text('Close Draft Reply', 'Đóng Soạn trả lời')}
             </Button>
           ) : (
             <>
