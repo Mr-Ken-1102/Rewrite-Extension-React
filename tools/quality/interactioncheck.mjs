@@ -67,14 +67,14 @@ ok('popup header keeps drag ownership except on explicit interactive controls', 
   assert.match(css, /\.rwa2-toolbar-actions\s*\{[\s\S]*flex:\s*0 1 auto/s);
 });
 
-ok('live rail help is keyboard reachable and bilingual', () => {
-  const source = read('./src/components/popup/LiveRail.jsx');
+ok('three-mode strip help is keyboard reachable and bilingual', () => {
+  const source = read('./src/components/popup/PerformanceStrip.jsx');
   assert.match(source, /FREE_MODE_HELP/);
   assert.match(source, /FREE_MODE_HELP_VI/);
   assert.match(source, /fastRewriteHelp\(mode, vi\)/);
   assert.match(source, /streamingHelp\(available, vi\)/);
-  assert.match(source, /aria-description=\{help\}/);
-  assert.match(source, /onFocus=\{\(event\) => onTooltip\?\.\(event, help\)\}/);
+  assert.match(source, /aria-description=\{item\.help\}/);
+  assert.match(source, /onFocus=\{\(event\) => onTooltip\?\.\(event, item\.help\)\}/);
   assert.match(source, /onBlur=\{onTooltipLeave\}/);
 });
 
@@ -97,18 +97,17 @@ ok('non-modal popup exposes a localized named region without interfering with di
   assert.doesNotMatch(source, /className="rwa2-popup"[\s\S]*role="dialog"/);
 });
 
-ok('popup controls preserve switch semantics and named request groups', () => {
+ok('popup controls preserve switch semantics and named compact groups', () => {
   const toggle = read('./src/components/ui/ToggleSwitch.jsx');
-  const inspector = read('./src/components/popup/RequestInspector.jsx');
-  const recipe = read('./src/components/popup/RecipeBar.jsx');
-  const live = read('./src/components/popup/LiveRail.jsx');
+  const context = read('./src/components/popup/ContextDeck.jsx');
+  const performance = read('./src/components/popup/PerformanceStrip.jsx');
   assert.match(toggle, /role="switch"/);
   assert.match(toggle, /aria-label=\{ariaLabel\}/);
-  assert.match(inspector, /role="group" aria-label=\{text\('Persistent context sources', 'Nguồn ngữ cảnh mặc định'\)\}/);
-  assert.match(recipe, /role="group" aria-label=\{text\('Sources and parameters for this rewrite'/);
-  assert.match(recipe, /aria-pressed=\{!excluded\}/);
-  assert.match(live, /aria-pressed=\{active\}/);
-  assert.match(live, /aria-expanded=\{inspectorOpen\}/);
+  assert.match(context, /role="group" aria-label=\{text\('Persistent context sources', 'Nguồn ngữ cảnh mặc định'\)\}/);
+  assert.match(context, /role="group" aria-label=\{text\('Sources for this rewrite', 'Nguồn cho lần viết lại này'\)\}/);
+  assert.match(context, /aria-pressed=\{!excluded\}/);
+  assert.match(context, /aria-expanded=\{open\}/);
+  assert.match(performance, /aria-pressed=\{item\.active\}/);
 });
 
 ok('trim-selection dialog is isolated and opts out of cursor-following glow work', () => {
