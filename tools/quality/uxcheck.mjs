@@ -178,14 +178,15 @@ ok('settings expose current-chat connection without duplicate model selection', 
   assert.match(api, /No separate model selection is required/);
 });
 
-ok('popup keeps identity and token status on one compact row with one unified context control block', () => {
+ok('popup keeps identity and token status on the approved row above modes and presets', () => {
+  const status = read('./src/components/popup/IdentityStatusRow.jsx');
   const context = read('./src/components/popup/ContextDeck.jsx');
   const tooltip = read('./src/components/popup/PopupTooltip.jsx');
-  assert.match(context, /rwa2-context-identity-row/);
+  assert.match(status, /rwa2-status-row/);
+  assert.match(status, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
+  assert.match(status, /kind: 'token'/);
+  assert.match(status, /Estimate only — not the provider billing\/tokenizer count/);
   assert.match(context, /rwa2-context-chip/);
-  assert.match(context, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
-  assert.match(context, /kind: 'token'/);
-  assert.match(context, /Estimate only — not the provider billing\/tokenizer count/);
   assert.match(tooltip, /rwa2-tooltip-token/);
   assert.doesNotMatch(context, /This rewrite|Input composition|rwa2-token-detail-grid|rwa2-token-popover/);
 });
@@ -196,7 +197,7 @@ ok('context refresh keeps resolved identity and token text stable while controls
   assert.match(hook, /const sameSelection = current\.selectionKey === selectionKey/);
   assert.match(hook, /identities: sameSelection \? current\.identities : null/);
   assert.match(hook, /parts: sameSelection \? current\.parts : null/);
-  assert.match(context, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.match(status, /tokenInfo\.loading && !tokenInfo\.parts/);
   assert.doesNotMatch(hook, /loading: true, identities: null/);
 });
 

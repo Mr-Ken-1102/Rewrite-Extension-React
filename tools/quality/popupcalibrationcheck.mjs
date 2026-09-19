@@ -15,19 +15,19 @@ assert.match(
 );
 
 assert.match(a11y, /\.rwa2-token-trigger,[\s\S]*font-size:\s*11px !important/);
-assert.match(a11y, /\.rwa2-profile-name\s*\{[\s\S]*font-size:\s*13px/);
-assert.match(a11y, /\.rwa2-context-chip\s*\{[\s\S]*min-height:\s*24px/);
-assert.match(context, /\.rwa2-performance-item\s*\{[\s\S]*min-height:\s*21px/);
-assert.match(context, /\.rwa2-token-trigger\s*\{[\s\S]*min-height:\s*21px/);
-assert.match(context, /\.rwa2-context-identity-row\s*\{[\s\S]*min-height:\s*29px/);
+assert.match(a11y, /\.rwa2-profile-name\s*\{[\s\S]*font-size:\s*12px/);
+assert.match(context, /\.rwa2-context-chip\s*\{[\s\S]*min-height:35px/);
+assert.match(context, /\.rwa2-performance-item\s*\{[\s\S]*min-height:32px/);
+assert.match(base, /\.rwa2-token-trigger\s*\{[\s\S]*min-height:31px/);
+assert.match(base, /\.rwa2-status-row\s*\{[\s\S]*min-height:39px/);
 assert.match(context, /\.rwa2-tooltip-token\s*\{[\s\S]*width:\s*min\(286px/);
 assert.match(a11y, /:focus-visible/);
 assert.match(a11y, /prefers-contrast:\s*more/);
 assert.doesNotMatch(a11y, /font-size:\s*(?:[0-9](?:\.[0-9]+)?)px/);
-assert.match(a11y, /\.rwa2-performance-key\s*\{\s*font-size:\s*10px/);
-assert.match(a11y, /\.rwa2-popup \.rwa2-action\s*\{\s*font-size:\s*11\.5px !important/);
-assert.match(base, /\.rwa2-brand-title\s*\{[\s\S]*font-weight:\s*760;[\s\S]*letter-spacing:\s*\.055em/);
-assert.match(base, /\.rwa2-profile-name\s*\{[\s\S]*font-weight:\s*650;[\s\S]*letter-spacing:\s*\.005em/);
-assert.match(base, /\.rwa2-popup \.rwa2-action\s*\{[\s\S]*font-weight:\s*600 !important/);
+assert.match(a11y, /\.rwa2-performance-key\s*\{\s*font-size:9\.5px/);
+assert.match(a11y, /\.rwa2-popup \.rwa2-action\s*\{\s*font-size:11px !important/);
+assert.match(base, /\.rwa2-brand-title\s*\{[\s\S]*font-weight:740;[\s\S]*letter-spacing:-\.015em/);
+assert.match(base, /\.rwa2-profile-name\s*\{[\s\S]*font-weight:560;[\s\S]*letter-spacing:-\.005em/);
+assert.match(base, /\.rwa2-popup \.rwa2-action\s*\{[\s\S]*font-weight:560 !important/);
 
 console.log('popupcalibrationcheck: readability/target/focus contract passed');

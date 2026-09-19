@@ -1140,7 +1140,8 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(popup, /deriveTrimmedSelection/);
   assert.match(popup, /pinnedPos/);
   assert.match(contextDeck, /rwa2-context-chip/);
-  assert.match(contextDeck, /kind: 'token'/);
+  const identityStatus = readFileSync('./src/components/popup/IdentityStatusRow.jsx', 'utf8');
+  assert.match(identityStatus, /kind: 'token'/);
   assert.doesNotMatch(contextDeck, /Persistent context sources/);
   assert.match(contextTab, /DEFAULT REWRITE SOURCES/);
   assert.match(contextTab, /config\.injectChar/);
@@ -1312,14 +1313,15 @@ ok('debug logging is opt-in, bounded, session-only, and metadata-owned by the se
 });
 
 ok('token preview stays compact beside identity and uses the shared right-side hover tooltip', () => {
+  const status = readFileSync('./src/components/popup/IdentityStatusRow.jsx', 'utf8');
   const deck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
   const tooltip = readFileSync('./src/components/popup/PopupTooltip.jsx', 'utf8');
   const hook = readFileSync('./src/hooks/useContextInspector.js', 'utf8');
-  assert.match(deck, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
-  assert.match(deck, /Show token estimate details/);
-  assert.match(deck, /kind: 'token'/);
-  assert.match(deck, /Estimate only — not the provider billing\/tokenizer count/);
-  assert.match(deck, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
+  assert.match(status, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
+  assert.match(status, /Show token estimate details/);
+  assert.match(status, /kind: 'token'/);
+  assert.match(status, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.match(status, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.doesNotMatch(deck, /rwa2-token-popover|rwa2-context-toggle|rwa2-context-collapse/);
   assert.match(tooltip, /rwa2-tooltip-token/);
   assert.match(hook, /const oneShot = rewriteSelection\(\)/);
@@ -1327,7 +1329,7 @@ ok('token preview stays compact beside identity and uses the shared right-side h
   assert.match(hook, /sameSelection \? current\.parts : null/);
   assert.match(hook, /sameSelection \? current\.identities : null/);
   assert.match(hook, /tokenInfo\.selectionKey !== selectionKey/);
-  assert.match(deck, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.match(status, /tokenInfo\.loading && !tokenInfo\.parts/);
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /characterNames:\s*extractIdentityNames\(context\.character\)/);
   assert.match(context, /personaNames:\s*extractIdentityNames\(context\.persona\)/);
