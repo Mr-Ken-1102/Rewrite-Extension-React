@@ -24,7 +24,21 @@ function profileDisplayName(profile, language) {
   return PROFILE_LABELS_VI[profile.id] || profile.name;
 }
 
-export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact, onRun, onTooltip, onTooltipLeave }) {
+export function ProfileGrid({
+  language = 'en',
+  profiles,
+  featuredProfile = null,
+  featuredLabel = '',
+  colCount,
+  rows,
+  compact,
+  onRun,
+  onTooltip,
+  onTooltipLeave,
+}) {
+  const gridProfiles = featuredProfile
+    ? [...profiles, { ...featuredProfile, __featured: true, __featuredLabel: featuredLabel || featuredProfile.name }]
+    : profiles;
   const requestedCols = Math.max(1, Number(colCount) || 1);
   const effectiveCols = compact ? Math.min(requestedCols, 6) : Math.min(requestedCols, 4);
   const viewportHeight = getProfileViewportHeight(rows, compact);
@@ -38,12 +52,12 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
   ].filter(Boolean).join(' ');
 
   useEffect(() => {
-    if (!profiles.length) {
+    if (!gridProfiles.length) {
       setActiveIndex(0);
       return;
     }
-    setActiveIndex((current) => Math.min(current, profiles.length - 1));
-  }, [profiles.length]);
+    setActiveIndex((current) => Math.min(current, gridProfiles.length - 1));
+  }, [gridProfiles.length]);
 
   useEffect(() => () => {
     if (typeaheadRef.current.timer !== null) window.clearTimeout(typeaheadRef.current.timer);
@@ -133,13 +147,15 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
       style={{ maxHeight: `${viewportHeight}px` }}
       onKeyDown={moveFocus}
     >
-      {profiles.map((profile, index) => {
-        const displayName = profileDisplayName(profile, language);
+      {gridProfiles.map((profile, index) => {
+        const displayName = profile.__featured
+          ? profile.__featuredLabel
+          : profileDisplayName(profile, language);
         return (
           <Button
             key={profile.id}
             glow={false}
-            className="rwa2-profile-btn"
+            className={`rwa2-profile-btn ${profile.__featured ? 'rwa2-profile-btn-voice' : ''}`.trim()}
             data-profile-index={index}
             data-profile-name={displayName}
             tabIndex={index === activeIndex ? 0 : -1}
