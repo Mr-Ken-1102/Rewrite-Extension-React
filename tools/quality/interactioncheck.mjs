@@ -25,14 +25,14 @@ ok('profile grid supports roving keyboard navigation without adding a tab stop p
   assert.match(source, /getComputedStyle\(gridRef\.current\)\.gridTemplateColumns/);
 });
 
-ok('profile toolbar supports low-chrome typeahead and overflow discovery', () => {
+ok('profile toolbar supports keyboard typeahead and overflow discovery without instructional chrome', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   assert.match(grid, /TYPEAHEAD_RESET_MS = 650/);
   assert.match(grid, /data-profile-name=\{displayName\}/);
   assert.match(grid, /findTypeaheadMatch/);
   assert.match(grid, /typeaheadRef\.current/);
-  assert.match(rewrite, /scroll or type/);
+  assert.doesNotMatch(rewrite, /scroll or type|13 styles/);
 });
 
 ok('default style labels can localize without mutating profile prompts or ids', () => {
