@@ -234,8 +234,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             rows={config.rows}
             compact={config.compact}
             autoProfile={autoProfile}
-            fastRewrite={config.fastRewrite !== false}
-            connectionMode={config.connMode}
+            fastRewrite={config.fastRewrite !== false} connectionMode={config.connMode}
             selection={selection}
             mergeMultiMsg={config.mergeMultiMsg}
             onRun={runProfile}
