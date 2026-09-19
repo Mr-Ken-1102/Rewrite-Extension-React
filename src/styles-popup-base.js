@@ -90,7 +90,7 @@ export const RWA_POPUP_BASE_CSS = `
 }
 .rwa2-toolbar-actions {
   min-width: 0;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   display: flex;
   align-items: center;
   justify-content: flex-end;
