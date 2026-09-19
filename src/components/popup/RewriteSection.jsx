@@ -84,6 +84,8 @@ export function RewriteSection({
         rows={rows}
         compact={compact}
         onRun={onRun}
+        onTooltip={onTooltip}
+        onTooltipLeave={onTooltipLeave}
       />
     </section>
   );
