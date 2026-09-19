@@ -943,7 +943,7 @@ ok('message-aware context fails closed while DOM Character metadata can avoid un
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /const needsMessageInfo = wantsHistory \|\| wantsPersona \|\| wantsSpeaker \|\| \(wantsCharacter && !explicitCharacterIds\.length\)/);
-  assert.match(context, /const domIdentity = voiceIdentityFromSelection\(savedSel\)/);
+  assert.match(context, /resolveSelectionVoiceIdentity\(savedSel/);
   assert.match(api, /Could not assemble the enabled context/);
   assert.match(context, /The selected message is no longer available from Marinara/);
 });
