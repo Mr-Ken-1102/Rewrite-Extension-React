@@ -20,15 +20,15 @@ ok('popup geometry constants encode the balanced 488px / three-column-first cont
   assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 30/);
   assert.match(source, /POPUP_PROFILE_ROW_GAP = 5/);
   assert.match(source, /POPUP_FIXED_HEIGHT = 124/);
-  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 35/);
-  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 36/);
+  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 28/);
+  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 62/);
   assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 29/);
-  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 76/);
+  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 46/);
 });
 
 ok('popup geometry accounts for collapsed context, optional detail, and narrow stacking', () => {
   const source = read('./src/popupGeometry.js');
-  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 60/);
+  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 34/);
   assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 30/);
   assert.match(source, /getResponsivePopupExtra/);
   assert.match(source, /contextOpen && width <= 459 \? POPUP_NARROW_CONTEXT_EXTRA : 0/);
@@ -71,7 +71,7 @@ ok('preset card removes redundant Choose-a-style and style-count chrome', () => 
   assert.match(rewrite, /<ProfileGrid/);
 });
 
-ok('popup architecture keeps modes in Rewrite and collapses the lower half into one context deck', () => {
+ok('popup architecture keeps modes in Rewrite and presents one always-visible context control deck', () => {
   const css = read('./src/styles-popup-context.js');
   const main = read('./src/components/PopupMain.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
@@ -82,10 +82,11 @@ ok('popup architecture keeps modes in Rewrite and collapses the lower half into 
   assert.match(rewrite, /<PerformanceStrip/);
   assert.match(performance, /rwa2-performance-strip/);
   assert.match(context, /rwa2-context-deck/);
+  assert.match(context, /rwa2-context-identity-row/);
+  assert.match(context, /rwa2-context-adjust-row/);
   assert.match(css, /\.rwa2-performance-strip\s*\{/);
   assert.match(css, /\.rwa2-context-deck\s*\{/);
-  assert.match(css, /\.rwa2-context-collapse\s*\{[\s\S]*grid-template-rows:\s*0fr/);
-  assert.match(css, /\.rwa2-context-deck-open \.rwa2-context-collapse\s*\{[\s\S]*grid-template-rows:\s*1fr/);
+  assert.doesNotMatch(context, /rwa2-context-toggle|rwa2-context-collapse/);
 });
 
 ok('profile grid derives viewport height from shared geometry and exposes deterministic column classes', () => {
@@ -183,35 +184,33 @@ ok('popup main passes geometry-relevant state without changing rewrite semantics
   assert.match(source, /identityProfile=\{autoProfile\}/);
   assert.match(source, /<RewriteSection/);
   assert.match(source, /<ContextDeck/);
-  assert.match(source, /contextOpen/);
-  assert.match(source, /contextSummaryCount:\s*contextSources\.length \+ \(config\.lengthEnabled \? 1 : 0\)/);
+  assert.match(source, /contextOpen:\s*true/);
+  assert.match(source, /contextSummaryCount:\s*contextSources\.length/);
   assert.doesNotMatch(source, /<LiveRail|<RecipeBar|<RequestInspector/);
   assert.match(source, /<PopupFooter/);
 });
 
-ok('active Character or Persona Voice Profile fills the spare final preset slot instead of the header', () => {
+ok('Character or Persona identity stays compact above source toggles and Voice Profile never becomes a preset', () => {
   const main = read('./src/components/PopupMain.jsx');
   const header = read('./src/components/popup/PopupHeader.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  const base = read('./src/styles-popup-base.js');
+  const context = read('./src/components/popup/ContextDeck.jsx');
   assert.match(main, /identityProfile=\{autoProfile\}/);
   assert.match(main, /voiceIdentity=\{voiceIdentity\}/);
   assert.doesNotMatch(header, /identityProfile|voiceIdentity|rwa2-identity-chip|onRunIdentityProfile/);
-  assert.match(rewrite, /featuredProfile=\{identityProfile\}/);
-  assert.match(rewrite, /featuredLabel=\{identityProfile/);
-  assert.match(grid, /\[\.\.\.profiles, \{ \.\.\.featuredProfile, __featured: true/);
-  assert.match(grid, /rwa2-profile-btn-voice/);
-  assert.match(grid, /voice:\$\{profile\.identityKey \|\| profile\.id\}/);
-  assert.match(base, /\.rwa2-popup \.rwa2-profile-btn-voice\s*\{/);
-  assert.match(base, /\.rwa2-toolbar-actions\s*\{[\s\S]*justify-content:\s*flex-end/s);
+  assert.doesNotMatch(rewrite, /featuredProfile|featuredLabel/);
+  assert.doesNotMatch(grid, /featuredProfile|rwa2-profile-btn-voice|__featured/);
+  assert.match(context, /rwa2-context-identity-row/);
+  assert.match(context, /rwa2-identity-profile-ready/);
+  assert.match(context, /identityKind === 'persona'/);
 });
 
 ok('responsive context detail stacks controls without turning token details into layout rows', () => {
   const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /@media \(max-width: 459px\)/);
   assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
-  assert.match(css, /\.rwa2-token-popover\s*\{[\s\S]*right:\s*0/);
+  assert.doesNotMatch(css, /\.rwa2-token-popover/);
   assert.match(css, /@media \(max-width: 419px\)/);
   assert.doesNotMatch(css, /\.rwa2-token-detail-grid/);
 });
@@ -250,26 +249,22 @@ ok('popup density removes redundant hierarchy without shrinking core controls', 
   assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*32px !important;[\s\S]*height:\s*32px !important/);
 });
 
-ok('context deck separates current-request chips, token popover, and advanced controls without repeating identity names', () => {
+ok('context deck unifies compact identity, token hover, one-shot source switches, and always-visible adjustments', () => {
   const css = read('./src/styles-popup-context.js');
   const context = read('./src/components/popup/ContextDeck.jsx');
   const presentation = read('./src/hooks/useContextPresentation.js');
-  assert.doesNotMatch(css, /\.rwa2-context-source-grid\s*\{/);
+  assert.match(css, /\.rwa2-context-identity-row\s*\{/);
   assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, \.78fr\) minmax\(0, 1\.22fr\)/);
-  assert.match(context, /rwa2-token-popover/);
-  assert.match(context, /role="region"/);
-  assert.match(context, /setTokenOpen\(\(current\) => !current\)/);
-  assert.match(context, /className="rwa2-context-toggle"/);
-  assert.doesNotMatch(context, /rwa2-token-detail-grid|Input composition/);
+  assert.match(context, /kind: 'token'/);
+  assert.match(context, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
+  assert.match(context, /aria-pressed=\{source\.enabled\}/);
+  assert.match(context, /onToggleContext\(source\.key, !source\.enabled\)/);
   assert.match(context, /History depth/);
   assert.match(context, /Rewrite length adjustment/);
-  assert.match(context, /summaryLabel\(source\)/);
-  assert.match(context, /config\.lengthEnabled &&/);
-  assert.match(context, /lengthLabel/);
-  assert.doesNotMatch(context, /Persistent context sources/);
-  assert.doesNotMatch(context, /identityName|characterNames|personaNames/);
-  assert.match(presentation, /label:\s*text\('Character', 'Nhân vật'\), detail:\s*characterLabel/);
-  assert.match(presentation, /label:\s*'Persona', detail:\s*personaLabel/);
+  assert.doesNotMatch(context, /rwa2-context-toggle|rwa2-context-collapse|rwa2-token-popover/);
+  assert.match(presentation, /source\('character'/);
+  assert.match(presentation, /source\('persona'/);
+  assert.match(presentation, /contextOverrides/);
 });
 
 ok('footer keeps the primary custom action wide while Settings is a compact named icon', () => {

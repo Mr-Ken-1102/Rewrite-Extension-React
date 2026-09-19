@@ -41,17 +41,18 @@ ok('default style labels can localize without mutating profile prompts or ids', 
   assert.match(grid, /expand:\s*'Làm giàu'/);
   assert.match(grid, /grammar:\s*'Trau chuốt'/);
   assert.match(grid, /profileDisplayName\(profile, language\)/);
-  assert.match(grid, /onRun\(profile\.__featured \? featuredProfile : profile\)/);
+  assert.match(grid, /onRun\(profile\)/);
 });
 
-ok('preset and Voice Profile explanations are available from keyboard focus in one grid', () => {
+ok('preset explanations remain keyboard reachable while Voice Profile identity stays outside the preset grid', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  assert.match(grid, /featuredProfile/);
+  const context = read('./src/components/popup/ContextDeck.jsx');
+  assert.doesNotMatch(grid, /featuredProfile|rwa2-profile-btn-voice|__featured/);
   assert.match(grid, /aria-description=\{profile\.prompt\}/);
   assert.match(grid, /onFocus=\{\(event\) => \{/);
   assert.match(grid, /onTooltip\(event, \{[\s\S]*kind:\s*'preset'/s);
   assert.match(grid, /onBlur=\{onTooltipLeave\}/);
-  assert.match(grid, /rwa2-profile-btn-voice/);
+  assert.match(context, /rwa2-identity-profile-ready/);
 });
 
 ok('popup header keeps drag ownership except on explicit interactive controls', () => {
@@ -107,12 +108,11 @@ ok('popup controls preserve switch semantics and named compact groups', () => {
   assert.match(settingsContext, /config\.injectUser/);
   assert.match(settingsContext, /config\.injectLorebook/);
   assert.match(settingsContext, /config\.localContextEnabled/);
-  assert.match(context, /role="group" aria-label=\{text\('Sources and parameters for this rewrite', 'Nguồn và tham số cho lần viết lại này'\)\}/);
+  assert.match(context, /role="group"[\s\S]*Sources for this rewrite/);
   assert.doesNotMatch(context, /Persistent context sources/);
-  assert.match(context, /aria-pressed=\{!excluded\}/);
-  assert.match(context, /aria-expanded=\{tokenOpen\}/);
-  assert.match(context, /aria-expanded=\{open\}/);
-  assert.match(context, /role="region" aria-label=\{text\('Token details', 'Chi tiết token'\)\}/);
+  assert.match(context, /aria-pressed=\{source\.enabled\}/);
+  assert.match(context, /aria-label=\{text\('Show token estimate details'/);
+  assert.match(context, /onFocus=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.match(performance, /aria-pressed=\{item\.active\}/);
   assert.match(performance, /key:\s*'FREE MODE'/);
   assert.match(performance, /key:\s*'FAST REWRITE'/);
