@@ -4,7 +4,7 @@
 
 Rewrite Assistant v3.0.3 is cross-checked against **Marinara Engine v2.4.4 and v2.4.6**.
 
-v3.0.3 retains the v3.0.2 exact selected-message Character targeting, identity-scoped Voice Profiles, and active-Persona Draft Reply guarantees, and additionally certifies Persona Reply UI integration across Marinara Roleplay, Conversation, and Game layouts. It adds no automatic send API or new destructive message route.
+v3.0.3 retains the v3.0.2 exact selected-message Character targeting and identity-scoped Voice Profiles, extends Draft Reply with an identity-race-safe Generic mode for chats with no active Persona, and certifies Persona Reply UI integration across Marinara Roleplay, Conversation, and Game layouts. It adds no automatic send API or new destructive message route.
 
 The v2.4.6 audit additionally covers character-backed user identity (`chat.personaCharacterId`) and historical `personaSnapshot.source` metadata. Rewrite Assistant resolves `source: "character"` through the Character endpoint while retaining the v2.4.4 legacy interpretation for snapshots that do not carry a source field.
 
@@ -20,7 +20,7 @@ The compatibility checker validates these contracts directly from an Engine sour
 - Lorebook scan response envelope (`entries`, token metadata).
 - `/generate/raw` request schema.
 - `/generate/raw` explicit aborted-response contract.
-- `/sidecar/tracker` 16,000-character limits.
+- `/generate/raw` synthetic local Sidecar connection (`__local_sidecar__`) used by current Rewrite Assistant Sidecar inference; the legacy `/sidecar/tracker` 16,000-character contract is also checked because the extension retains that conservative per-prompt ceiling.
 - `data-message-id`, `.mari-message-content`, `data-chat-composer="true"`, and active-chat storage hooks.
 - Chat layout mode roots: `data-chat-mode="roleplay"`, `data-chat-mode="conversation"`, and `data-chat-mode="game"`.
 - Roleplay/Conversation composer resource shells and the v2.4.6 GameInput resource shell/textarea fallback used for Persona Reply anchoring.
