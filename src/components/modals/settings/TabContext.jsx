@@ -139,7 +139,13 @@ export const TabContext = () => {
         <ToggleSwitch checked={config.localContextEnabled} onChange={(value) => updateConfig({ localContextEnabled: value })} />
       </Row>
       <Row title={text('History', 'Lịch sử')} note={text('Include previous visible messages up to the History depth shown in the popup.', 'Dùng các tin nhắn hiển thị trước đó theo Độ sâu lịch sử trong popup.')}>
-        <ToggleSwitch checked={config.historyContextEnabled !== false} onChange={(value) => updateConfig({ historyContextEnabled: value })} />
+        <ToggleSwitch
+          checked={config.historyContextEnabled !== false && (Number(config.contextDepth) || 0) > 0}
+          onChange={(value) => updateConfig({
+            historyContextEnabled: value,
+            ...(value && (Number(config.contextDepth) || 0) <= 0 ? { contextDepth: 1 } : {}),
+          })}
+        />
       </Row>
 
       <div className="rwa-lbl" style={{ marginTop: '22px' }}>{text('CONTEXT BEHAVIOR', 'HÀNH VI NGỮ CẢNH')}</div>
