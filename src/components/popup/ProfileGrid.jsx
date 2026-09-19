@@ -4,19 +4,19 @@ import { Button } from '../ui/Button';
 
 const TYPEAHEAD_RESET_MS = 650;
 const PROFILE_LABELS_VI = Object.freeze({
-  expand: 'Mở rộng',
-  compress: 'Rút gọn',
-  thoughts: 'Thêm nội tâm',
-  dialogue: 'Chuyển thành hội thoại',
-  active: 'Bị động → Chủ động',
-  diffwords: 'Dùng từ khác',
-  showdont: 'Tả, đừng kể',
-  emotion: 'Tăng cảm xúc',
-  transitions: 'Sửa chuyển ý',
-  noai: 'Bỏ văn phong AI',
-  expdialogue: 'Mở rộng hội thoại',
-  romance: 'Tăng lãng mạn',
-  grammar: 'Sửa ngữ pháp',
+  expand: 'Làm giàu',
+  compress: 'Cô đọng',
+  thoughts: 'Nội tâm',
+  dialogue: 'Chuyển thoại',
+  active: 'Chủ động',
+  diffwords: 'Diễn đạt mới',
+  showdont: 'Thể hiện',
+  emotion: 'Chiều sâu cảm xúc',
+  transitions: 'Mượt chuyển ý',
+  noai: 'Tự nhiên hóa',
+  expdialogue: 'Đào sâu hội thoại',
+  romance: 'Sắc thái lãng mạn',
+  grammar: 'Trau chuốt',
 });
 
 function profileDisplayName(profile, language) {
