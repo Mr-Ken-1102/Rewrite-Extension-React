@@ -326,11 +326,13 @@ await ok('grouped Character resolution scales to arbitrary chat cardinality and 
         if (!character) throw new Error(`unknown Character endpoint: ${path}`);
         return {
           id: character.id,
-          data: {
+          data: JSON.stringify({
             name: character.name,
-            convoDisplayName: character.convoDisplayName,
             personality: character.id === selected.id ? 'selected voice evidence' : 'other voice evidence',
-          },
+            extensions: {
+              convoDisplayName: character.convoDisplayName,
+            },
+          }),
         };
       }
       throw new Error(`unexpected API call: ${path}`);
@@ -434,22 +436,22 @@ await ok('manual and automatic Character profile scans share the exact grouped s
       if (path === '/characters/char-parent') {
         return {
           id: 'char-parent',
-          data: {
+          data: JSON.stringify({
             name: 'Parent Character',
-            convoDisplayName: 'Parent Display',
             personality: 'parent style evidence',
-          },
+            extensions: { convoDisplayName: 'Parent Display' },
+          }),
         };
       }
       if (path === '/characters/char-selected') {
         return {
           id: 'char-selected',
-          data: {
+          data: JSON.stringify({
             name: 'Selected Character',
-            convoDisplayName: 'Selected Display',
             personality: 'selected style evidence',
             mes_example: 'Selected example dialogue.',
-          },
+            extensions: { convoDisplayName: 'Selected Display' },
+          }),
         };
       }
       throw new Error(`unexpected API call: ${path}`);
