@@ -470,13 +470,13 @@ ok('Marinara v2.4.4 persona and lorebook contracts are pinned', () => {
 });
 
 ok('Fast Rewrite copy stays user-facing and accurately limited to Marinara connections', () => {
-  const liveRail = readFileSync('./src/components/popup/LiveRail.jsx', 'utf8');
+  const performanceStrip = readFileSync('./src/components/popup/PerformanceStrip.jsx', 'utf8');
   const capabilities = readFileSync('./src/services/providers/providerCapabilities.js', 'utf8');
-  assert.match(liveRail, /Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn/);
-  assert.match(liveRail, /Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này/);
-  assert.match(liveRail, /Hiện chỉ hỗ trợ kết nối Marinara/);
-  assert.match(liveRail, /Fast Rewrite speeds up rewriting and returns results sooner/);
-  assert.match(liveRail, /Currently supported only with Marinara connections/);
+  assert.match(performanceStrip, /Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn/);
+  assert.match(performanceStrip, /Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này/);
+  assert.match(performanceStrip, /Hiện chỉ hỗ trợ kết nối Marinara/);
+  assert.match(performanceStrip, /Fast Rewrite speeds up rewriting and returns results sooner/);
+  assert.match(performanceStrip, /Currently supported only with Marinara connections/);
   assert.match(capabilities, /marinara:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*true/);
   assert.match(capabilities, /sidecar:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
   assert.match(capabilities, /direct:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
@@ -1277,20 +1277,20 @@ ok('debug logging is opt-in, bounded, session-only, and metadata-owned by the se
   assert.match(dataTab, /Debug logging is opt-in/);
 });
 
-ok('token preview stays compact in the live rail and expands into a request breakdown', () => {
-  const live = readFileSync('./src/components/popup/LiveRail.jsx', 'utf8');
-  const inspector = readFileSync('./src/components/popup/RequestInspector.jsx', 'utf8');
+ok('token preview stays compact in Context and expands into direct token details', () => {
+  const deck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
   const hook = readFileSync('./src/hooks/useContextInspector.js', 'utf8');
-  assert.match(live, /≈\$\{tokenInfo\.parts\.total\.toLocaleString\(\)\} tok/);
-  assert.match(live, /Open Request Inspector for the breakdown/);
-  assert.match(inspector, /Estimate only — not the provider billing\/tokenizer count/);
-  assert.match(inspector, /Input composition/);
+  assert.match(deck, /≈\$\{total\.toLocaleString\(\)\} tok/);
+  assert.match(deck, /Show the estimated token breakdown for this rewrite/);
+  assert.match(deck, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.match(deck, /Token details/);
+  assert.doesNotMatch(deck, /Input composition|rwa2-token-composition/);
   assert.match(hook, /const oneShot = rewriteSelection\(\)/);
   assert.match(hook, /APIService\.inspectContext\(oneShot/);
   assert.match(hook, /sameSelection \? current\.parts : null/);
   assert.match(hook, /sameSelection \? current\.identities : null/);
   assert.match(hook, /tokenInfo\.selectionKey !== selectionKey/);
-  assert.match(live, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.match(deck, /tokenInfo\.loading && !tokenInfo\.parts/);
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /characterNames:\s*extractIdentityNames\(context\.character\)/);
   assert.match(context, /personaNames:\s*extractIdentityNames\(context\.persona\)/);
