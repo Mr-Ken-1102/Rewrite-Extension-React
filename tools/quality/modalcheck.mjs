@@ -60,6 +60,10 @@ assert.match(preview, /disabled=\{isApplying \|\| nativeEditorPrepared\}/);
 assert.match(preview, /Rewrite again/);
 assert.match(preview, /Viết lại lần nữa/);
 assert.match(preview, /rwar-rewrite-again/);
+assert.ok(
+  preview.indexOf('className="rwar-accept"') < preview.indexOf('className="rwar-rewrite-again"'),
+  'Rewrite again must remain immediately after the primary Accept action',
+);
 assert.match(preview, /rwar-ready-rail/);
 assert.match(preview, /<div className="rwar-writing" aria-live="polite">[\s\S]*?<div className="rwar-working-rail" aria-hidden="true"><span><\/span><\/div>[\s\S]*?<div className="rwar-writing-copy">/);
 assert.ok(preview.indexOf('className="rwar-rewrite-again"') < preview.indexOf('className="rwar-native-editor"'));
