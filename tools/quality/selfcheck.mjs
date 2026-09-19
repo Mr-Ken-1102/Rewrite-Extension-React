@@ -1137,7 +1137,12 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(popup, /pinnedPos/);
   assert.match(contextDeck, /rwa2-context-chip/);
   assert.match(contextDeck, /rwa2-token-popover/);
-  assert.match(contextDeck, /Persistent context sources/);
+  assert.doesNotMatch(contextDeck, /Persistent context sources/);
+  assert.match(contextTab, /DEFAULT REWRITE SOURCES/);
+  assert.match(contextTab, /config\.injectChar/);
+  assert.match(contextTab, /config\.injectUser/);
+  assert.match(contextTab, /config\.injectLorebook/);
+  assert.match(contextTab, /config\.localContextEnabled/);
   assert.doesNotMatch(contextDeck, /This rewrite/);
   assert.match(performanceStrip, /key:\s*'FREE MODE'/);
   assert.match(performanceStrip, /key:\s*'FAST REWRITE'/);
@@ -1587,9 +1592,10 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(hook, /setRetryTick\(\(value\) => value \+ 1\)/);
   assert.match(popup, /autoProfileBucket\[voiceIdentity\.key\]/);
   assert.match(popup, /identityProfile=\{autoProfile\}/);
-  assert.match(popupHeader, /identityKind === 'persona'/);
-  assert.match(popupHeader, /rwa2-identity-chip/);
-  assert.doesNotMatch(rewriteSection, /autoProfile|rwa2-auto-profile/);
+  assert.match(popup, /voiceIdentity=\{voiceIdentity\}/);
+  assert.doesNotMatch(popupHeader, /identityProfile|voiceIdentity|rwa2-identity-chip/);
+  assert.match(rewriteSection, /featuredProfile=\{identityProfile\}/);
+  assert.match(rewriteSection, /featuredLabel=\{identityProfile/);
   assert.match(contextTab, /Automatic Character \/ Persona voice profiles/);
   assert.match(contextTab, /Generate for selected identity/);
   assert.match(identity, /persona:\$\{source\}:/);
