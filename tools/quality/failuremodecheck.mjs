@@ -630,6 +630,91 @@ await ok('Draft Reply writes only the active Persona and preserves named multi-c
   }
 });
 
+await ok('Draft Reply uses explicit Generic mode when the chat has no active Persona', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/generic-draft') return {
+        id: 'generic-draft',
+        personaId: null,
+        personaCharacterId: null,
+        characterIds: ['char-a'],
+      };
+      if (path === '/characters/char-a') return { id: 'char-a', data: { name: 'Alice', personality: 'calm' } };
+      if (path === '/chats/generic-draft/messages') return [
+        { id: 'u', role: 'user', content: 'Mình đang suy nghĩ.', extra: {} },
+        { id: 'a', role: 'assistant', characterId: 'char-a', content: 'Cậu muốn nói gì?', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    let captured = null;
+    h.provider.ProviderService.runInference = async (systemPrompt, userPrompt) => {
+      captured = { systemPrompt, userPrompt };
+      return { result: 'Mình muốn nói rõ hơn một chút.', streamed: false };
+    };
+
+    const meta = [];
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'generic-draft',
+      direction: 'trả lời tự nhiên',
+      mode: 'idea',
+      expectNoPersona: true,
+      signal: new AbortController().signal,
+      onMeta: (value) => meta.push(value),
+    });
+
+    assert.equal(result.genericMode, true);
+    assert.equal(result.persona, null);
+    assert.equal(result.voiceProfile, null);
+    assert.equal(result.result, 'Mình muốn nói rõ hơn một chút.');
+    assert.match(captured.systemPrompt, /without assuming a Persona card/);
+    assert.match(captured.systemPrompt, /Do not invent a Persona name, biography, memories, traits/);
+    assert.match(captured.userPrompt, /WRITING IDENTITY\nGeneric user reply/);
+    assert.doesNotMatch(captured.userPrompt, /ACTIVE PERSONA/);
+    assert.match(captured.userPrompt, /Alice: Cậu muốn nói gì\?/);
+    assert.equal(meta.at(-1).genericMode, true);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Generic Draft is discarded if a Persona becomes active during generation', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = { connMode: 'sidecar', draftReplyHistoryDepth: 8 };
+    let chatReads = 0;
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/generic-race') {
+        chatReads += 1;
+        return chatReads <= 2
+          ? { id: 'generic-race', personaId: null, personaCharacterId: null, characterIds: [] }
+          : { id: 'generic-race', personaId: 'p-new', personaCharacterId: null, characterIds: [] };
+      }
+      if (path === '/chats/generic-race/messages') return [
+        { id: 'a', role: 'assistant', characterId: null, content: 'hello', extra: {} },
+      ];
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async () => ({ result: 'Generic reply.', streamed: false });
+
+    const result = await h.draft.DraftReplyService.generate({
+      chatId: 'generic-race',
+      direction: 'reply',
+      mode: 'idea',
+      expectNoPersona: true,
+      signal: new AbortController().signal,
+    });
+
+    assert.match(result.error, /Persona became active while Generic Draft was generating/i);
+    assert.equal(result.result, undefined);
+    assert.equal(chatReads, 3);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 await ok('Draft Reply keeps the real active Persona name even when the card has no voice evidence', async () => {
   const h = await loadApiHarness();
   try {
