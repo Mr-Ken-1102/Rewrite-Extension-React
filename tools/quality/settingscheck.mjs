@@ -183,7 +183,7 @@ assert.match(css, /\.rwa-connection-hub \.rwa-fast-rewrite-global/);
 assert.match(api, /Fast rewrite/);
 assert.match(api, /Viết lại nhanh/);
 assert.match(api, /fastRewriteDescription\(config\.connMode, language\)/);
-assert.ok(api.indexOf('rwa-fast-rewrite-global') < api.indexOf("config.connMode === 'marinara'"));
+assert.ok(api.indexOf('rwa-fast-rewrite-global') < api.indexOf("{config.connMode === 'marinara' && ("));
 assert.match(api, /Follow current chat \(default\)/);
 assert.match(api, /Use a specific Marinara connection/);
 assert.match(api, /Normal Marinara rewrites do not use a client-side deadline/);
