@@ -1286,7 +1286,7 @@ ok('token preview stays compact and opens an independent token popover', () => {
   assert.match(deck, /≈\$\{total\.toLocaleString\(\)\} tok/);
   assert.match(deck, /Show token details/);
   assert.match(deck, /rwa2-token-popover/);
-  assert.match(deck, /role="dialog"/);
+  assert.match(deck, /role="region"/));
   assert.match(deck, /Estimate only — not the provider billing\/tokenizer count/);
   assert.match(deck, /setTokenOpen\(\(current\) => !current\)/);
   assert.match(deck, /className="rwa2-context-toggle"/);
