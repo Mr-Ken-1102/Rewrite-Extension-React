@@ -12,6 +12,7 @@ export const POPUP_FIXED_HEIGHT = 124;
 export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
 export const POPUP_PERFORMANCE_STRIP_HEIGHT = 35;
 export const POPUP_CONTEXT_SUMMARY_HEIGHT = 36;
+export const POPUP_CONTEXT_WRAP_EXTRA = 29;
 export const POPUP_CONTEXT_DETAIL_HEIGHT = 76;
 export const POPUP_NARROW_CONTEXT_EXTRA = 60;
 export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 30;
@@ -47,6 +48,7 @@ export function estimatePopupHeight({
   compact = false,
   multiMessage = false,
   contextOpen = false,
+  contextSummaryCount = 0,
   viewportWidth = POPUP_DESKTOP_WIDTH,
 }) {
   return POPUP_FIXED_HEIGHT
@@ -54,6 +56,7 @@ export function estimatePopupHeight({
     + (multiMessage ? POPUP_TRANSIENT_ROW_HEIGHT : 0)
     + POPUP_PERFORMANCE_STRIP_HEIGHT
     + POPUP_CONTEXT_SUMMARY_HEIGHT
+    + (contextSummaryCount > 5 ? POPUP_CONTEXT_WRAP_EXTRA : 0)
     + (contextOpen ? POPUP_CONTEXT_DETAIL_HEIGHT : 0)
     + getResponsivePopupExtra(viewportWidth, contextOpen);
 }
