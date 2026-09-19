@@ -141,7 +141,7 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /POPUP_DESKTOP_WIDTH/);
   assert.match(source, /POPUP_VIEWPORT_GUTTER/);
   assert.match(source, /estimatePopupHeight/);
-  assert.match(source, /hasAutoProfile/);
+  assert.doesNotMatch(source, /hasAutoProfile/);
   assert.match(source, /multiMessage/);
   assert.match(source, /compact/);
   assert.doesNotMatch(source, /fastRewrite/);
@@ -153,10 +153,29 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
 ok('popup main passes geometry-relevant state without changing rewrite semantics', () => {
   const source = read('./src/components/PopupMain.jsx');
   assert.match(source, /compact:\s*config\.compact/);
-  assert.match(source, /hasAutoProfile:\s*!!autoProfile/);
+  assert.match(source, /identityProfile=\{autoProfile\}/);
   assert.match(source, /<RewriteSection/);
   assert.match(source, /<ContextPanel/);
   assert.match(source, /<PopupFooter/);
+});
+
+ok('active Character or Persona profile lives in the right side of the popup header', () => {
+  const main = read('./src/components/PopupMain.jsx');
+  const header = read('./src/components/popup/PopupHeader.jsx');
+  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const base = read('./src/styles-popup-base.js');
+  const responsive = read('./src/styles-popup-responsive.js');
+  assert.match(main, /identityProfile=\{autoProfile\}/);
+  assert.match(main, /onRunIdentityProfile=\{runProfile\}/);
+  assert.match(header, /rwa2-toolbar-actions/);
+  assert.match(header, /rwa2-identity-chip/);
+  assert.match(header, /identityKind === 'persona'/);
+  assert.match(header, /onRunIdentityProfile\?\.\(identityProfile\)/);
+  assert.doesNotMatch(rewrite, /rwa2-auto-profile|autoProfile/);
+  assert.match(base, /\.rwa2-toolbar-actions\s*\{[\s\S]*justify-content:\s*flex-end/s);
+  assert.match(base, /\.rwa2-identity-chip\s*\{/);
+  assert.match(base, /text-overflow:\s*ellipsis/);
+  assert.match(responsive, /\.rwa2-identity-chip\s*\{\s*max-width:\s*128px/);
 });
 
 ok('responsive context geometry stacks deliberately on narrow viewports', () => {
