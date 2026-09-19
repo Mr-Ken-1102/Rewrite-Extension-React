@@ -46,12 +46,13 @@ export const RWA_POPUP_BASE_CSS = `
   gap: 6px;
   padding: 7px ${POPUP_OUTER_PADDING_X}px 8px;
   border: 1px solid var(--rwa2-border);
-  border-radius: 12px;
+  border-radius: 14px;
   background:
-    radial-gradient(circle at 14% -14%, rgba(209,154,69,.075), transparent 34%),
+    radial-gradient(circle at 12% -18%, rgba(209,154,69,.10), transparent 32%),
+    linear-gradient(180deg, rgba(255,255,255,.012), transparent 30%),
     var(--rwa2-bg);
   color: var(--rwa2-text-2);
-  box-shadow: 0 18px 48px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.03);
+  box-shadow: 0 22px 58px rgba(0,0,0,.50), inset 0 1px 0 rgba(255,255,255,.04);
   font-family: var(--rwa-host-font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   contain: layout paint style;
   isolation: isolate;
@@ -123,10 +124,12 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-rewrite {
   min-width: 0;
   padding: 7px;
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.010));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.015);
+  border: 1px solid rgba(209,154,69,.10);
+  border-radius: 11px;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(209,154,69,.055), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,.010));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.022);
 }
 .rwa2-section-head {
   min-height: 20px;
@@ -230,6 +233,22 @@ export const RWA_POPUP_BASE_CSS = `
   animation: rwa2-fast-sweep 2.35s cubic-bezier(.42,0,.24,1) infinite;
 }
 
+.rwa2-fast-strip-idle {
+  border-color: rgba(255,255,255,.055);
+  background: linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.010));
+}
+.rwa2-fast-strip-idle .rwa2-fast-title { color: var(--rwa2-muted); }
+.rwa2-fast-strip-idle .rwa2-fast-meta { color: var(--rwa2-subtle); }
+.rwa2-fast-strip-idle .rwa2-fast-live {
+  border-color: rgba(255,255,255,.075);
+  background: rgba(255,255,255,.025);
+  color: var(--rwa2-subtle);
+}
+.rwa2-fast-strip-idle .rwa2-fast-rail > span {
+  animation: none;
+  opacity: 0;
+}
+
 .rwa2-popup .rwa2-auto-profile,
 .rwa2-popup .rwa2-profile-btn,
 .rwa2-popup .rwa2-action {
@@ -316,6 +335,75 @@ export const RWA_POPUP_BASE_CSS = `
   border-color: var(--rwa2-brand-border) !important;
   color: var(--rwa2-text) !important;
 }
+
+.rwa2-popup .rwa2-profile-btn-inspected:not(:disabled) {
+  border-color: rgba(209,154,69,.30) !important;
+  background:
+    linear-gradient(180deg, rgba(209,154,69,.075), rgba(209,154,69,.035)) !important;
+  color: var(--rwa2-text) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025) !important;
+}
+
+.rwa2-preset-inspector {
+  min-height: 70px;
+  height: 70px;
+  display: grid;
+  grid-template-rows: auto minmax(0,1fr);
+  gap: 5px;
+  margin-top: 6px;
+  padding: 8px 10px 9px;
+  overflow: hidden;
+  border: 1px solid rgba(209,154,69,.20);
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(209,154,69,.065), transparent 42%),
+    rgba(8,9,13,.34);
+  box-shadow:
+    inset 2px 0 0 rgba(209,154,69,.38),
+    inset 0 1px 0 rgba(255,255,255,.018);
+}
+.rwa2-preset-inspector-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rwa2-preset-inspector-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--rwa2-brand);
+  font-size: 10.5px;
+  line-height: 1.1;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rwa2-preset-inspector-meta {
+  flex: 0 0 auto;
+  color: var(--rwa2-subtle);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .09em;
+}
+.rwa2-preset-inspector-prompt {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  color: rgba(255,255,255,.78);
+  font-size: 10.5px;
+  line-height: 1.45;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.12) transparent;
+}
+.rwa2-preset-inspector-prompt::-webkit-scrollbar { width: 4px; }
+.rwa2-preset-inspector-prompt::-webkit-scrollbar-track { background: transparent; }
+.rwa2-preset-inspector-prompt::-webkit-scrollbar-thumb {
+  border-radius: 99px;
+  background: rgba(255,255,255,.12);
+}
 .rwa2-profile-name {
   width: 100%;
   min-width: 0;
@@ -330,11 +418,12 @@ export const RWA_POPUP_BASE_CSS = `
 }
 
 .rwa2-actionbar {
-  min-height: 32px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding-top: 1px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255,255,255,.045);
 }
 .rwa2-popup .rwa2-action {
   min-width: 0 !important;
