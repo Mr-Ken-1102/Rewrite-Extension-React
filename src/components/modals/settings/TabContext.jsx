@@ -120,6 +120,27 @@ export const TabContext = () => {
   return (
     <>
       <div className="rwa-lbl">{text('CONTEXT BEHAVIOR', 'HÀNH VI NGỮ CẢNH')}</div>
+      <div className="rwa-lbl" style={{ marginTop: '2px' }}>{text('DEFAULT REWRITE SOURCES', 'NGUỒN VIẾT LẠI MẶC ĐỊNH')}</div>
+      <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
+        {text(
+          'These are the defaults for new rewrites. The source chips in the popup can include or exclude a source for one rewrite without changing these defaults.',
+          'Đây là các nguồn mặc định cho những lần viết lại mới. Các chip nguồn trong popup có thể thêm hoặc loại một nguồn cho riêng lần viết lại hiện tại mà không đổi thiết lập mặc định này.',
+        )}
+      </div>
+      <Row title={text('Character', 'Nhân vật')} note={text('Include the resolved Character card when available.', 'Dùng Character card đã xác định khi có.')}>
+        <ToggleSwitch checked={config.injectChar} onChange={(value) => updateConfig({ injectChar: value })} />
+      </Row>
+      <Row title="Persona" note={text('Include the active Persona context when available.', 'Dùng ngữ cảnh Persona hiện tại khi có.')}>
+        <ToggleSwitch checked={config.injectUser} onChange={(value) => updateConfig({ injectUser: value })} />
+      </Row>
+      <Row title="Lore" note={text('Include relevant Lorebook context.', 'Dùng ngữ cảnh Lorebook phù hợp.')}>
+        <ToggleSwitch checked={config.injectLorebook} onChange={(value) => updateConfig({ injectLorebook: value })} />
+      </Row>
+      <Row title={text('Around', 'Xung quanh')} note={text('Include nearby prose around the selected text.', 'Dùng phần văn bản lân cận quanh vùng chọn.')}>
+        <ToggleSwitch checked={config.localContextEnabled} onChange={(value) => updateConfig({ localContextEnabled: value })} />
+      </Row>
+
+      <div className="rwa-lbl" style={{ marginTop: '22px' }}>{text('CONTEXT BEHAVIOR', 'HÀNH VI NGỮ CẢNH')}</div>
       <Row
         title={text('Speaker-aware editing', 'Chỉnh sửa theo vai người nói')}
         note={text('Adds a small role-derived reference note so user prose is not rewritten in character voice and character prose keeps its register.', 'Thêm một ghi chú ngắn theo vai để văn bản của người dùng không bị viết theo giọng nhân vật và văn bản nhân vật vẫn giữ đúng sắc thái.')}
