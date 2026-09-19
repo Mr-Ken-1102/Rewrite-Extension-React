@@ -78,11 +78,30 @@ export const TabContext = () => {
     generateControllerRef.current = controller;
     setGenerating(true);
     try {
-      const result = await APIService.generateAutoProfile(chatId, controller.signal, {
+      let profileOptions = {
         messageId: selectedMessageId || undefined,
         preferredCharacterIds: config.charCardIds,
         force: true,
-      });
+      };
+
+      if (selectedMessageId && selection?.cid === chatId) {
+        const target = await APIService.resolveVoiceProfileTarget(selection, controller.signal);
+        if (controller.signal.aborted) return;
+        if (!target?.identity?.key || !target?.targetMessage) {
+          showToast(text(
+            'The selected Character/Persona identity could not be resolved safely. Re-select exactly one speaker message and try again.',
+            'Không thể xác định an toàn Character/Persona đã chọn. Hãy chọn lại đúng một tin nhắn của một người nói rồi thử lại.',
+          ), 'warn');
+          return;
+        }
+        profileOptions = {
+          ...profileOptions,
+          targetMessage: target.targetMessage,
+          expectedIdentityKey: target.identity.key,
+        };
+      }
+
+      const result = await APIService.generateAutoProfile(chatId, controller.signal, profileOptions);
       if (controller.signal.aborted) return;
       if (result?.profile) {
         const kind = result.profile.identityKind === 'persona' ? 'Persona' : 'Char';
