@@ -143,7 +143,7 @@ export function ContextDeck({
             className="rwa2-depth-input"
             min="1"
             max="20"
-            value={config.contextDepth !== undefined ? config.contextDepth : 0}
+            value={Math.max(1, Number(config.contextDepth) || 1)}
             aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
             onChange={(event) => updateConfig({ contextDepth: Math.max(1, parseInt(event.target.value, 10) || 1) })}
           />
