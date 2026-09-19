@@ -16,8 +16,8 @@ export const RWA_POPUP_CONTEXT_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 0 8px;
+  gap: 4px;
+  padding: 0 5px;
   border: 0;
   background: transparent;
   color: var(--rwa2-muted);
@@ -92,19 +92,18 @@ export const RWA_POPUP_CONTEXT_CSS = `
   min-height: 35px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 7px;
-  padding: 4px 5px 4px 7px;
+  align-items: start;
+  gap: 5px;
+  padding: 4px 5px 4px 6px;
 }
 .rwa2-context-chips {
   min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
+  gap: 3px;
+  overflow: visible;
 }
-.rwa2-context-chips::-webkit-scrollbar { display: none; }
 .rwa2-context-chip {
   appearance: none;
   min-height: 25px;
@@ -290,8 +289,8 @@ export const RWA_POPUP_CONTEXT_CSS = `
 }
 .rwa2-context-control-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
   padding: 7px 8px 8px;
 }
 .rwa2-context-control-block { min-width: 0; }
@@ -303,31 +302,19 @@ export const RWA_POPUP_CONTEXT_CSS = `
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-.rwa2-context-source-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px 8px;
-  margin-top: 5px;
-}
-.rwa2-context-source-grid > label {
-  min-width: 0;
-  min-height: 23px;
-  justify-content: space-between;
-  flex-direction: row-reverse;
-  gap: 5px !important;
-}
-.rwa2-context-source-grid > label > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .rwa2-context-adjust {
-  padding-left: 10px;
-  border-left: 1px solid rgba(255,255,255,.045);
+  padding-left: 0;
+  border-left: 0;
+}
+.rwa2-context-adjust-row {
+  display: grid;
+  grid-template-columns: minmax(0, .78fr) minmax(0, 1.22fr);
+  align-items: end;
+  gap: 14px;
+  margin-top: 4px;
 }
 .rwa2-context-depth {
-  min-height: 28px;
+  min-height: 31px;
   display: grid;
   grid-template-columns: minmax(0,1fr) 48px;
   align-items: center;
@@ -353,9 +340,9 @@ export const RWA_POPUP_CONTEXT_CSS = `
 }
 .rwa2-depth-input:focus { border-color: var(--rwa2-brand-border); }
 .rwa2-context-length {
-  margin-top: 3px;
-  padding-top: 4px;
-  border-top: 1px solid rgba(255,255,255,.04);
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 .rwa2-context-length-head {
   min-height: 22px;
