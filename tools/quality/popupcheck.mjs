@@ -10,25 +10,25 @@ const ok = (name, fn) => {
   console.log(`✓ ${name}`);
 };
 
-ok('popup geometry constants encode the compact 520px / three-column-first contract', () => {
+ok('popup geometry constants encode the balanced 488px / three-column-first contract', () => {
   const source = read('./src/popupGeometry.js');
-  assert.match(source, /POPUP_DESKTOP_WIDTH = 520/);
+  assert.match(source, /POPUP_DESKTOP_WIDTH = 488/);
   assert.match(source, /POPUP_OUTER_PADDING_X = 10/);
   assert.match(source, /POPUP_GRID_COLUMNS = 12/);
   assert.match(source, /POPUP_GRID_GAP = 6/);
-  assert.match(source, /POPUP_NORMAL_MIN_CELL = 116/);
+  assert.match(source, /POPUP_NORMAL_MIN_CELL = 110/);
   assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 30/);
   assert.match(source, /POPUP_PROFILE_ROW_GAP = 5/);
-  assert.match(source, /POPUP_FIXED_HEIGHT = 145/);
+  assert.match(source, /POPUP_FIXED_HEIGHT = 124/);
   assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 35/);
-  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 35/);
-  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 132/);
+  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 36/);
+  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 98/);
 });
 
 ok('popup geometry accounts for collapsed context, optional detail, and narrow stacking', () => {
   const source = read('./src/popupGeometry.js');
-  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 72/);
-  assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 36/);
+  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 60/);
+  assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 30/);
   assert.match(source, /getResponsivePopupExtra/);
   assert.match(source, /contextOpen && width <= 459 \? POPUP_NARROW_CONTEXT_EXTRA : 0/);
   assert.match(source, /width <= 419 \? POPUP_WRAPPED_ACTIONBAR_EXTRA : 0/);
@@ -58,6 +58,14 @@ ok('popup root uses the isolated rwa2 namespace and preserves geometry contract'
   assert.doesNotMatch(popup, /className="rwa rwa-popup-main"/);
   assert.match(css, /POPUP_DESKTOP_WIDTH/);
   assert.match(css, /\.rwa2-popup\s*\{[\s\S]*width:\s*min\(\$\{POPUP_DESKTOP_WIDTH\}px/);
+});
+
+ok('preset card removes redundant Choose-a-style and style-count chrome', () => {
+  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  assert.doesNotMatch(rewrite, /rwa2-section-head|rwa2-section-title|rwa2-section-meta/);
+  assert.doesNotMatch(rewrite, /Choose a style|styles · scroll or type|kiểu · cuộn hoặc gõ để tìm/);
+  assert.match(rewrite, /<PerformanceStrip/);
+  assert.match(rewrite, /<ProfileGrid/);
 });
 
 ok('popup architecture keeps modes in Rewrite and collapses the lower half into one context deck', () => {
@@ -156,8 +164,8 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /compact/);
   assert.doesNotMatch(source, /fastRewrite/);
   assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*35/);
-  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*35/);
-  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*132/);
+  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*36/);
+  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*98/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
   assert.match(geometry, /contextOpen \? POPUP_CONTEXT_DETAIL_HEIGHT : 0/);
@@ -197,13 +205,13 @@ ok('active Character or Persona profile lives in the right side of the popup hea
   assert.match(responsive, /\.rwa2-identity-chip\s*\{\s*max-width:\s*112px/);
 });
 
-ok('responsive context detail stacks deliberately on narrow viewports', () => {
+ok('responsive context detail stacks controls without turning token details into layout rows', () => {
   const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /@media \(max-width: 459px\)/);
   assert.match(css, /\.rwa2-context-control-grid\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
-  assert.match(css, /\.rwa2-token-detail-grid\s*\{\s*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.rwa2-token-popover\s*\{[\s\S]*right:\s*0/);
   assert.match(css, /@media \(max-width: 419px\)/);
-  assert.match(css, /\.rwa2-token-trigger\s*\{[\s\S]*width:\s*100%/);
+  assert.doesNotMatch(css, /\.rwa2-token-detail-grid/);
 });
 
 ok('three-mode performance strip makes Free, Fast Rewrite, and Streaming directly actionable', () => {
@@ -212,15 +220,16 @@ ok('three-mode performance strip makes Free, Fast Rewrite, and Streaming directl
   const contextCss = read('./src/styles-popup-context.js');
   assert.match(rewrite, /<PerformanceStrip/);
   assert.match(strip, /getProviderCapabilities/);
-  assert.match(strip, /key:\s*'FREE'/);
-  assert.match(strip, /key:\s*'FAST'/);
+  assert.match(strip, /key:\s*'FREE MODE'/);
+  assert.match(strip, /key:\s*'FAST REWRITE'/);
   assert.match(strip, /key:\s*'STREAM'/);
   assert.match(strip, /updateConfig\(\{ freeMode: !config\.freeMode \}\)/);
   assert.match(strip, /updateConfig\(\{ fastRewrite: config\.fastRewrite === false \}\)/);
   assert.match(strip, /updateConfig\(\{ liveStreaming: config\.liveStreaming === false \}\)/);
   assert.match(strip, /aria-pressed=\{item\.active\}/);
-  assert.match(contextCss, /\.rwa2-performance-strip\s*\{/);
+  assert.match(contextCss, /\.rwa2-performance-strip\s*\{[\s\S]*border-bottom:\s*1px solid/);
   assert.match(contextCss, /\.rwa2-performance-item \+ \.rwa2-performance-item/);
+  assert.match(contextCss, /\.rwa2-performance-dot\s*\{/);
 });
 
 ok('popup visual layer is low-paint and uses subdued amber', () => {
@@ -239,29 +248,34 @@ ok('popup density removes redundant hierarchy without shrinking core controls', 
   assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*32px !important;[\s\S]*height:\s*32px !important/);
 });
 
-ok('context deck keeps token details direct and advanced controls compact without repeating identity names', () => {
+ok('context deck separates current-request chips, token popover, and advanced controls without repeating identity names', () => {
   const css = read('./src/styles-popup-context.js');
   const context = read('./src/components/popup/ContextDeck.jsx');
   const presentation = read('./src/hooks/useContextPresentation.js');
   assert.match(css, /\.rwa2-context-source-grid\s*\{[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(context, /Token details/);
-  assert.doesNotMatch(context, /Input composition/);
-  assert.doesNotMatch(context, /rwa2-token-composition|rwa2-token-segment/);
+  assert.match(context, /rwa2-token-popover/);
+  assert.match(context, /role="dialog"/);
+  assert.match(context, /setTokenOpen\(\(current\) => !current\)/);
+  assert.match(context, /className="rwa2-context-toggle"/);
+  assert.doesNotMatch(context, /rwa2-token-detail-grid|Input composition/);
   assert.match(context, /History depth/);
   assert.match(context, /Rewrite length adjustment/);
   assert.match(context, /summaryLabel\(source\)/);
+  assert.match(context, /lengthLabel/);
   assert.doesNotMatch(context, /identityName|characterNames|personaNames/);
   assert.match(presentation, /label:\s*text\('Character', 'Nhân vật'\), detail:\s*characterLabel/);
   assert.match(presentation, /label:\s*'Persona', detail:\s*personaLabel/);
 });
 
-ok('footer fills available width without vacant grid columns', () => {
+ok('footer keeps the primary custom action wide while Settings is a compact named icon', () => {
   const base = read('./src/styles-popup-base.js');
+  const footer = read('./src/components/popup/PopupFooter.jsx');
   assert.match(base, /\.rwa2-actionbar\s*\{[\s\S]*display:\s*flex/);
-  assert.doesNotMatch(base, /\.rwa2-actionbar\s*\{[\s\S]*grid-template-columns:\s*repeat\(12/);
   assert.match(base, /\.rwa2-popup \.rwa2-custom\s*\{[\s\S]*flex:\s*1 1 auto/);
-  assert.match(base, /\.rwa2-popup \.rwa2-custom\s*\{[\s\S]*margin-left:\s*4px !important/);
+  assert.match(base, /\.rwa2-popup \.rwa2-settings\s*\{[\s\S]*flex:\s*0 0 34px/);
   assert.match(base, /\.rwa2-popup \.rwa2-undo,[\s\S]*flex:\s*0 0 32px/);
+  assert.match(footer, /aria-label=\{text\('Settings', 'Cài đặt'\)\}/);
+  assert.match(footer, /<svg width="15" height="15"/);
 });
 
 ok('main-popup buttons disable cursor-following glow work', () => {
