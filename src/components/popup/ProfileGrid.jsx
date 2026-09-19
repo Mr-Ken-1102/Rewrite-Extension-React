@@ -153,7 +153,7 @@ export function ProfileGrid({
           : profileDisplayName(profile, language);
         return (
           <Button
-            key={profile.id}
+            key={profile.__featured ? `voice:${profile.identityKey || profile.id}` : profile.id}
             glow={false}
             className={`rwa2-profile-btn ${profile.__featured ? 'rwa2-profile-btn-voice' : ''}`.trim()}
             data-profile-index={index}
@@ -182,7 +182,7 @@ export function ProfileGrid({
             }}
           >
             <span className="rwa2-profile-name" style={profile.color ? { color: profile.color } : {}}>
-              {compact ? displayName.slice(0, 2).toUpperCase() : displayName}
+              {compact ? (profile.__featured ? 'VP' : displayName.slice(0, 2).toUpperCase()) : displayName}
             </span>
           </Button>
         );
