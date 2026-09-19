@@ -213,7 +213,7 @@ ok('Character or Persona identity shares one compact status row with token count
 ok('responsive context detail stacks controls without turning token details into layout rows', () => {
   const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /@media \(max-width:\s*459px\)/);
-  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
   assert.doesNotMatch(css, /\.rwa2-token-popover/);
   assert.match(css, /@media \(max-width:\s*419px\)/);
   assert.doesNotMatch(css, /\.rwa2-token-detail-grid/);
