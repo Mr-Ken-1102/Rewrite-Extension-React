@@ -97,54 +97,6 @@ export const RWA_POPUP_BASE_CSS = `
   justify-content: flex-end;
   gap: 2px;
 }
-.rwa2-identity-chip {
-  appearance: none;
-  min-width: 0;
-  max-width: min(250px, 44vw);
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-right: 3px;
-  padding: 0 8px;
-  border: 1px solid var(--rwa2-brand-border);
-  border-radius: 999px;
-  background: rgba(209,154,69,.055);
-  color: var(--rwa2-brand);
-  font: inherit;
-  cursor: pointer;
-  transition: background-color .10s ease, border-color .10s ease, color .10s ease;
-}
-.rwa2-identity-chip-profile:hover,
-.rwa2-identity-chip-profile:focus-visible {
-  border-color: rgba(209,154,69,.38);
-  background: rgba(209,154,69,.10);
-  color: var(--rwa2-brand-hover);
-  outline: none;
-}
-.rwa2-identity-chip-static {
-  cursor: default;
-  border-color: rgba(255,255,255,.07);
-  background: rgba(255,255,255,.018);
-  color: var(--rwa2-text-2);
-}
-.rwa2-identity-chip-static .rwa2-identity-chip-mark {
-  color: var(--rwa2-positive);
-}
-.rwa2-identity-chip-mark {
-  flex: 0 0 auto;
-  font-size: 9px;
-  line-height: 1;
-}
-.rwa2-identity-chip-text {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 9.5px;
-  line-height: 1;
-  font-weight: 650;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .rwa2-icon-button {
   appearance: none;
   width: 28px;
