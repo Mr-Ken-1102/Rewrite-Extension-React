@@ -143,12 +143,11 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /estimatePopupHeight/);
   assert.match(source, /hasAutoProfile/);
   assert.match(source, /multiMessage/);
-  assert.match(source, /fastRewrite/);
   assert.match(source, /compact/);
-  assert.match(geometry, /POPUP_FAST_REWRITE_HEIGHT\s*=\s*35/);
-  assert.match(geometry, /\+ POPUP_FAST_REWRITE_HEIGHT/);
+  assert.doesNotMatch(source, /fastRewrite/);
+  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*35/);
+  assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.doesNotMatch(geometry, /POPUP_PRESET_INSPECTOR_HEIGHT/);
-  assert.doesNotMatch(geometry, /fastRewrite \? POPUP_FAST_REWRITE_HEIGHT : 0/);
 });
 
 ok('popup main passes geometry-relevant state without changing rewrite semantics', () => {
@@ -168,25 +167,24 @@ ok('responsive context geometry stacks deliberately on narrow viewports', () => 
   assert.match(css, /\.rwa2-context-sources,[\s\S]*\.rwa2-context-modifiers\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
 });
 
-ok('Fast Rewrite keeps stable geometry and exposes provider-aware paths in every mode', () => {
+ok('performance strip separates Fast Rewrite acceleration from Live Streaming', () => {
   const main = read('./src/components/PopupMain.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   const base = read('./src/styles-popup-base.js');
-  const responsive = read('./src/styles-popup-responsive.js');
   assert.match(main, /fastRewrite=\{config\.fastRewrite !== false\}/);
+  assert.match(main, /liveStreaming=\{config\.liveStreaming !== false\}/);
   assert.match(main, /connectionMode=\{config\.connMode\}/);
-  assert.doesNotMatch(main, /fastRewrite=\{config\.connMode === 'marinara'/);
-  assert.match(rewrite, /rwa2-fast-strip-active/);
-  assert.match(rewrite, /rwa2-fast-strip-idle/);
-  assert.match(rewrite, /Reasoning-light · SSE live/);
-  assert.match(rewrite, /Direct stream · SSE live/);
-  assert.match(rewrite, /Extender stream · SSE live/);
-  assert.match(rewrite, /Compact prompt · local path/);
-  assert.match(rewrite, /Standard path/);
-  assert.match(base, /@keyframes rwa2-fast-sweep/);
-  assert.match(base, /\.rwa2-fast-strip-idle/);
-  assert.match(base, /\.rwa2-fast-rail/);
-  assert.match(responsive, /\.rwa2-fast-rail > span/);
+  assert.match(rewrite, /getProviderCapabilities/);
+  assert.match(rewrite, /rwa2-performance-strip/);
+  assert.match(rewrite, /rwa2-performance-key">FAST/);
+  assert.match(rewrite, /rwa2-performance-key">STREAM/);
+  assert.match(rewrite, /Reasoning reduced/);
+  assert.match(rewrite, /Live output/);
+  assert.match(rewrite, /Unavailable/);
+  assert.doesNotMatch(rewrite, /SSE live|Fast path · SSE|Compact prompt · local path/);
+  assert.match(base, /\.rwa2-performance-strip\s*\{/);
+  assert.match(base, /\.rwa2-performance-item\s*\{/);
+  assert.doesNotMatch(base, /rwa2-fast-sweep|rwa2-fast-rail|rwa2-fast-strip/);
 });
 
 ok('popup visual layer is low-paint and uses subdued amber', () => {
