@@ -6,7 +6,7 @@ import { extractSurroundingContext } from '../../utils/selectionContext.js';
 import { analyzeMergedMessageCompatibility } from '../policies/contextPolicy.js';
 import { validateProviderHttpUrl } from '../policies/providerPolicy.js';
 import { estimateTokens } from '../prompt/promptService.js';
-import { resolveVoiceIdentity, voiceIdentityFromSelection } from '../voiceProfileIdentity.js';
+import { resolveVoiceIdentity } from '../voiceProfileIdentity.js';
 
 const ENDPOINTS = {
   chats: '/chats',
@@ -135,10 +135,14 @@ export class ContextService {
       try {
         const char = await MarinaraHost.apiFetch(`${ENDPOINTS.chars}/${encodeURIComponent(id)}`, { signal }, 15000);
         const data = safeObject(char?.data);
-        return { id, name: String(data.name || char?.name || id).slice(0, 160) };
+        return {
+          id,
+          name: String(data.name || char?.name || id).slice(0, 160),
+          convoDisplayName: String(data.convoDisplayName || char?.convoDisplayName || '').slice(0, 160),
+        };
       } catch (err) {
         if (MarinaraHost.isAbortError(err) || signal?.aborted) throw err;
-        return { id, name: id };
+        return { id, name: id, convoDisplayName: '' };
       }
     }));
   }
@@ -356,6 +360,18 @@ export class ContextService {
     return { messages, index, message: index >= 0 ? messages[index] : null };
   }
 
+  static async resolveSelectionVoiceIdentity(savedSel, message, signal, suppliedCharacters = null) {
+    if (!savedSel) return resolveVoiceIdentity(savedSel, message);
+    if (savedSel.detectedGroupedSpeaker === true) {
+      if (savedSel.detectedGroupedSpeakerAmbiguous === true || !savedSel.cid) return null;
+      const characters = Array.isArray(suppliedCharacters)
+        ? suppliedCharacters
+        : await this.fetchChatCharacters(savedSel.cid, signal);
+      return resolveVoiceIdentity(savedSel, message, characters);
+    }
+    return resolveVoiceIdentity(savedSel, message);
+  }
+
   static buildHistoryContext(messages, targetIndex, depth, audienceCharacterId = null) {
     return buildSafeHistoryContext(messages, targetIndex, depth, audienceCharacterId);
   }
@@ -384,10 +400,17 @@ export class ContextService {
       }
     }
 
-    const domIdentity = voiceIdentityFromSelection(savedSel);
     const role = info.message?.role || savedSel.detectedRole || null;
+    const resolvedVoiceIdentity = Object.hasOwn(options || {}, 'resolvedVoiceIdentity')
+      ? options.resolvedVoiceIdentity
+      : await this.resolveSelectionVoiceIdentity(savedSel, info.message, signal);
+    const groupedSelection = savedSel?.detectedGroupedSpeaker === true;
     const authoritativeCharacterId = role === 'assistant'
-      ? (domIdentity?.id || info.message?.characterId || '')
+      ? (
+        resolvedVoiceIdentity?.kind === 'character'
+          ? resolvedVoiceIdentity.id
+          : (groupedSelection ? '' : (info.message?.characterId || ''))
+      )
       : '';
     const history = wantsHistory
       ? this.buildHistoryContext(info.messages, info.index, config.contextDepth, authoritativeCharacterId || null)
@@ -395,20 +418,25 @@ export class ContextService {
     const authoritativeSender = authoritativeCharacterId
       ? normalizeIdList(authoritativeCharacterId)
       : [];
-    if (domIdentity?.id && info.message?.characterId && String(domIdentity.id) !== String(info.message.characterId)) {
+    if (
+      resolvedVoiceIdentity?.kind === 'character'
+      && info.message?.characterId
+      && String(resolvedVoiceIdentity.id) !== String(info.message.characterId)
+    ) {
       debugLogService.add('identity.dom_api_mismatch', {
         chatId: savedSel?.cid || null,
         messageId: savedSel?.mid || null,
-        domCharacterId: domIdentity.id,
+        domCharacterId: resolvedVoiceIdentity.id,
         apiCharacterId: String(info.message.characterId),
-        chosen: 'dom',
+        chosen: resolvedVoiceIdentity.sourceOfTruth || 'dom',
       });
     }
     // The exact rendered Character selected by the user is authoritative.
-    // Marinara API metadata remains the fallback when no DOM Character id was
-    // captured. Manual Character selections are only a final fallback for
-    // user/narrator/legacy text without an authoritative sender.
-    const characterIds = authoritativeSender.length ? authoritativeSender : explicitCharacterIds;
+    // Grouped multi-speaker Conversation segments never fall back to the parent
+    // message Character or to a stale manual Character selection: if the visible
+    // speaker cannot be mapped uniquely, Character-specific context is omitted.
+    const fallbackCharacterIds = groupedSelection ? [] : explicitCharacterIds;
+    const characterIds = authoritativeSender.length ? authoritativeSender : fallbackCharacterIds;
     const surrounding = wantsSurrounding ? extractSurroundingContext(savedSel, config.localContextWords) : '';
     const speaker = wantsSpeaker ? this.speakerNote(role) : '';
     const [character, persona, lore, memory] = await Promise.all([
@@ -417,8 +445,12 @@ export class ContextService {
       wantsPersona && role === 'user'
         ? this.fetchUserPersona(savedSel.cid, signal, getMessagePersonaSnapshot(info.message)) : Promise.resolve(''),
       wantsLore ? this.fetchLorebookContext(savedSel.cid, signal) : Promise.resolve(''),
-      wantsMemory
-        ? this.fetchExtenderMemory(savedSel.cid, signal, authoritativeSender.length ? authoritativeSender : explicitCharacterIds) : Promise.resolve(''),
+      wantsMemory && (authoritativeSender.length || fallbackCharacterIds.length)
+        ? this.fetchExtenderMemory(
+          savedSel.cid,
+          signal,
+          authoritativeSender.length ? authoritativeSender : fallbackCharacterIds,
+        ) : Promise.resolve(''),
     ]);
     return { role, character, persona, lore, surrounding, history, memory, speaker, messageInfo: info };
   }
@@ -462,12 +494,19 @@ export class ContextService {
       if (savedSel?.cid && savedSel?.mid) {
         messageInfo = await this.getMessageInfo(savedSel.cid, savedSel.mid, signal);
       }
+      let voiceIdentity = await this.resolveSelectionVoiceIdentity(
+        savedSel,
+        messageInfo?.message || null,
+        signal,
+      );
       const context = await this.collectContext(
         savedSel,
         signal,
-        messageInfo?.message ? { messageInfo } : {},
+        {
+          ...(messageInfo?.message ? { messageInfo } : {}),
+          resolvedVoiceIdentity: voiceIdentity,
+        },
       );
-      let voiceIdentity = resolveVoiceIdentity(savedSel, messageInfo?.message || context.messageInfo?.message || null);
       if (voiceIdentity?.kind === 'character' && !voiceIdentity.name) {
         const resolvedName = extractIdentityNames(context.character)[0] || '';
         if (resolvedName) voiceIdentity = { ...voiceIdentity, name: resolvedName };
