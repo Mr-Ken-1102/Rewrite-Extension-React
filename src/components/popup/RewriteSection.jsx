@@ -1,6 +1,7 @@
 import { Button } from '../ui/Button';
 import { MultiMessageNotice } from './MultiMessageNotice';
 import { ProfileGrid } from './ProfileGrid';
+import { getProviderCapabilities } from '../../services/providers/providerCapabilities.js';
 
 export function RewriteSection({
   language = 'en',
@@ -10,6 +11,7 @@ export function RewriteSection({
   compact,
   autoProfile,
   fastRewrite = false,
+  liveStreaming = true,
   connectionMode = 'marinara',
   selection,
   mergeMultiMsg,
@@ -22,16 +24,17 @@ export function RewriteSection({
   const autoIdentityLabel = autoProfile
     ? `${autoProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${autoProfile.identityName || autoProfile.name}`
     : '';
-  const fastMeta = connectionMode === 'marinara'
-    ? text('Reasoning-light · SSE live', 'Giảm reasoning · SSE trực tiếp')
-    : connectionMode === 'direct'
-      ? text('Direct stream · SSE live', 'Direct stream · SSE trực tiếp')
-      : connectionMode === 'extender'
-        ? text('Extender stream · SSE live', 'Extender stream · SSE trực tiếp')
-        : text('Compact prompt · local path', 'Prompt gọn · luồng local');
-  const fastAria = connectionMode === 'sidecar'
-    ? text('Fast Rewrite enabled with compact local rewrite instructions', 'Viết lại nhanh đang bật với prompt gọn cho model local')
-    : text('Fast Rewrite enabled with live streaming', 'Viết lại nhanh đang bật với streaming trực tiếp');
+  const capabilities = getProviderCapabilities(connectionMode);
+  const fastState = capabilities.fastRewrite
+    ? (fastRewrite ? text('Reasoning reduced', 'Giảm reasoning') : text('Off', 'Tắt'))
+    : text('Unavailable', 'Không hỗ trợ');
+  const streamState = capabilities.liveStreaming
+    ? (liveStreaming ? text('Live output', 'Trực tiếp') : text('Off', 'Tắt'))
+    : text('Unavailable', 'Không hỗ trợ');
+  const performanceAria = text(
+    `Fast Rewrite: ${fastState}. Live Streaming: ${streamState}.`,
+    `Viết lại nhanh: ${fastState}. Streaming trực tiếp: ${streamState}.`,
+  );
 
   return (
     <section className="rwa2-rewrite" aria-label={text('Rewrite commands', 'Thiết lập viết lại')}>
@@ -47,21 +50,16 @@ export function RewriteSection({
         </div>
       </div>
 
-      <div
-        className={`rwa2-fast-strip ${fastRewrite ? 'rwa2-fast-strip-active' : 'rwa2-fast-strip-idle'}`}
-        role="status"
-        aria-label={fastRewrite
-          ? fastAria
-          : text('Standard rewrite path active', 'Đang dùng luồng viết lại tiêu chuẩn')}
-      >
-        <div className="rwa2-fast-copy">
-          <span className="rwa2-fast-title">{text('Fast Rewrite', 'Viết lại nhanh')}</span>
-          <span className="rwa2-fast-meta">
-            {fastRewrite ? fastMeta : text('Standard path', 'Luồng tiêu chuẩn')}
-          </span>
+      <div className="rwa2-performance-strip" role="status" aria-label={performanceAria}>
+        <div className={`rwa2-performance-item ${capabilities.fastRewrite && fastRewrite ? 'rwa2-performance-on' : ''}`.trim()}>
+          <span className="rwa2-performance-key">FAST</span>
+          <span className="rwa2-performance-meta">{fastState}</span>
         </div>
-        <span className="rwa2-fast-live">{fastRewrite ? text('FAST', 'NHANH') : text('STD', 'CHUẨN')}</span>
-        <span className="rwa2-fast-rail" aria-hidden="true"><span></span></span>
+        <span className="rwa2-performance-divider" aria-hidden="true"></span>
+        <div className={`rwa2-performance-item ${capabilities.liveStreaming && liveStreaming ? 'rwa2-performance-on' : ''}`.trim()}>
+          <span className="rwa2-performance-key">STREAM</span>
+          <span className="rwa2-performance-meta">{streamState}</span>
+        </div>
       </div>
 
       {autoProfile && (
