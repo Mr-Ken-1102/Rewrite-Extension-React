@@ -469,6 +469,20 @@ ok('Marinara v2.4.4 persona and lorebook contracts are pinned', () => {
   assert.match(context, /loreScan:\s*['"]\/lorebooks\/scan['"]/);
 });
 
+ok('Fast Rewrite copy stays user-facing and accurately limited to Marinara connections', () => {
+  const contextPanel = readFileSync('./src/components/popup/ContextPanel.jsx', 'utf8');
+  const capabilities = readFileSync('./src/services/providers/providerCapabilities.js', 'utf8');
+  assert.match(contextPanel, /Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn/);
+  assert.match(contextPanel, /Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này/);
+  assert.match(contextPanel, /Hiện chỉ hỗ trợ kết nối Marinara/);
+  assert.match(contextPanel, /Fast Rewrite speeds up rewriting and returns results sooner/);
+  assert.match(contextPanel, /Currently supported only with Marinara connections/);
+  assert.match(capabilities, /marinara:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*true/);
+  assert.match(capabilities, /sidecar:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
+  assert.match(capabilities, /direct:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
+  assert.match(capabilities, /extender:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
+});
+
 ok('Marinara raw-generation payload stays schema-compatible for streaming and JSON transport', () => {
   const provider = readFileSync('./src/services/providers/providerService.js', 'utf8');
   const capabilities = readFileSync('./src/services/providers/providerCapabilities.js', 'utf8');
