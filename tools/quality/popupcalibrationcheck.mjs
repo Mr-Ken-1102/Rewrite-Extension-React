@@ -14,11 +14,11 @@ assert.match(
   /RWA_POPUP_CONTEXT_CSS\}\\n\$\{RWA_POPUP_A11Y_CSS\}\\n\$\{RWA_POPUP_RESPONSIVE_CSS\}/,
 );
 
-assert.match(a11y, /\.rwa2-live-token,[\s\S]*font-size:\s*11px !important/);
+assert.match(a11y, /\.rwa2-token-trigger,[\s\S]*font-size:\s*11px !important/);
 assert.match(a11y, /\.rwa2-profile-name\s*\{[\s\S]*font-size:\s*13px/);
-assert.match(a11y, /\.rwa2-recipe-chip\s*\{[\s\S]*min-height:\s*27px/);
-assert.match(context, /\.rwa2-live-control,[\s\S]*min-height:\s*25px/);
-assert.match(context, /\.rwa2-inspector-close\s*\{[\s\S]*width:\s*26px;[\s\S]*height:\s*26px/);
+assert.match(a11y, /\.rwa2-context-chip\s*\{[\s\S]*min-height:\s*26px/);
+assert.match(context, /\.rwa2-performance-item\s*\{[\s\S]*min-height:\s*28px/);
+assert.match(context, /\.rwa2-token-trigger\s*\{[\s\S]*min-height:\s*25px/);
 assert.match(a11y, /:focus-visible/);
 assert.match(a11y, /prefers-contrast:\s*more/);
 assert.doesNotMatch(a11y, /font-size:\s*(?:[0-9](?:\.[0-9]+)?)px/);
