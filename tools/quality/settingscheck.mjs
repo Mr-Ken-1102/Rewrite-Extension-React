@@ -214,7 +214,7 @@ assert.match(schema, /historyDepth:\s*1/);
 assert.match(schema, /contextDepth:\s*1/);
 assert.match(schema, /speakerAware:\s*true/);
 assert.match(schema, /useExtenderMemory:\s*false/);
-assert.match(schema, /autoProfileEnabled:\s*true/);
+assert.match(schema, /autoProfileEnabled:\s*false/);
 assert.match(schema, /draftReplyEnabled:\s*true/);
 assert.match(schema, /fastRewrite:\s*true/);
 assert.match(schema, /fastRewrite:\s*cleanBoolean/);
