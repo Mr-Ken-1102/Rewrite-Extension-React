@@ -42,7 +42,7 @@ export const DEFAULT_CONFIG = {
   onlyAltR: false,
   speakerAware: true,
   useExtenderMemory: false,
-  autoProfileEnabled: true,
+  autoProfileEnabled: false,
   draftReplyEnabled: true,
   draftReplyHistoryDepth: 8,
   draftReplyLauncherPlacement: 'auto',
