@@ -13,6 +13,16 @@ export const RWA_RESULT_CSS = `
   55% { transform: translateX(150%); opacity: 1; }
   100% { transform: translateX(150%); opacity: .35; }
 }
+@keyframes rwa-waiting-dot {
+  0%, 70%, 100% { transform: translateY(0); opacity: .28; }
+  35% { transform: translateY(-3px); opacity: 1; }
+}
+@keyframes rwar-selected-sheen {
+  0% { transform: translateX(-135%); opacity: 0; }
+  18% { opacity: .32; }
+  58% { opacity: .18; }
+  100% { transform: translateX(165%); opacity: 0; }
+}
 
 .rwar-window {
   width: min(600px, calc(100vw - 24px)) !important;
@@ -324,7 +334,7 @@ export const RWA_RESULT_CSS = `
 .rwar-working-rail {
   position: relative;
   width: 100%;
-  height: 3px;
+  height: 4px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255,255,255,.045);
@@ -335,18 +345,56 @@ export const RWA_RESULT_CSS = `
   width: 42%;
   border-radius: inherit;
   background: linear-gradient(90deg, transparent, #d19a45, #ff7043, transparent);
-  box-shadow: 0 0 12px rgba(209,154,69,.20);
-  animation: rwar-working-sweep 1.35s cubic-bezier(.42,0,.22,1) infinite;
+  box-shadow: 0 0 16px rgba(209,154,69,.34), 0 0 7px rgba(255,112,67,.20);
+  animation: rwar-working-sweep 1.05s cubic-bezier(.42,0,.22,1) infinite;
 }
 .rwar-writing-copy {
   margin-top: 8px;
-  color: rgba(255,255,255,.42);
+  min-height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: rgba(255,255,255,.50);
   font-size: 9.5px;
   line-height: 1;
   font-weight: 800;
   letter-spacing: .09em;
   text-align: center;
   text-transform: uppercase;
+}
+.rwa-waiting-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: 21px;
+  height: 10px;
+}
+.rwa-waiting-dots > i {
+  width: 4px;
+  height: 4px;
+  display: block;
+  border-radius: 50%;
+  background: #d19a45;
+  box-shadow: 0 0 7px rgba(209,154,69,.34);
+  animation: rwa-waiting-dot .9s ease-in-out infinite;
+}
+.rwa-waiting-dots > i:nth-child(2) { animation-delay: .12s; }
+.rwa-waiting-dots > i:nth-child(3) { animation-delay: .24s; }
+
+.rwar-loading .rwa-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.rwar-loading .rwa-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -35%;
+  width: 34%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(209,154,69,.12), rgba(255,255,255,.045), transparent);
+  transform: translateX(-135%);
+  animation: rwar-selected-sheen 2.15s ease-in-out infinite;
 }
 .rwar-loading-actions {
   display: flex;
@@ -372,11 +420,17 @@ export const RWA_RESULT_CSS = `
 @media (prefers-reduced-motion: reduce) {
   .rwar-window *, .rwar-window { transition: none !important; animation-duration: .001ms !important; }
   .rwar-ready-rail > span,
-  .rwar-working-rail > span {
+  .rwar-working-rail > span,
+  .rwa-waiting-dots > i,
+  .rwar-loading .rwa-shimmer::after {
     animation: none !important;
     transform: none !important;
     width: 100%;
     opacity: .55;
+  }
+  .rwa-waiting-dots > i {
+    width: 4px;
+    opacity: .7;
   }
 }
 `;
