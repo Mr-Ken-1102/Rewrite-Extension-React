@@ -1878,15 +1878,16 @@ await ok('rewrite output removes echoed rewrite_this delimiters before preview o
 });
 
 
-await ok('one-shot context exclusions prevent excluded context reads without changing persisted settings', async () => {
+await ok('persistent context defaults own source inclusion and stale request overrides cannot re-enable them', async () => {
   const h = await loadApiHarness();
   try {
     h.store.control.state.config = {
+      historyContextEnabled: false,
       contextDepth: 4,
-      injectChar: true,
-      injectUser: true,
-      injectLorebook: true,
-      localContextEnabled: true,
+      injectChar: false,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
       localContextWords: 150,
       freeMode: false,
       maxPromptChars: 32000,
@@ -1904,7 +1905,8 @@ await ok('one-shot context exclusions prevent excluded context reads without cha
       {
         cid: 'chat-1', mid: 'm1', text: 'hello', detectedRole: 'assistant',
         source: 'textarea', originalValue: 'before hello after', start: 7, end: 12,
-        contextExclusions: ['history', 'character', 'persona', 'lore', 'surrounding'],
+        contextOverrides: { history: true, character: true, persona: true, lore: true, surrounding: true },
+        contextExclusions: [],
       },
       new AbortController().signal,
     );
@@ -1912,7 +1914,8 @@ await ok('one-shot context exclusions prevent excluded context reads without cha
     assert.equal(inferenceCalls, 1);
     assert.equal(h.host.control.calls.length, 0);
     assert.equal(h.store.control.state.config.contextDepth, 4);
-    assert.equal(h.store.control.state.config.injectLorebook, true);
+    assert.equal(h.store.control.state.config.historyContextEnabled, false);
+    assert.equal(h.store.control.state.config.injectLorebook, false);
   } finally {
     await rm(h.dir, { recursive: true, force: true });
   }
