@@ -1,19 +1,35 @@
 export const STORE_VERSION = 6;
 
+const BUILTIN_PROFILE_NAME_MIGRATIONS = Object.freeze({
+  expand: Object.freeze({ legacy: 'Expand', current: 'Elaborate' }),
+  compress: Object.freeze({ legacy: 'Compress', current: 'Tighten' }),
+  thoughts: Object.freeze({ legacy: 'Add Inner Thoughts', current: 'Inner Voice' }),
+  dialogue: Object.freeze({ legacy: 'Convert to Dialogue', current: 'Dialogue Shift' }),
+  active: Object.freeze({ legacy: 'Passive to Active', current: 'Active Voice' }),
+  diffwords: Object.freeze({ legacy: 'Use Different Words', current: 'Fresh Wording' }),
+  showdont: Object.freeze({ legacy: "Show, Don't Tell", current: 'Show It' }),
+  emotion: Object.freeze({ legacy: 'Show More Emotion', current: 'Emotional Depth' }),
+  transitions: Object.freeze({ legacy: 'Fix Transitions', current: 'Smooth Flow' }),
+  noai: Object.freeze({ legacy: 'Remove LLM-isms', current: 'Naturalize' }),
+  expdialogue: Object.freeze({ legacy: 'Expand Dialogue', current: 'Dialogue Depth' }),
+  romance: Object.freeze({ legacy: 'Increase Romance', current: 'Romantic Tone' }),
+  grammar: Object.freeze({ legacy: 'Grammar Fix', current: 'Polish' }),
+});
+
 export const DEFAULT_PROFILES = [
-  { id: 'expand',      name: 'Expand',             order: 0,  prompt: 'Expand the passage with more descriptive detail, sensory imagery, and action. Add no new plot events.' },
-  { id: 'compress',    name: 'Compress',           order: 1,  prompt: 'Condense the passage to be more succinct, keeping every key event and beat.' },
-  { id: 'thoughts',    name: 'Add Inner Thoughts', order: 2,  prompt: "Weave in the point-of-view character's inner thoughts and emotional reactions, in close POV." },
-  { id: 'dialogue',    name: 'Convert to Dialogue',order: 3,  prompt: 'Convert the passage into natural spoken dialogue between the characters, carrying the same information through what they say and do.' },
-  { id: 'active',      name: 'Passive to Active',  order: 4,  prompt: 'Convert passive-voice constructions to active voice.' },
-  { id: 'diffwords',   name: 'Use Different Words',order: 5,  prompt: 'Rephrase using different vocabulary and sentence structure, keeping the exact meaning and tone.' },
-  { id: 'showdont',    name: "Show, Don't Tell",  order: 6,  prompt: 'Show through action, sensory detail, and dialogue instead of explaining emotions or states directly.' },
-  { id: 'emotion',     name: 'Show More Emotion',  order: 7,  prompt: "Heighten the passage's emotional immediacy while preserving facts, POV, and character intent." },
-  { id: 'transitions', name: 'Fix Transitions',    order: 8,  prompt: 'Improve transitions and sentence flow so the passage reads naturally without changing its meaning.' },
-  { id: 'noai',        name: 'Remove LLM-isms',    order: 9,  prompt: 'Remove formulaic AI-writing patterns, hollow affirmations, repetitive cadence, and unnecessary em dashes. Keep the prose natural and specific.' },
-  { id: 'expdialogue', name: 'Expand Dialogue',    order: 10, prompt: 'Expand the dialogue with more natural back-and-forth, subtext, reactions, and distinct character voice.' },
-  { id: 'romance',     name: 'Increase Romance',   order: 11, prompt: 'Increase romantic tension, chemistry, and emotional intimacy while preserving consent, character intent, and established facts.' },
-  { id: 'grammar',     name: 'Grammar Fix',        order: 12, prompt: 'Correct grammar, spelling, and punctuation only. Preserve wording, style, voice, and content whenever possible.' },
+  { id: 'expand',      name: 'Elaborate',         order: 0,  prompt: 'Expand the passage with more descriptive detail, sensory imagery, and action. Add no new plot events.' },
+  { id: 'compress',    name: 'Tighten',           order: 1,  prompt: 'Condense the passage to be more succinct, keeping every key event and beat.' },
+  { id: 'thoughts',    name: 'Inner Voice',       order: 2,  prompt: "Weave in the point-of-view character's inner thoughts and emotional reactions, in close POV." },
+  { id: 'dialogue',    name: 'Dialogue Shift',    order: 3,  prompt: 'Convert the passage into natural spoken dialogue between the characters, carrying the same information through what they say and do.' },
+  { id: 'active',      name: 'Active Voice',      order: 4,  prompt: 'Convert passive-voice constructions to active voice.' },
+  { id: 'diffwords',   name: 'Fresh Wording',     order: 5,  prompt: 'Rephrase using different vocabulary and sentence structure, keeping the exact meaning and tone.' },
+  { id: 'showdont',    name: 'Show It',           order: 6,  prompt: 'Show through action, sensory detail, and dialogue instead of explaining emotions or states directly.' },
+  { id: 'emotion',     name: 'Emotional Depth',   order: 7,  prompt: "Heighten the passage's emotional immediacy while preserving facts, POV, and character intent." },
+  { id: 'transitions', name: 'Smooth Flow',       order: 8,  prompt: 'Improve transitions and sentence flow so the passage reads naturally without changing its meaning.' },
+  { id: 'noai',        name: 'Naturalize',        order: 9,  prompt: 'Remove formulaic AI-writing patterns, hollow affirmations, repetitive cadence, and unnecessary em dashes. Keep the prose natural and specific.' },
+  { id: 'expdialogue', name: 'Dialogue Depth',    order: 10, prompt: 'Expand the dialogue with more natural back-and-forth, subtext, reactions, and distinct character voice.' },
+  { id: 'romance',     name: 'Romantic Tone',     order: 11, prompt: 'Increase romantic tension, chemistry, and emotional intimacy while preserving consent, character intent, and established facts.' },
+  { id: 'grammar',     name: 'Polish',            order: 12, prompt: 'Correct grammar, spelling, and punctuation only. Preserve wording, style, voice, and content whenever possible.' },
 ];
 
 export const DEFAULT_CONFIG = {
@@ -195,9 +211,14 @@ export function sanitizeProfiles(value) {
       suffix += 1;
     }
     const color = typeof profile.color === 'string' && /^#[0-9a-f]{6}$/i.test(profile.color) ? profile.color : null;
+    const rawName = profile.name.trim();
+    const builtInName = BUILTIN_PROFILE_NAME_MIGRATIONS[id];
+    const normalizedName = builtInName && rawName === builtInName.legacy
+      ? builtInName.current
+      : rawName;
     const base = {
       id,
-      name: profile.name.trim().slice(0, 80) || `Profile ${index + 1}`,
+      name: normalizedName.slice(0, 80) || `Profile ${index + 1}`,
       prompt: '',
       order: Math.trunc(clampNumber(profile.order, 0, 10000, index)),
       hidden: profile.hidden === true,
