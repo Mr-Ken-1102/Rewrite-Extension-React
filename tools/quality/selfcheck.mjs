@@ -1092,7 +1092,7 @@ ok('auto-profile policy yields to manual rewrites and enforces a 60-second failu
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
   assert.match(app, /useAutoVoiceProfileCoordinator/);
   assert.match(coordinator, /isProcessing = useRuntimeStore/);
-  assert.match(coordinator, /voiceIdentityFromMessage/);
+  assert.match(coordinator, /resolveVoiceIdentity/);
   assert.match(coordinator, /useAutoProfileGeneration/);
   assert.match(hook, /shouldStartAutoProfile/);
   assert.match(hook, /autoProfileBackoffRemaining/);
@@ -1416,7 +1416,7 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.ok(context.indexOf("'Example dialogue'") < context.indexOf("'Description'"));
   assert.doesNotMatch(context.slice(context.indexOf('function buildVoiceReference'), context.indexOf('export class ContextService')), /system_prompt|post_history_instructions/);
   assert.match(coordinator, /resolved\.selectionKey === selectionKey/);
-  assert.match(coordinator, /targetMessage: message/);
+  assert.match(coordinator, /const targetMessage = identity\?\.kind === 'character' && selection\.detectedGroupedSpeaker === true/);
   assert.match(hook, /const targetMessageRef = useRef\(targetMessage\)/);
   assert.match(hook, /targetMessageRef\.current = targetMessage/);
   assert.match(hook, /targetMessage: targetMessageRef\.current/);
