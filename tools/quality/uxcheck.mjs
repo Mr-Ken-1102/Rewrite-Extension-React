@@ -261,7 +261,7 @@ ok('main-popup buttons opt out of cursor-following glow layout reads', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
   const footer = read('./src/components/popup/PopupFooter.jsx');
   assert.match(button, /if \(glow && btnRef\.current/);
-  assert.match(rewrite, /glow=\{false\}/);
+  assert.doesNotMatch(rewrite, /<Button|glow=/);
   assert.match(grid, /glow=\{false\}/);
   assert.equal((footer.match(/glow=\{false\}/g) || []).length, 4);
 });
