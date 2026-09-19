@@ -10,9 +10,7 @@ import { usePopupDrag } from '../hooks/usePopupDrag';
 import { usePopupPosition } from '../hooks/usePopupPosition';
 import { PopupHeader } from './popup/PopupHeader';
 import { RewriteSection } from './popup/RewriteSection';
-import { LiveRail } from './popup/LiveRail';
-import { RecipeBar } from './popup/RecipeBar';
-import { RequestInspector } from './popup/RequestInspector';
+import { ContextDeck } from './popup/ContextDeck';
 import { TrimSelectionModal } from './popup/TrimSelectionModal';
 import { PopupTooltip } from './popup/PopupTooltip';
 import { PopupFooter } from './popup/PopupFooter';
@@ -53,12 +51,12 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const [contextExclusions, setContextExclusions] = useState({});
   const [trimOpen, setTrimOpen] = useState(false);
   const [trimText, setTrimText] = useState(selection?.text || '');
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [contextOpen, setContextOpen] = useState(false);
 
   useEffect(() => {
     setContextExclusions({});
     setTrimOpen(false);
-    setInspectorOpen(false);
+    setContextOpen(false);
     setTrimText(selection?.text || '');
   }, [selection?.captureId, selection?.text]);
 
@@ -113,7 +111,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     }
   }, [tip.show, tip.content, tip.kind, tip.x, tip.y]);
 
-  const colCount = useMemo(() => Math.max(1, config.cols || 4), [config.cols]);
+  const colCount = useMemo(() => Math.max(1, config.cols || 3), [config.cols]);
   const layoutColCount = useMemo(
     () => config.compact ? Math.min(colCount, 6) : Math.min(colCount, 4),
     [colCount, config.compact],
@@ -150,7 +148,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     compact: config.compact,
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
-    inspectorOpen,
+    contextOpen,
   });
 
   const runProfile = useCallback((profile) => {
@@ -236,6 +234,9 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
+            config={config}
+            updateConfig={updateConfig}
+            keepFocus={keepFocus}
             selection={selection}
             mergeMultiMsg={config.mergeMultiMsg}
             onRun={runProfile}
@@ -243,38 +244,18 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             onTooltipLeave={hideTooltip}
           />
 
-          <LiveRail
+          <ContextDeck
+            open={contextOpen}
             language={language}
             config={config}
             updateConfig={updateConfig}
             keepFocus={keepFocus}
             tokenInfo={tokenInfo}
             selection={selection}
-            inspectorOpen={inspectorOpen}
-            onToggleInspector={() => setInspectorOpen((open) => !open)}
-            onTooltip={showTooltip}
-            onTooltipLeave={hideTooltip}
-          />
-
-          <RecipeBar
-            language={language}
-            config={config}
             contextSources={contextSources}
             contextExclusions={contextExclusions}
             onToggleContext={toggleContextExclusion}
-            onOpenInspector={() => setInspectorOpen(true)}
-            onTooltip={showTooltip}
-            onTooltipLeave={hideTooltip}
-          />
-
-          <RequestInspector
-            open={inspectorOpen}
-            language={language}
-            config={config}
-            updateConfig={updateConfig}
-            keepFocus={keepFocus}
-            tokenInfo={tokenInfo}
-            onClose={() => setInspectorOpen(false)}
+            onToggleOpen={() => setContextOpen((open) => !open)}
           />
         </main>
 
