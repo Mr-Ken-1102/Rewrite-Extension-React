@@ -76,6 +76,7 @@ export function PerformanceStrip({
           type="button"
           className={`rwa2-performance-item ${item.active ? 'rwa2-performance-on' : ''}`.trim()}
           aria-pressed={item.active}
+          aria-label={`${item.key}: ${item.state}`}
           disabled={item.disabled}
           onClick={(event) => {
             event.preventDefault();
@@ -90,7 +91,7 @@ export function PerformanceStrip({
           aria-description={item.help}
         >
           <span className="rwa2-performance-key">{item.key}</span>
-          <span className="rwa2-performance-meta">{item.state}</span>
+          <span className="rwa2-performance-meta" data-short={item.state}>{item.state}</span>
           {index < items.length - 1 && <span className="rwa2-performance-divider" aria-hidden="true"></span>}
         </button>
       ))}
