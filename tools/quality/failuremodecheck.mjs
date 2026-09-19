@@ -405,6 +405,94 @@ await ok('Persona identity stays message-scoped regardless of Character count', 
   }
 });
 
+await ok('manual and automatic Character profile scans share the exact grouped speaker target', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      connMode: 'sidecar',
+      maxPromptChars: 32000,
+      requestTimeoutMs: 45000,
+      charCardIds: ['char-parent'],
+    };
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/chat-profile/messages') {
+        return [{
+          id: 'm-grouped',
+          role: 'assistant',
+          characterId: 'char-parent',
+          characterName: 'Parent Character',
+          content: 'grouped content',
+          extra: {},
+        }];
+      }
+      if (path === '/chats/chat-profile') {
+        return {
+          id: 'chat-profile',
+          characterIds: ['char-parent', 'char-selected'],
+        };
+      }
+      if (path === '/characters/char-parent') {
+        return {
+          id: 'char-parent',
+          data: {
+            name: 'Parent Character',
+            convoDisplayName: 'Parent Display',
+            personality: 'parent style evidence',
+          },
+        };
+      }
+      if (path === '/characters/char-selected') {
+        return {
+          id: 'char-selected',
+          data: {
+            name: 'Selected Character',
+            convoDisplayName: 'Selected Display',
+            personality: 'selected style evidence',
+            mes_example: 'Selected example dialogue.',
+          },
+        };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+    h.provider.ProviderService.runInference = async (_system, user) => {
+      assert.match(user, /Selected Character|selected style evidence|Selected example dialogue/);
+      assert.doesNotMatch(user, /parent style evidence/);
+      return { result: '{"name":"Selected Voice","prompt":"Preserve the selected speaker cadence."}' };
+    };
+
+    const selection = {
+      cid: 'chat-profile',
+      mid: 'm-grouped',
+      text: 'selected segment text',
+      detectedRole: 'assistant',
+      detectedCharacterId: null,
+      detectedName: 'Selected Display',
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: false,
+    };
+    const target = await h.api.APIService.resolveVoiceProfileTarget(selection, new AbortController().signal);
+
+    assert.equal(target.identity?.key, 'character:char-selected');
+    assert.equal(target.targetMessage?.characterId, 'char-selected');
+    assert.equal(target.targetMessage?.id, 'm-grouped');
+
+    const result = await h.api.APIService.generateAutoProfile('chat-profile', new AbortController().signal, {
+      messageId: selection.mid,
+      targetMessage: target.targetMessage,
+      expectedIdentityKey: target.identity.key,
+      preferredCharacterIds: ['char-parent'],
+      force: true,
+    });
+
+    assert.equal(result.profile?.identityKey, 'character:char-selected');
+    assert.equal(result.profile?.identityName, 'Selected Character');
+    assert.ok(h.store.control.state.autoProfiles['chat-profile']['character:char-selected']);
+    assert.equal(h.store.control.state.autoProfiles['chat-profile']['character:char-parent'], undefined);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 await ok('ambiguous grouped speaker never falls back to a stale manual Character profile', async () => {
   const h = await loadApiHarness();
   try {
