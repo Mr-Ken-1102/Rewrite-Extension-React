@@ -149,6 +149,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
     contextOpen,
+    contextSummaryCount: contextSources.length + (config.lengthEnabled ? 1 : 0),
   });
 
   const runProfile = useCallback((profile) => {
