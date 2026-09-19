@@ -14,16 +14,7 @@ function fastRewriteHelp(mode, vi) {
     : 'The current backend does not expose a safe acceleration capability that Rewrite Assistant can control. Fast Rewrite remains a global preference but is unavailable in this mode.';
 }
 
-function liveStreamingHelp(mode, vi) {
-  const transport = mode === 'sidecar'
-    ? (vi ? 'Sidecar dùng Marinara raw SSE.' : 'Sidecar uses Marinara raw SSE.')
-    : mode === 'marinara'
-      ? (vi ? 'Marinara dùng raw SSE.' : 'Marinara uses raw SSE.')
-      : (vi ? 'Endpoint OpenAI-compatible dùng SSE streaming.' : 'The OpenAI-compatible endpoint uses SSE streaming.');
-  return vi
-    ? `Streaming trực tiếp hiển thị nội dung ngay khi token đến và độc lập với Viết lại nhanh. Nó không làm giảm compute của model. ${transport}`
-    : `Live Streaming displays output as tokens arrive and is independent from Fast Rewrite. It does not reduce model compute time. ${transport}`;
-}
+
 
 export function ContextPanel({
   language = 'en',
@@ -45,7 +36,6 @@ export function ContextPanel({
   const contextHelp = vi ? CONTEXT_MODE_HELP_VI : CONTEXT_MODE_HELP;
   const capabilities = getProviderCapabilities(config.connMode);
   const fastRewriteHelpText = fastRewriteHelp(config.connMode, vi);
-  const liveStreamingHelpText = liveStreamingHelp(config.connMode, vi);
   const characterNames = tokenInfo.identities?.characterNames || [];
   const personaNames = tokenInfo.identities?.personaNames || [];
   const targetCharacterName = voiceIdentity?.kind === 'character' ? String(voiceIdentity.name || '').trim() : '';
@@ -143,25 +133,7 @@ export function ContextPanel({
               aria-description={fastRewriteHelpText}
             >i</button>
           </div>
-          <div className="rwa2-source-mode-item">
-            <ToggleSwitch
-              label={text('Live Stream', 'Stream trực tiếp')}
-              labelStyle={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--rwa2-brand)' }}
-              checked={config.liveStreaming !== false}
-              disabled={!capabilities.liveStreaming}
-              onChange={(value) => { updateConfig({ liveStreaming: value }); keepFocus(); }}
-            />
-            <button
-              type="button"
-              className="rwa2-info rwa2-mode-info"
-              onMouseEnter={(event) => onTooltip(event, liveStreamingHelpText)}
-              onMouseLeave={onTooltipLeave}
-              onFocus={(event) => onTooltip(event, liveStreamingHelpText)}
-              onBlur={onTooltipLeave}
-              aria-label={text('Live Streaming help', 'Trợ giúp Streaming trực tiếp')}
-              aria-description={liveStreamingHelpText}
-            >i</button>
-          </div>
+
         </div>
 
         <div className="rwa2-source-grid" role="group" aria-label={text('Persistent context sources', 'Nguồn ngữ cảnh')}>
