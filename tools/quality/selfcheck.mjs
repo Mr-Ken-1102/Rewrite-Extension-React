@@ -865,11 +865,13 @@ ok('history context never crosses Marinara conversation-start boundaries', () =>
   assert.doesNotMatch(buildHistoryContext(characterStart, 3, 10, null), /before char start/);
 });
 
-ok('Character context uses authoritative assistant identity with explicit fallback only when needed', () => {
+ok('Character context uses authoritative assistant identity with grouped-speaker fail-closed fallback', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /const authoritativeCharacterId = role === 'assistant'[\s\S]*domIdentity\?\.id \|\| info\.message\?\.characterId/s);
+  assert.match(context, /const authoritativeCharacterId = role === 'assistant'[\s\S]*resolvedVoiceIdentity\?\.kind === 'character'/s);
+  assert.match(context, /groupedSelection \? '' : \(info\.message\?\.characterId \|\| ''\)/);
   assert.match(context, /const authoritativeSender = authoritativeCharacterId[\s\S]*normalizeIdList\(authoritativeCharacterId\)/s);
-  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
+  assert.match(context, /const fallbackCharacterIds = groupedSelection \? \[\] : explicitCharacterIds/);
+  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : fallbackCharacterIds/);
   assert.match(context, /wantsCharacter && characterIds\.length > 0/);
 });
 
