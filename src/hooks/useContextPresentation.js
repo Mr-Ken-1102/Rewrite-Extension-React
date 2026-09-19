@@ -71,6 +71,7 @@ export function useContextPresentation({
     config.injectLorebook,
     config.injectUser,
     config.localContextEnabled,
+    config.historyContextEnabled,
     personaLabel,
     text,
   ]);
