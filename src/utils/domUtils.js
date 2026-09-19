@@ -250,6 +250,7 @@ export const DOMUtils = {
       ? first.text
       : segments.map((segment) => segment.text).join('\n\n');
 
+    const singleSegment = segments.length === 1;
     return {
       source: 'message',
       text,
@@ -261,11 +262,13 @@ export const DOMUtils = {
       occ: first.occ,
       fp: first.fp,
       renderedAtSelection: first.renderedAtSelection,
-      detectedRole: first.detectedRole,
-      detectedCharacterId: first.detectedCharacterId,
-      detectedName: first.detectedName,
+      detectedRole: singleSegment ? first.detectedRole : null,
+      detectedCharacterId: singleSegment ? first.detectedCharacterId : null,
+      detectedName: singleSegment ? first.detectedName : null,
+      detectedGroupedSpeaker: singleSegment ? first.detectedGroupedSpeaker === true : false,
+      detectedGroupedSpeakerAmbiguous: singleSegment ? first.detectedGroupedSpeakerAmbiguous === true : true,
       segments: segments.map((segment) => ({ ...segment, cid })),
-      multiMessage: segments.length > 1,
+      multiMessage: !singleSegment,
       captureId,
     };
   },
