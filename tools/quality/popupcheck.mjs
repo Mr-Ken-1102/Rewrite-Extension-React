@@ -22,6 +22,7 @@ ok('popup geometry constants encode the balanced 488px / three-column-first cont
   assert.match(source, /POPUP_FIXED_HEIGHT = 124/);
   assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 35/);
   assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 36/);
+  assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 29/);
   assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 76/);
 });
 
@@ -33,6 +34,8 @@ ok('popup geometry accounts for collapsed context, optional detail, and narrow s
   assert.match(source, /contextOpen && width <= 459 \? POPUP_NARROW_CONTEXT_EXTRA : 0/);
   assert.match(source, /width <= 419 \? POPUP_WRAPPED_ACTIONBAR_EXTRA : 0/);
   assert.match(source, /contextOpen = false/);
+  assert.match(source, /contextSummaryCount = 0/);
+  assert.match(source, /contextSummaryCount > 5 \? POPUP_CONTEXT_WRAP_EXTRA : 0/);
   assert.match(source, /contextOpen \? POPUP_CONTEXT_DETAIL_HEIGHT : 0/);
   assert.match(source, /viewportWidth = POPUP_DESKTOP_WIDTH/);
 });
@@ -165,9 +168,11 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.doesNotMatch(source, /fastRewrite/);
   assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*35/);
   assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*36/);
+  assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*29/);
   assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*76/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
+  assert.match(geometry, /contextSummaryCount > 5 \? POPUP_CONTEXT_WRAP_EXTRA : 0/);
   assert.match(geometry, /contextOpen \? POPUP_CONTEXT_DETAIL_HEIGHT : 0/);
 });
 
@@ -179,6 +184,7 @@ ok('popup main passes geometry-relevant state without changing rewrite semantics
   assert.match(source, /<RewriteSection/);
   assert.match(source, /<ContextDeck/);
   assert.match(source, /contextOpen/);
+  assert.match(source, /contextSummaryCount:\s*contextSources\.length \+ \(config\.lengthEnabled \? 1 : 0\)/);
   assert.doesNotMatch(source, /<LiveRail|<RecipeBar|<RequestInspector/);
   assert.match(source, /<PopupFooter/);
 });
