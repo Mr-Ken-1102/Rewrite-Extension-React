@@ -43,7 +43,7 @@ export function ProfileGrid({
   const [activeIndex, setActiveIndex] = useState(0);
   const classes = [
     'rwa2-profile-grid',
-    'rwa2-cols-' + effectiveCols,
+    `rwa2-cols-${effectiveCols}`,
     compact ? 'rwa2-profile-grid-compact' : '',
   ].filter(Boolean).join(' ');
 
