@@ -151,7 +151,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
     hasAutoProfile: !!autoProfile,
-    fastRewrite: config.connMode === 'marinara' && config.fastRewrite !== false,
+    fastRewrite: config.fastRewrite !== false,
   });
 
   const runProfile = useCallback((profile) => {
@@ -234,7 +234,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             rows={config.rows}
             compact={config.compact}
             autoProfile={autoProfile}
-            fastRewrite={config.connMode === 'marinara' && config.fastRewrite !== false}
+            fastRewrite={config.fastRewrite !== false}
+            connectionMode={config.connMode}
             selection={selection}
             mergeMultiMsg={config.mergeMultiMsg}
             onRun={runProfile}
