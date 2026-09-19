@@ -1150,8 +1150,8 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(performanceStrip, /key:\s*'FAST REWRITE'/);
   assert.match(performanceStrip, /key:\s*'STREAM'/);
   const contextPresentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
-  assert.match(contextPresentation, /Char: \$\{characterNameText\}/);
-  assert.match(contextPresentation, /Persona: \$\{personaNameText\}/);
+  assert.match(contextPresentation, /'Char: ' \+ characterNameText/);
+  assert.match(contextPresentation, /'Persona: ' \+ personaNameText/);
   assert.match(preview, /Rewrite again/);
   assert.match(preview, /Viết lại lần nữa/);
   assert.match(preview, /Copied result to clipboard/);
