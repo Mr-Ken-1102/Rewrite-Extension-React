@@ -2,8 +2,26 @@ import { ToggleSwitch } from '../ui/ToggleSwitch';
 
 const CONTEXT_MODE_HELP = 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.';
 const CONTEXT_MODE_HELP_VI = 'Tắt Tự do: phù hợp khi viết theo POV nhân vật, hội thoại trực tiếp hoặc nội tâm.\nBật Tự do: phù hợp với miêu tả cảnh, hành động chung hoặc bối cảnh thời gian/không gian.';
-const FAST_REWRITE_HELP = 'Fast Rewrite On: for Marinara connections, disable model reasoning only for this rewrite request when supported. The chat model and saved connection settings are unchanged.\nFast Rewrite Off: use the connection\'s normal reasoning settings. SSE streaming stays enabled in both modes.';
-const FAST_REWRITE_HELP_VI = 'Bật Viết lại nhanh: với kết nối Marinara, chỉ tắt reasoning cho lần viết lại này khi nhà cung cấp AI hỗ trợ. Model của chat và cấu hình kết nối đã lưu không thay đổi.\nTắt Viết lại nhanh: dùng reasoning bình thường của kết nối. SSE streaming vẫn bật ở cả hai chế độ.';
+function fastRewriteHelp(mode, vi) {
+  if (mode === 'marinara') {
+    return vi
+      ? 'Bật Viết lại nhanh: giảm/tắt reasoning cho riêng request viết lại khi provider hỗ trợ và nhận kết quả trực tiếp bằng SSE. Model chat và cấu hình kết nối đã lưu không bị thay đổi.\nTắt: dùng reasoning bình thường của kết nối; Marinara vẫn có thể stream kết quả.'
+      : 'Fast Rewrite On: reduce/disable reasoning for this rewrite request when the provider supports it and receive live SSE output. The chat model and saved connection settings are unchanged.\nOff: use the connection\'s normal reasoning settings; Marinara may still stream the result.';
+  }
+  if (mode === 'direct') {
+    return vi
+      ? 'Bật Viết lại nhanh: Direct OpenAI-compatible API dùng streaming để hiển thị kết quả ngay khi token đến. Không gửi tham số reasoning riêng để tránh làm hỏng provider không hỗ trợ.\nTắt: chờ phản hồi hoàn chỉnh như bình thường.'
+      : 'Fast Rewrite On: the Direct OpenAI-compatible API uses streaming so output appears as tokens arrive. No provider-specific reasoning parameter is sent, avoiding incompatibility.\nOff: wait for the normal complete response.';
+  }
+  if (mode === 'extender') {
+    return vi
+      ? 'Bật Viết lại nhanh: Extender dùng OpenAI-compatible streaming để trả kết quả trực tiếp khi token đến.\nTắt: dùng phản hồi hoàn chỉnh tiêu chuẩn.'
+      : 'Fast Rewrite On: Extender uses OpenAI-compatible streaming and delivers output as tokens arrive.\nOff: use the standard complete response.';
+  }
+  return vi
+    ? 'Bật Viết lại nhanh: Sidecar dùng system prompt viết lại gọn hơn để giảm overhead trên model local. Endpoint Sidecar hiện không hỗ trợ SSE hoặc điều khiển reasoning riêng.\nTắt: dùng system prompt đầy đủ.'
+    : 'Fast Rewrite On: Sidecar uses a more compact rewrite system prompt to reduce local-model overhead. The current Sidecar endpoint does not expose SSE or a reasoning control.\nOff: use the full rewrite system prompt.';
+}
 
 export function ContextPanel({
   language = 'en',
@@ -23,7 +41,7 @@ export function ContextPanel({
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const contextHelp = vi ? CONTEXT_MODE_HELP_VI : CONTEXT_MODE_HELP;
-  const fastRewriteHelp = vi ? FAST_REWRITE_HELP_VI : FAST_REWRITE_HELP;
+  const fastRewriteHelpText = fastRewriteHelp(config.connMode, vi);
   const characterNames = tokenInfo.identities?.characterNames || [];
   const personaNames = tokenInfo.identities?.personaNames || [];
   const targetCharacterName = voiceIdentity?.kind === 'character' ? String(voiceIdentity.name || '').trim() : '';
@@ -112,12 +130,12 @@ export function ContextPanel({
             <button
               type="button"
               className="rwa2-info rwa2-mode-info"
-              onMouseEnter={(event) => onTooltip(event, fastRewriteHelp)}
+              onMouseEnter={(event) => onTooltip(event, fastRewriteHelpText)}
               onMouseLeave={onTooltipLeave}
-              onFocus={(event) => onTooltip(event, fastRewriteHelp)}
+              onFocus={(event) => onTooltip(event, fastRewriteHelpText)}
               onBlur={onTooltipLeave}
               aria-label={text('Fast Rewrite help', 'Trợ giúp Viết lại nhanh')}
-              aria-description={fastRewriteHelp}
+              aria-description={fastRewriteHelpText}
             >i</button>
           </div>
         </div>
