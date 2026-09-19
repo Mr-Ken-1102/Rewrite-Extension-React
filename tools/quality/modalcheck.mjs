@@ -61,8 +61,7 @@ assert.match(preview, /Rewrite again/);
 assert.match(preview, /Viết lại lần nữa/);
 assert.match(preview, /rwar-rewrite-again/);
 assert.match(preview, /rwar-ready-rail/);
-assert.match(preview, /rwar-working-rail/);
-assert.doesNotMatch(preview, /className="rwa-pulse"/);
+assert.match(preview, /<div className="rwar-writing" aria-live="polite">[\s\S]*?<div className="rwar-working-rail" aria-hidden="true"><span><\/span><\/div>[\s\S]*?<div className="rwar-writing-copy">/);
 assert.ok(preview.indexOf('className="rwar-rewrite-again"') < preview.indexOf('className="rwar-native-editor"'));
 assert.match(preview, /config\.typewriter && !streamed/);
 
