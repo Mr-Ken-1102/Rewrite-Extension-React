@@ -48,7 +48,7 @@ export function RecipeBar({
   return (
     <section className="rwa2-recipe" aria-label={text('Recipe for this rewrite', 'Công thức cho lần viết lại này')}>
       <span className="rwa2-recipe-title">{text('Recipe', 'Công thức')}</span>
-      <div className="rwa2-recipe-chips">
+      <div className="rwa2-recipe-chips" role="group" aria-label={text('Sources and parameters for this rewrite', 'Nguồn và tham số cho lần viết lại này')}>
         {sourceItems.map(sourceChip)}
         {historyDepth > 0 && (
           <button
