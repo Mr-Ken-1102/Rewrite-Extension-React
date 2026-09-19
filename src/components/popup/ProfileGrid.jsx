@@ -27,8 +27,6 @@ function profileDisplayName(profile, language) {
 export function ProfileGrid({
   language = 'en',
   profiles,
-  featuredProfile = null,
-  featuredLabel = '',
   colCount,
   rows,
   compact,
@@ -36,9 +34,7 @@ export function ProfileGrid({
   onTooltip,
   onTooltipLeave,
 }) {
-  const gridProfiles = featuredProfile
-    ? [...profiles, { ...featuredProfile, __featured: true, __featuredLabel: featuredLabel || featuredProfile.name }]
-    : profiles;
+  const gridProfiles = profiles;
   const requestedCols = Math.max(1, Number(colCount) || 1);
   const effectiveCols = compact ? Math.min(requestedCols, 6) : Math.min(requestedCols, 4);
   const viewportHeight = getProfileViewportHeight(rows, compact);
@@ -47,7 +43,7 @@ export function ProfileGrid({
   const [activeIndex, setActiveIndex] = useState(0);
   const classes = [
     'rwa2-profile-grid',
-    `rwa2-cols-${effectiveCols}`,
+    'rwa2-cols-' + effectiveCols,
     compact ? 'rwa2-profile-grid-compact' : '',
   ].filter(Boolean).join(' ');
 
@@ -99,7 +95,7 @@ export function ProfileGrid({
     if (isTypeaheadKey) {
       const state = typeaheadRef.current;
       if (state.timer !== null) window.clearTimeout(state.timer);
-      let query = `${state.query}${event.key}`;
+      let query = state.query + event.key;
       let nextIndex = findTypeaheadMatch(buttons, currentIndex, query);
       if (nextIndex < 0 && query.length > 1) {
         query = event.key;
@@ -144,18 +140,16 @@ export function ProfileGrid({
       aria-label={language === 'vi'
         ? 'Các kiểu viết lại. Dùng phím mũi tên để di chuyển hoặc gõ tên kiểu để nhảy tới.'
         : 'Rewrite styles. Use arrow keys to move or type a style name to jump.'}
-      style={{ maxHeight: `${viewportHeight}px` }}
+      style={{ maxHeight: viewportHeight + 'px' }}
       onKeyDown={moveFocus}
     >
       {gridProfiles.map((profile, index) => {
-        const displayName = profile.__featured
-          ? profile.__featuredLabel
-          : profileDisplayName(profile, language);
+        const displayName = profileDisplayName(profile, language);
         return (
           <Button
-            key={profile.__featured ? `voice:${profile.identityKey || profile.id}` : profile.id}
+            key={profile.id}
             glow={false}
-            className={`rwa2-profile-btn ${profile.__featured ? 'rwa2-profile-btn-voice' : ''}`.trim()}
+            className="rwa2-profile-btn"
             data-profile-index={index}
             data-profile-name={displayName}
             tabIndex={index === activeIndex ? 0 : -1}
@@ -178,16 +172,15 @@ export function ProfileGrid({
             onBlur={onTooltipLeave}
             onClick={(event) => {
               event.stopPropagation();
-              onRun(profile.__featured ? featuredProfile : profile);
+              onRun(profile);
             }}
           >
             <span className="rwa2-profile-name" style={profile.color ? { color: profile.color } : {}}>
-              {compact ? (profile.__featured ? 'VP' : displayName.slice(0, 2).toUpperCase()) : displayName}
+              {compact ? displayName.slice(0, 2).toUpperCase() : displayName}
             </span>
           </Button>
         );
       })}
     </div>
-
   );
 }

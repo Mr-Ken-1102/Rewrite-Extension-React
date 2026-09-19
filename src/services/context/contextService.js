@@ -28,6 +28,16 @@ function safeObject(value) {
   return {};
 }
 
+function oneShotSourceEnabled(savedSel, key, defaultEnabled) {
+  const overrides = savedSel?.contextOverrides;
+  if (overrides && typeof overrides === 'object' && Object.prototype.hasOwnProperty.call(overrides, key)) {
+    return !!overrides[key];
+  }
+  const exclusions = new Set(Array.isArray(savedSel?.contextExclusions) ? savedSel.contextExclusions : []);
+  if (exclusions.has(key)) return false;
+  return !!defaultEnabled;
+}
+
 export function normalizeIdList(value, maxItems = 8) {
   let list = value;
   if (typeof list === 'string') {
@@ -413,13 +423,12 @@ export class ContextService {
 
   static async collectContext(savedSel, signal, options = {}) {
     const config = usePersistentStore.getState().config;
-    const exclusions = new Set(Array.isArray(savedSel?.contextExclusions) ? savedSel.contextExclusions : []);
-    const wantsHistory = config.contextDepth > 0 && !exclusions.has('history');
-    const wantsCharacter = !config.freeMode && config.injectChar && !exclusions.has('character');
-    const wantsPersona = !config.freeMode && config.injectUser && !exclusions.has('persona');
-    const wantsLore = !config.freeMode && config.injectLorebook && !exclusions.has('lore');
-    const wantsSurrounding = config.localContextEnabled && !exclusions.has('surrounding');
-    const wantsMemory = !config.freeMode && config.useExtenderMemory && !exclusions.has('memory');
+    const wantsHistory = config.contextDepth > 0 && oneShotSourceEnabled(savedSel, 'history', true);
+    const wantsCharacter = !config.freeMode && oneShotSourceEnabled(savedSel, 'character', config.injectChar);
+    const wantsPersona = !config.freeMode && oneShotSourceEnabled(savedSel, 'persona', config.injectUser);
+    const wantsLore = !config.freeMode && oneShotSourceEnabled(savedSel, 'lore', config.injectLorebook);
+    const wantsSurrounding = oneShotSourceEnabled(savedSel, 'surrounding', config.localContextEnabled);
+    const wantsMemory = !config.freeMode && config.useExtenderMemory && oneShotSourceEnabled(savedSel, 'memory', true);
     const wantsSpeaker = !config.freeMode && config.speakerAware;
     const explicitCharacterIds = normalizeIdList(config.charCardIds);
     const needsMessageInfo = wantsHistory || wantsPersona || wantsSpeaker || (wantsCharacter && !explicitCharacterIds.length);
@@ -509,8 +518,7 @@ export class ContextService {
     const context = await this.collectContext(anchorSelection, signal, { messageInfo: { messages, index, message: firstMessage } });
 
     const config = usePersistentStore.getState().config;
-    const exclusions = new Set(Array.isArray(parentSelection?.contextExclusions) ? parentSelection.contextExclusions : []);
-    if (config.localContextEnabled && !exclusions.has('surrounding')) {
+    if (oneShotSourceEnabled(parentSelection, 'surrounding', config.localContextEnabled)) {
       const notes = segments.map((segment, segmentIndex) => {
         const selection = { ...parentSelection, ...segment, source: 'message', cid, segments: undefined, multiMessage: false };
         const local = extractSurroundingContext(selection, config.localContextWords);

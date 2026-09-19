@@ -5,8 +5,6 @@ import { ProfileGrid } from './ProfileGrid';
 export function RewriteSection({
   language = 'en',
   profiles,
-  identityProfile = null,
-  voiceIdentity = null,
   colCount,
   rows,
   compact,
@@ -32,16 +30,10 @@ export function RewriteSection({
         onTooltip={onTooltip}
         onTooltipLeave={onTooltipLeave}
       />
-
       <MultiMessageNotice language={language} selection={selection} mergeMultiMsg={mergeMultiMsg} />
-
       <ProfileGrid
         language={language}
         profiles={profiles}
-        featuredProfile={identityProfile}
-        featuredLabel={identityProfile
-          ? `✦ ${String(voiceIdentity?.name || identityProfile.identityName || identityProfile.name || '').trim() || identityProfile.name}`
-          : ''}
         colCount={colCount}
         rows={rows}
         compact={compact}
@@ -51,4 +43,4 @@ export function RewriteSection({
       />
     </section>
   );
-}
+};

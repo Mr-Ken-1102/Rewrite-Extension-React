@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 
 const PART_LABELS = Object.freeze({
@@ -24,227 +23,157 @@ function tokenParts(parts, vi) {
 }
 
 export function ContextDeck({
-  open,
   language = 'en',
   config,
   updateConfig,
   keepFocus,
   tokenInfo,
   contextSources,
-  contextExclusions,
+  voiceIdentity,
+  identityProfile,
   onToggleContext,
-  onToggleOpen,
+  onTooltip,
+  onTooltipLeave,
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
-  const [tokenOpen, setTokenOpen] = useState(false);
-  const rootRef = useRef(null);
   const parts = tokenParts(tokenInfo.parts, vi);
   const total = Math.max(0, Number(tokenInfo.parts?.total) || 0);
   const tokenLabel = tokenInfo.loading && !tokenInfo.parts
     ? text('calculating…', 'đang tính…')
     : tokenInfo.parts
-      ? `≈${total.toLocaleString()} tok`
+      ? '≈' + total.toLocaleString() + ' tok'
       : '≈— tok';
-  const lengthLabel = config.lengthEnabled
-    ? `${text('Length', 'Độ dài')} ${config.lengthPct >= 0 ? '+' : ''}${config.lengthPct || 0}%`
-    : text('Length Auto', 'Độ dài Auto');
 
-  useEffect(() => {
-    if (!tokenOpen) return undefined;
-    const onPointerDown = (event) => {
-      if (!rootRef.current?.contains(event.target)) setTokenOpen(false);
-    };
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setTokenOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown, true);
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown, true);
-      document.removeEventListener('keydown', onKeyDown, true);
-    };
-  }, [tokenOpen]);
+  const identityKind = voiceIdentity?.kind === 'persona'
+    ? 'persona'
+    : (voiceIdentity?.kind === 'character' ? 'character' : '');
+  const identityName = String(voiceIdentity?.name || '').trim();
+  const identityLabel = identityKind
+    ? (identityKind === 'persona' ? 'Persona: ' : 'Char: ') + (identityName || text('Unknown', 'Không rõ'))
+    : '';
+  const profileReady = !!identityProfile;
+  const identityTitle = identityKind
+    ? (profileReady
+      ? text('Voice Profile ready for ', 'Hồ sơ giọng đã sẵn sàng cho ') + identityLabel
+      : text('No Voice Profile yet for ', 'Chưa có Hồ sơ giọng cho ') + identityLabel)
+    : '';
 
-  useEffect(() => {
-    setTokenOpen(false);
-  }, [tokenInfo.selectionKey]);
-
-  useEffect(() => {
-    if (open) setTokenOpen(false);
-  }, [open]);
-
-  const summaryLabel = (source) => source.key === 'history'
-    ? `${source.label} ${Math.max(0, Number(config.contextDepth) || 0)}`
-    : source.label;
+  const tokenTooltip = {
+    kind: 'token',
+    title: text('Request size', 'Kích thước yêu cầu'),
+    total: tokenLabel,
+    parts,
+    note: tokenInfo.error || text(
+      'Estimate only — not the provider billing/tokenizer count.',
+      'Chỉ là ước lượng — không phải số token tính phí/tokenizer chính xác của nhà cung cấp.',
+    ),
+  };
 
   return (
-    <section
-      ref={rootRef}
-      className={`rwa2-context-deck ${open ? 'rwa2-context-deck-open' : ''}`.trim()}
-      aria-label={text('Current rewrite context', 'Ngữ cảnh của lần viết lại hiện tại')}
-    >
-      <div className="rwa2-context-summary">
-        <div className="rwa2-context-chips" role="group" aria-label={text('Sources and parameters for this rewrite', 'Nguồn và tham số cho lần viết lại này')}>
-          {contextSources.map((source) => {
-            const excluded = !!contextExclusions[source.key];
-            return (
-              <button
-                key={source.key}
-                type="button"
-                className={`rwa2-context-chip ${excluded ? 'rwa2-context-chip-off' : ''}`.trim()}
-                aria-pressed={!excluded}
-                title={text(
-                  `${source.detail || source.label} — ${excluded ? 'excluded from' : 'included in'} this rewrite only`,
-                  `${source.detail || source.label} — ${excluded ? 'đã loại khỏi' : 'đang dùng trong'} lần viết lại này`,
-                )}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setTokenOpen(false);
-                  onToggleContext(source.key);
-                }}
-              >
-                <span className="rwa2-context-chip-dot" aria-hidden="true"></span>
-                {summaryLabel(source)}
-              </button>
-            );
-          })}
-
-          {config.lengthEnabled && (
-            <button
-              type="button"
-              className="rwa2-context-chip rwa2-context-param-chip"
-              title={text('Open Length controls', 'Mở điều chỉnh độ dài')}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setTokenOpen(false);
-                if (!open) onToggleOpen();
-              }}
-            >
-              {lengthLabel}
-            </button>
-          )}
-        </div>
-
-        <div className="rwa2-context-summary-actions">
-          <button
-            type="button"
-            className={`rwa2-token-trigger ${tokenOpen ? 'rwa2-token-trigger-open' : ''}`.trim()}
-            aria-expanded={tokenOpen}
-            aria-controls="rwa2-token-popover"
-            title={text('Show token details', 'Xem chi tiết token')}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setTokenOpen((current) => !current);
-            }}
+    <section className="rwa2-context-deck" aria-label={text('Context and rewrite controls', 'Ngữ cảnh và điều khiển viết lại')}>
+      <div className="rwa2-context-identity-row">
+        {identityLabel ? (
+          <span
+            className={[
+              'rwa2-identity-chip',
+              'rwa2-identity-' + identityKind,
+              profileReady ? 'rwa2-identity-profile-ready' : '',
+            ].filter(Boolean).join(' ')}
+            title={identityTitle}
           >
-            {tokenLabel}
-          </button>
+            {profileReady ? <span className="rwa2-identity-profile-mark" aria-hidden="true">✦</span> : null}
+            <span className="rwa2-identity-copy">{identityLabel}</span>
+          </span>
+        ) : <span aria-hidden="true" />}
 
-          <button
-            type="button"
-            className="rwa2-context-toggle"
-            aria-expanded={open}
-            aria-controls="rwa2-context-detail"
-            title={open
-              ? text('Hide context options', 'Ẩn tùy chọn ngữ cảnh')
-              : text('Show context options', 'Hiện tùy chọn ngữ cảnh')}
-            aria-label={open
-              ? text('Hide context options', 'Ẩn tùy chọn ngữ cảnh')
-              : text('Show context options', 'Hiện tùy chọn ngữ cảnh')}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setTokenOpen(false);
-              onToggleOpen();
-            }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
-        </div>
+        <button
+          type="button"
+          className="rwa2-token-trigger"
+          aria-label={text('Show token estimate details', 'Xem chi tiết ước lượng token')}
+          aria-description={tokenTooltip.note}
+          onMouseEnter={(event) => onTooltip?.(event, tokenTooltip)}
+          onMouseLeave={onTooltipLeave}
+          onFocus={(event) => onTooltip?.(event, tokenTooltip)}
+          onBlur={onTooltipLeave}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onTooltip?.(event, tokenTooltip);
+          }}
+        >
+          {tokenLabel}
+        </button>
       </div>
 
-      {tokenOpen && (
-        <div id="rwa2-token-popover" className="rwa2-token-popover" role="region" aria-label={text('Token details', 'Chi tiết token')}>
-          <div className="rwa2-token-popover-head">
-            <span>{text('Request size', 'Kích thước yêu cầu')}</span>
-            <strong>{tokenLabel}</strong>
-          </div>
-          {parts.length > 0 ? (
-            <div className="rwa2-token-popover-grid">
-              {parts.map((part) => (
-                <div className="rwa2-token-popover-row" key={part.key}>
-                  <span>{part.label}</span>
-                  <strong>≈{part.value.toLocaleString()}</strong>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="rwa2-token-popover-empty">
-              {tokenInfo.error || text('No token estimate available yet.', 'Chưa có ước lượng token.')}
-            </div>
-          )}
-          <div className="rwa2-token-popover-note">
-            {text(
-              'Estimate only — not the provider billing/tokenizer count.',
-              'Chỉ là ước lượng — không phải số token tính phí/tokenizer chính xác của nhà cung cấp.',
-            )}
-          </div>
-        </div>
-      )}
+      <div className="rwa2-context-chips" role="group" aria-label={text('Sources for this rewrite', 'Nguồn cho lần viết lại này')}>
+        {contextSources.map((source) => (
+          <button
+            key={source.key}
+            type="button"
+            className={[
+              'rwa2-context-chip',
+              source.enabled ? 'rwa2-context-chip-on' : 'rwa2-context-chip-off',
+              source.overridden ? 'rwa2-context-chip-overridden' : '',
+            ].filter(Boolean).join(' ')}
+            aria-pressed={source.enabled}
+            disabled={source.disabled}
+            title={source.disabled
+              ? text(
+                source.key === 'history' ? 'Set History depth above 0 to use this source.' : 'This source is unavailable while Free Mode is on.',
+                source.key === 'history' ? 'Đặt Độ sâu lịch sử lớn hơn 0 để dùng nguồn này.' : 'Nguồn này không khả dụng khi Chế độ tự do đang bật.',
+              )
+              : (source.detail || source.label)}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onToggleContext(source.key, !source.enabled);
+            }}
+          >
+            <span className="rwa2-context-chip-dot" aria-hidden="true"></span>
+            {source.label}
+          </button>
+        ))}
+      </div>
 
-      <div id="rwa2-context-detail" className="rwa2-context-collapse" inert={open ? undefined : true}>
-        <div className="rwa2-context-detail">
-          <div className="rwa2-context-control-grid">
-            <div className="rwa2-context-control-block rwa2-context-adjust">
-              <div className="rwa2-context-detail-label">{text('Adjust', 'Điều chỉnh')}</div>
-              <div className="rwa2-context-adjust-row">
-                <label className="rwa2-context-depth">
-                  <span>{text('History depth', 'Độ sâu lịch sử')}</span>
-                  <input
-                    type="number"
-                    className="rwa2-depth-input"
-                    min="0"
-                    max="20"
-                    value={config.contextDepth !== undefined ? config.contextDepth : 0}
-                    aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
-                    onChange={(event) => updateConfig({ contextDepth: Math.max(0, parseInt(event.target.value, 10) || 0) })}
-                  />
-                </label>
+      <div className="rwa2-context-adjust-row">
+        <label className="rwa2-context-depth">
+          <span>{text('History depth', 'Độ sâu lịch sử')}</span>
+          <input
+            type="number"
+            className="rwa2-depth-input"
+            min="0"
+            max="20"
+            value={config.contextDepth !== undefined ? config.contextDepth : 0}
+            aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
+            onChange={(event) => updateConfig({ contextDepth: Math.max(0, parseInt(event.target.value, 10) || 0) })}
+          />
+        </label>
 
-                <div className="rwa2-context-length">
-                  <div className="rwa2-context-length-head">
-                    <ToggleSwitch
-                      label={text('Length', 'Độ dài')}
-                      checked={config.lengthEnabled}
-                      onChange={(value) => {
-                        updateConfig({ lengthEnabled: value, lengthPct: value ? config.lengthPct : 0 });
-                        keepFocus();
-                      }}
-                    />
-                    <span>{config.lengthEnabled ? `${config.lengthPct >= 0 ? '+' : ''}${config.lengthPct}%` : text('Auto', 'Auto')}</span>
-                  </div>
-                  <input
-                    className="rwa2-range"
-                    type="range"
-                    min="-99"
-                    max="200"
-                    value={config.lengthPct || 0}
-                    disabled={!config.lengthEnabled}
-                    aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
-                    onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
-                    onMouseUp={keepFocus}
-                    onTouchEnd={keepFocus}
-                  />
-                </div>
-              </div>
-            </div>
+        <div className="rwa2-context-length">
+          <div className="rwa2-context-length-head">
+            <ToggleSwitch
+              label={text('Length', 'Độ dài')}
+              checked={config.lengthEnabled}
+              onChange={(value) => {
+                updateConfig({ lengthEnabled: value, lengthPct: value ? config.lengthPct : 0 });
+                keepFocus();
+              }}
+            />
+            <span>{config.lengthEnabled ? (config.lengthPct >= 0 ? '+' : '') + config.lengthPct + '%' : text('Auto', 'Auto')}</span>
           </div>
+          <input
+            className="rwa2-range"
+            type="range"
+            min="-99"
+            max="200"
+            value={config.lengthPct || 0}
+            disabled={!config.lengthEnabled}
+            aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
+            onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
+            onMouseUp={keepFocus}
+            onTouchEnd={keepFocus}
+          />
         </div>
       </div>
     </section>

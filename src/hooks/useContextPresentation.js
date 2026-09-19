@@ -1,6 +1,21 @@
 import { useMemo } from 'react';
 
-export function useContextPresentation({ activeRole, config, tokenInfo, voiceIdentity = null, text }) {
+function hasOverride(overrides, key) {
+  return !!overrides && typeof overrides === 'object' && Object.prototype.hasOwnProperty.call(overrides, key);
+}
+
+function effectiveSource(overrides, key, fallback) {
+  return hasOverride(overrides, key) ? !!overrides[key] : !!fallback;
+}
+
+export function useContextPresentation({
+  activeRole,
+  config,
+  tokenInfo,
+  voiceIdentity = null,
+  contextOverrides = {},
+  text,
+}) {
   const characterNameText = Array.isArray(tokenInfo.identities?.characterNames)
     ? tokenInfo.identities.characterNames.join(' · ')
     : '';
@@ -10,51 +25,52 @@ export function useContextPresentation({ activeRole, config, tokenInfo, voiceIde
   const targetCharacterName = voiceIdentity?.kind === 'character' ? String(voiceIdentity.name || '').trim() : '';
   const targetPersonaName = voiceIdentity?.kind === 'persona' ? String(voiceIdentity.name || '').trim() : '';
   const characterLabel = targetCharacterName
-    ? `Char: ${targetCharacterName}`
-    : (characterNameText ? `Char: ${characterNameText}` : text('Character', 'Nhân vật'));
+    ? 'Char: ' + targetCharacterName
+    : (characterNameText ? 'Char: ' + characterNameText : text('Character', 'Nhân vật'));
   const personaLabel = targetPersonaName
-    ? `Persona: ${targetPersonaName}`
-    : (personaNameText ? `Persona: ${personaNameText}` : 'Persona');
+    ? 'Persona: ' + targetPersonaName
+    : (personaNameText ? 'Persona: ' + personaNameText : 'Persona');
 
   const radar = useMemo(() => {
     if (config.freeMode) return { radarText: text('✨ Free Mode', '✨ Chế độ tự do'), radarColor: 'var(--rwa2-brand)' };
     if (activeRole === 'user') return {
       radarText: targetPersonaName
-        ? `✍️ Persona: ${targetPersonaName}`
-        : (personaNameText ? `✍️ Persona: ${personaNameText}` : text('✍️ User Persona', '✍️ Persona người dùng')),
+        ? '✍️ Persona: ' + targetPersonaName
+        : (personaNameText ? '✍️ Persona: ' + personaNameText : text('✍️ User Persona', '✍️ Persona người dùng')),
       radarColor: 'var(--rwa2-positive)',
     };
     if (activeRole === 'assistant') return {
       radarText: targetCharacterName
-        ? `🤖 Char: ${targetCharacterName}`
-        : (characterNameText ? `🤖 Char: ${characterNameText}` : text('🤖 Character Card', '🤖 Thẻ nhân vật')),
+        ? '🤖 Char: ' + targetCharacterName
+        : (characterNameText ? '🤖 Char: ' + characterNameText : text('🤖 Character Card', '🤖 Thẻ nhân vật')),
       radarColor: 'var(--rwa2-brand)',
     };
     return { radarText: text('❓ System Context', '❓ Ngữ cảnh hệ thống'), radarColor: 'var(--rwa2-text-2)' };
   }, [activeRole, characterNameText, config.freeMode, personaNameText, targetCharacterName, targetPersonaName, text]);
 
   const contextSources = useMemo(() => {
-    const sources = [];
-    if (!config.freeMode && config.injectChar) {
-      sources.push({ key: 'character', label: text('Character', 'Nhân vật'), detail: characterLabel });
+    const freeModeBlocked = !!config.freeMode;
+    const source = (key, label, detail, fallback, disabled = false) => ({
+      key,
+      label,
+      detail,
+      enabled: disabled ? false : effectiveSource(contextOverrides, key, fallback),
+      disabled,
+      overridden: hasOverride(contextOverrides, key),
+    });
+
+    const sources = [
+      source('character', text('Character', 'Nhân vật'), characterLabel, config.injectChar, freeModeBlocked),
+      source('persona', 'Persona', personaLabel, config.injectUser, freeModeBlocked),
+      source('lore', 'Lore', 'Lore', config.injectLorebook, freeModeBlocked),
+      source('surrounding', text('Around', 'Xung quanh'), text('Nearby context around the selection', 'Ngữ cảnh gần vùng chọn'), config.localContextEnabled),
+      source('history', text('History', 'Lịch sử'), text('History depth: ', 'Độ sâu lịch sử: ') + Math.max(0, Number(config.contextDepth) || 0), (config.contextDepth || 0) > 0, (config.contextDepth || 0) <= 0),
+    ];
+
+    if (config.useExtenderMemory) {
+      sources.push(source('memory', text('Memory', 'Bộ nhớ'), text('Extender memory', 'Bộ nhớ Extender'), true, freeModeBlocked));
     }
-    if (!config.freeMode && config.injectUser) {
-      sources.push({ key: 'persona', label: 'Persona', detail: personaLabel });
-    }
-    if (!config.freeMode && config.injectLorebook) sources.push({ key: 'lore', label: 'Lore', detail: 'Lore' });
-    if (!config.freeMode && config.useExtenderMemory) {
-      sources.push({ key: 'memory', label: text('Memory', 'Bộ nhớ'), detail: text('Extender memory', 'Bộ nhớ Extender') });
-    }
-    if (config.localContextEnabled) {
-      sources.push({ key: 'surrounding', label: text('Around', 'Xung quanh'), detail: text('Nearby context around the selection', 'Ngữ cảnh gần vùng chọn') });
-    }
-    if ((config.contextDepth || 0) > 0) {
-      sources.push({
-        key: 'history',
-        label: text('History', 'Lịch sử'),
-        detail: text(`History depth: ${config.contextDepth}`, `Độ sâu lịch sử: ${config.contextDepth}`),
-      });
-    }
+
     return sources;
   }, [
     characterLabel,
@@ -65,9 +81,10 @@ export function useContextPresentation({ activeRole, config, tokenInfo, voiceIde
     config.injectUser,
     config.localContextEnabled,
     config.useExtenderMemory,
+    contextOverrides,
     personaLabel,
     text,
   ]);
 
-  return { ...radar, contextSources };
+  return { ...radar, contextSources, characterLabel, personaLabel };
 }

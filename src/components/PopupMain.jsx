@@ -20,6 +20,7 @@ const EMPTY_HISTORY = Object.freeze({ undo: [], redo: [] });
 const TOOLTIP_GAP = 10;
 const TOOLTIP_MAX_WIDTH = 240;
 const PRESET_TOOLTIP_MAX_WIDTH = 320;
+const TOKEN_TOOLTIP_MAX_WIDTH = 286;
 const TOOLTIP_VIEWPORT_GUTTER = 8;
 
 function getTooltipViewportBounds() {
@@ -48,15 +49,13 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const text = useCallback((en, viText) => (vi ? viText : en), [vi]);
 
   const [tip, setTip] = useState({ show: false, content: '', kind: 'default', x: 0, y: 0 });
-  const [contextExclusions, setContextExclusions] = useState({});
+  const [contextOverrides, setContextOverrides] = useState({});
   const [trimOpen, setTrimOpen] = useState(false);
   const [trimText, setTrimText] = useState(selection?.text || '');
-  const [contextOpen, setContextOpen] = useState(false);
 
   useEffect(() => {
-    setContextExclusions({});
+    setContextOverrides({});
     setTrimOpen(false);
-    setContextOpen(false);
     setTrimText(selection?.text || '');
   }, [selection?.captureId, selection?.text]);
 
@@ -77,7 +76,9 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const bounds = getTooltipViewportBounds();
     const kind = tooltipContent && typeof tooltipContent === 'object' ? tooltipContent.kind || 'default' : 'default';
-    const tooltipWidth = kind === 'preset' ? PRESET_TOOLTIP_MAX_WIDTH : TOOLTIP_MAX_WIDTH;
+    const tooltipWidth = kind === 'preset'
+      ? PRESET_TOOLTIP_MAX_WIDTH
+      : (kind === 'token' ? TOKEN_TOOLTIP_MAX_WIDTH : TOOLTIP_MAX_WIDTH);
     const rightCandidate = rect.right + TOOLTIP_GAP;
     const leftCandidate = rect.left - tooltipWidth - TOOLTIP_GAP;
     const x = rightCandidate + tooltipWidth <= bounds.right - TOOLTIP_VIEWPORT_GUTTER
@@ -123,8 +124,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
 
   const rewriteSelection = useCallback(() => ({
     ...selection,
-    contextExclusions: Object.keys(contextExclusions).filter((key) => contextExclusions[key]),
-  }), [contextExclusions, selection]);
+    contextOverrides: { ...contextOverrides },
+  }), [contextOverrides, selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
   const voiceIdentity = selection?.multiMessage ? null : (voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null);
@@ -135,6 +136,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     config,
     tokenInfo,
     voiceIdentity,
+    contextOverrides,
     text,
   });
 
@@ -142,14 +144,14 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const { finalLeft, finalTop, finalVisibility } = usePopupPosition({
     popupPosition,
     selection,
-    sortedProfilesLength: sortedProfiles.length + (autoProfile ? 1 : 0),
+    sortedProfilesLength: sortedProfiles.length,
     colCount: layoutColCount,
     rows: config.rows,
     compact: config.compact,
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
-    contextOpen,
-    contextSummaryCount: contextSources.length + (config.lengthEnabled ? 1 : 0),
+    contextOpen: true,
+    contextSummaryCount: contextSources.length,
   });
 
   const runProfile = useCallback((profile) => {
@@ -157,8 +159,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     onRewrite(profile, rewriteSelection());
   }, [hideTooltip, onRewrite, rewriteSelection]);
 
-  const toggleContextExclusion = useCallback((key) => {
-    setContextExclusions((current) => ({ ...current, [key]: !current[key] }));
+  const toggleContextSource = useCallback((key, enabled) => {
+    setContextOverrides((current) => ({ ...current, [key]: !!enabled }));
     keepFocus();
   }, [keepFocus]);
 
@@ -228,8 +230,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           <RewriteSection
             language={language}
             profiles={sortedProfiles}
-            identityProfile={autoProfile}
-            voiceIdentity={voiceIdentity}
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
@@ -244,16 +244,17 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           />
 
           <ContextDeck
-            open={contextOpen}
             language={language}
             config={config}
             updateConfig={updateConfig}
             keepFocus={keepFocus}
             tokenInfo={tokenInfo}
             contextSources={contextSources}
-            contextExclusions={contextExclusions}
-            onToggleContext={toggleContextExclusion}
-            onToggleOpen={() => setContextOpen((open) => !open)}
+            voiceIdentity={voiceIdentity}
+            identityProfile={autoProfile}
+            onToggleContext={toggleContextSource}
+            onTooltip={showTooltip}
+            onTooltipLeave={hideTooltip}
           />
         </main>
 
