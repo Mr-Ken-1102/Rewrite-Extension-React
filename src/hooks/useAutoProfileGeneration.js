@@ -18,8 +18,10 @@ export function useAutoProfileGeneration({
   const validatedRef = useRef(new Map());
   const profileRef = useRef(profile);
   const targetMessageRef = useRef(targetMessage);
+  const selectionRef = useRef(selection);
   profileRef.current = profile;
   targetMessageRef.current = targetMessage;
+  selectionRef.current = selection;
   const [retryTick, setRetryTick] = useState(0);
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export function useAutoProfileGeneration({
         }
       } else if (result?.error) {
         attempts.set(runKey, { state: 'failed', at: Date.now() });
-        identityDiagnosticService.capture(selection, {
+        identityDiagnosticService.capture(selectionRef.current, {
           triggerReason: 'profile-generation-failure',
           profileGenerationStatus: 'failed',
         }).catch(() => {});
@@ -89,7 +91,7 @@ export function useAutoProfileGeneration({
     }).catch((error) => {
       if (controller.signal.aborted) return;
       attempts.set(runKey, { state: 'failed', at: Date.now() });
-      identityDiagnosticService.capture(selection, {
+      identityDiagnosticService.capture(selectionRef.current, {
         triggerReason: 'profile-generation-failure',
         profileGenerationStatus: 'threw',
       }).catch(() => {});
