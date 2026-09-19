@@ -470,13 +470,13 @@ ok('Marinara v2.4.4 persona and lorebook contracts are pinned', () => {
 });
 
 ok('Fast Rewrite copy stays user-facing and accurately limited to Marinara connections', () => {
-  const contextPanel = readFileSync('./src/components/popup/ContextPanel.jsx', 'utf8');
+  const liveRail = readFileSync('./src/components/popup/LiveRail.jsx', 'utf8');
   const capabilities = readFileSync('./src/services/providers/providerCapabilities.js', 'utf8');
-  assert.match(contextPanel, /Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn/);
-  assert.match(contextPanel, /Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này/);
-  assert.match(contextPanel, /Hiện chỉ hỗ trợ kết nối Marinara/);
-  assert.match(contextPanel, /Fast Rewrite speeds up rewriting and returns results sooner/);
-  assert.match(contextPanel, /Currently supported only with Marinara connections/);
+  assert.match(liveRail, /Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn/);
+  assert.match(liveRail, /Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này/);
+  assert.match(liveRail, /Hiện chỉ hỗ trợ kết nối Marinara/);
+  assert.match(liveRail, /Fast Rewrite speeds up rewriting and returns results sooner/);
+  assert.match(liveRail, /Currently supported only with Marinara connections/);
   assert.match(capabilities, /marinara:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*true/);
   assert.match(capabilities, /sidecar:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
   assert.match(capabilities, /direct:\s*Object\.freeze\(\{[\s\S]*fastRewrite:\s*false/);
@@ -1115,7 +1115,8 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
-  const contextPanel = readFileSync('./src/components/popup/ContextPanel.jsx', 'utf8');
+  const recipeBar = readFileSync('./src/components/popup/RecipeBar.jsx', 'utf8');
+  const requestInspector = readFileSync('./src/components/popup/RequestInspector.jsx', 'utf8');
   const preview = readFileSync('./src/components/modals/PreviewModal.jsx', 'utf8');
   const profiles = readFileSync('./src/components/modals/settings/TabProfiles.jsx', 'utf8');
   const custom = readFileSync('./src/components/modals/CustomPromptModal.jsx', 'utf8');
@@ -1132,8 +1133,10 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(popup, /selection\?\.captureId/);
   assert.match(popup, /deriveTrimmedSelection/);
   assert.match(popup, /pinnedPos/);
-  assert.match(contextPanel, /This rewrite:/);
-  assert.match(contextPanel, /rwa2-context-applied/);
+  assert.match(recipeBar, /Recipe/);
+  assert.match(recipeBar, /rwa2-recipe-chip/);
+  assert.match(requestInspector, /Request Inspector/);
+  assert.match(requestInspector, /Persistent context sources/);
   const contextPresentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
   assert.match(contextPresentation, /Char: \$\{characterNameText\}/);
   assert.match(contextPresentation, /Persona: \$\{personaNameText\}/);
@@ -1199,6 +1202,17 @@ ok('release pipeline runs dependency-free preflights before package-dependent bu
   assert.doesNotMatch(ci, /npm ci --ignore-scripts/);
 });
 
+ok('built-in preset title refresh preserves ids, prompts, and user-customized names', () => {
+  const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
+  assert.match(schema, /expand:\s*Object\.freeze\(\{ legacy: 'Expand', current: 'Elaborate' \}\)/);
+  assert.match(schema, /compress:\s*Object\.freeze\(\{ legacy: 'Compress', current: 'Tighten' \}\)/);
+  assert.match(schema, /grammar:\s*Object\.freeze\(\{ legacy: 'Grammar Fix', current: 'Polish' \}\)/);
+  assert.match(schema, /name:\s*'Naturalize'/);
+  assert.match(schema, /rawName === builtInName\.legacy/);
+  assert.match(schema, /builtInName\.current/);
+  assert.match(schema, /prompt:\s*'Remove formulaic AI-writing patterns/);
+});
+
 ok('store schema v6 keeps bounded context defaults and identity-scoped Voice Profiles', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   const adapter = readFileSync('./src/store/persistence/storageAdapter.js', 'utf8');
@@ -1261,17 +1275,20 @@ ok('debug logging is opt-in, bounded, session-only, and metadata-owned by the se
   assert.match(dataTab, /Debug logging is opt-in/);
 });
 
-ok('token preview is explicitly labeled Selection + context and snapshots selection once', () => {
-  const panel = readFileSync('./src/components/popup/ContextPanel.jsx', 'utf8');
+ok('token preview stays compact in the live rail and expands into a request breakdown', () => {
+  const live = readFileSync('./src/components/popup/LiveRail.jsx', 'utf8');
+  const inspector = readFileSync('./src/components/popup/RequestInspector.jsx', 'utf8');
   const hook = readFileSync('./src/hooks/useContextInspector.js', 'utf8');
-  assert.match(panel, /Selection \+ context ≈/);
-  assert.match(panel, /not a provider billing\/tokenizer count/);
+  assert.match(live, /≈\$\{tokenInfo\.parts\.total\.toLocaleString\(\)\} tok/);
+  assert.match(live, /Open Request Inspector for the breakdown/);
+  assert.match(inspector, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.match(inspector, /Input composition/);
   assert.match(hook, /const oneShot = rewriteSelection\(\)/);
   assert.match(hook, /APIService\.inspectContext\(oneShot/);
   assert.match(hook, /sameSelection \? current\.parts : null/);
   assert.match(hook, /sameSelection \? current\.identities : null/);
   assert.match(hook, /tokenInfo\.selectionKey !== selectionKey/);
-  assert.match(panel, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.match(live, /tokenInfo\.loading && !tokenInfo\.parts/);
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /characterNames:\s*extractIdentityNames\(context\.character\)/);
   assert.match(context, /personaNames:\s*extractIdentityNames\(context\.persona\)/);
