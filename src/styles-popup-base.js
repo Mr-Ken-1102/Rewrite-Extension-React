@@ -88,7 +88,53 @@ export const RWA_POPUP_BASE_CSS = `
   font-size: 9px;
   font-weight: 780;
 }
-.rwa2-toolbar-actions { display: flex; align-items: center; gap: 2px; }
+.rwa2-toolbar-actions {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+.rwa2-identity-chip {
+  appearance: none;
+  min-width: 0;
+  max-width: min(250px, 44vw);
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 3px;
+  padding: 0 8px;
+  border: 1px solid var(--rwa2-brand-border);
+  border-radius: 999px;
+  background: rgba(209,154,69,.055);
+  color: var(--rwa2-brand);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color .10s ease, border-color .10s ease, color .10s ease;
+}
+.rwa2-identity-chip:hover,
+.rwa2-identity-chip:focus-visible {
+  border-color: rgba(209,154,69,.38);
+  background: rgba(209,154,69,.10);
+  color: var(--rwa2-brand-hover);
+  outline: none;
+}
+.rwa2-identity-chip-mark {
+  flex: 0 0 auto;
+  font-size: 9px;
+  line-height: 1;
+}
+.rwa2-identity-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 9.5px;
+  line-height: 1;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .rwa2-icon-button {
   appearance: none;
   width: 28px;
@@ -205,29 +251,12 @@ export const RWA_POPUP_BASE_CSS = `
   background: rgba(255,255,255,.065);
 }
 
-.rwa2-popup .rwa2-auto-profile,
 .rwa2-popup .rwa2-profile-btn,
 .rwa2-popup .rwa2-action {
   box-shadow: none !important;
   transform: none !important;
   filter: none !important;
 }
-.rwa2-popup .rwa2-auto-profile {
-  width: 100% !important;
-  min-height: 30px !important;
-  height: 30px !important;
-  justify-content: flex-start !important;
-  gap: 7px !important;
-  margin: 0 0 5px !important;
-  padding: 0 10px !important;
-  border: 1px solid var(--rwa2-brand-border) !important;
-  border-radius: 8px !important;
-  background: var(--rwa2-brand-soft) !important;
-  color: var(--rwa2-brand) !important;
-  font-size: 10.5px !important;
-  font-weight: 600 !important;
-}
-
 .rwa2-multi-notice {
   min-height: 28px;
   display: flex;
