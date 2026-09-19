@@ -19,7 +19,7 @@ ok('popup geometry constants encode the rebalanced 620px / 12-column contract', 
   assert.match(source, /POPUP_NORMAL_MIN_CELL = 140/);
   assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 30/);
   assert.match(source, /POPUP_PROFILE_ROW_GAP = 5/);
-  assert.match(source, /POPUP_FIXED_HEIGHT = 266/);
+  assert.match(source, /POPUP_FIXED_HEIGHT = 270/);
 });
 
 ok('popup geometry accounts for responsive context stacking and wrapped actions', () => {
