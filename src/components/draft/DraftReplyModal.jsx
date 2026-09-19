@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Button } from '../ui/Button';
 import { usePersistentStore } from '../../store/usePersistentStore';
 import { useToastStore } from '../../store/useToastStore';
+import { useRuntimeStore } from '../../store/useRuntimeStore';
 import { DOMUtils } from '../../utils/domUtils.js';
 import {
   clampFloatingPanelPosition,
@@ -16,8 +17,6 @@ function modeCopy(language, mode) {
   return vi ? 'Từ ý tưởng → trả lời' : 'Idea → Reply';
 }
 
-const sessionPanelPositions = new Map();
-
 export function DraftReplyModal({
   state,
   onUpdateInput,
@@ -29,12 +28,15 @@ export function DraftReplyModal({
 }) {
   const language = usePersistentStore((store) => store.config.uiLanguage === 'vi' ? 'vi' : 'en');
   const showToast = useToastStore((store) => store.showToast);
+  const panelResetVersion = useRuntimeStore((store) => store.draftReplyPanelPositionResetVersion);
+  const setRuntimePanelPosition = useRuntimeStore((store) => store.setDraftReplyPanelPosition);
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const [direction, setDirection] = useState(state?.direction || '');
   const [mode, setMode] = useState(state?.mode === 'continue' ? 'continue' : 'idea');
   const [position, setPosition] = useState(null);
   const panelRef = useRef(null);
+  const seenPanelResetVersionRef = useRef(panelResetVersion);
   const chatMode = state?.chatMode || null;
 
   useEffect(() => {
@@ -44,9 +46,9 @@ export function DraftReplyModal({
 
   const commitPosition = useCallback((next) => {
     const normalized = { left: Math.round(next.left), top: Math.round(next.top) };
-    if (chatMode) sessionPanelPositions.set(chatMode, normalized);
+    if (chatMode) setRuntimePanelPosition(chatMode, normalized);
     setPosition(normalized);
-  }, [chatMode]);
+  }, [chatMode, setRuntimePanelPosition]);
   const handleDragStart = useFloatingPanelDrag({ panelRef, onPositionChange: commitPosition });
 
   useLayoutEffect(() => {
@@ -63,13 +65,15 @@ export function DraftReplyModal({
       const bounds = getVisualViewportBounds(window);
       const anchor = DOMUtils.getChatComposerAnchor();
       setPosition((current) => {
-        const remembered = state?.chatMode ? sessionPanelPositions.get(state.chatMode) : null;
+        const remembered = state?.chatMode
+          ? useRuntimeStore.getState().draftReplyPanelPositions?.[state.chatMode]
+          : null;
         const next = current
           ? clampFloatingPanelPosition(current, size, bounds)
           : remembered
             ? clampFloatingPanelPosition(remembered, size, bounds)
             : defaultDraftReplyPanelPosition(size, bounds, anchor);
-        if (state?.chatMode) sessionPanelPositions.set(state.chatMode, next);
+        if (state?.chatMode) useRuntimeStore.getState().setDraftReplyPanelPosition(state.chatMode, next);
         return next;
       });
     };
@@ -93,6 +97,27 @@ export function DraftReplyModal({
       window.visualViewport?.removeEventListener?.('scroll', schedule);
     };
   }, [state?.chatId, state?.chatMode]);
+
+  useLayoutEffect(() => {
+    if (seenPanelResetVersionRef.current === panelResetVersion) return;
+    seenPanelResetVersionRef.current = panelResetVersion;
+    if (!state?.chatId) {
+      setPosition(null);
+      return;
+    }
+    const panel = panelRef.current;
+    if (!panel) {
+      setPosition(null);
+      return;
+    }
+    const rect = panel.getBoundingClientRect();
+    const size = { width: rect.width, height: rect.height };
+    const bounds = getVisualViewportBounds(window);
+    const anchor = DOMUtils.getChatComposerAnchor();
+    const next = defaultDraftReplyPanelPosition(size, bounds, anchor);
+    if (chatMode) setRuntimePanelPosition(chatMode, next);
+    setPosition(next);
+  }, [chatMode, panelResetVersion, setRuntimePanelPosition, state?.chatId]);
 
   if (!state) return null;
 
