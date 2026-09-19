@@ -14,13 +14,13 @@ export const RWA_POPUP_A11Y_CSS = `
   font-size: 11px !important;
 }
 
-.rwa2-live-key { font-size: 9.5px; }
-.rwa2-live-label { font-size: 10px; }
+.rwa2-live-key { font-size: 11px; }
+.rwa2-live-label { font-size: 11px; }
 .rwa2-profile-name { font-size: 13px; }
-.rwa2-token-cell { font-size: 10.5px; }
+.rwa2-token-cell { font-size: 11px; }
 .rwa2-inspector-note,
 .rwa2-inspector-empty,
-.rwa2-inspector-subtitle { font-size: 10px; }
+.rwa2-inspector-subtitle { font-size: 11px; }
 
 .rwa2-recipe-chip {
   min-height: 27px;
