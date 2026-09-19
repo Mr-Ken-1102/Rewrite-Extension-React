@@ -22,6 +22,7 @@ export default function App() {
   const popupPosition = useRuntimeStore((state) => state.popupPosition);
   const [activeModal, setActiveModal] = useState(null);
   const [modalPayload, setModalPayload] = useState(null);
+  const [settingsInitialTab, setSettingsInitialTab] = useState('profiles');
   const {
     processState,
     handleRewrite,
@@ -47,18 +48,23 @@ export default function App() {
   } = useDraftReplySession();
   const settingsLayerVisible = ['settings', 'editProfile', 'aiArchitect'].includes(activeModal);
   const draftUiOpen = !!draftState;
+  const openSettings = (tab = 'profiles') => {
+    setSettingsInitialTab(tab);
+    setActiveModal('settings');
+  };
 
   return (
     <>
       <ToastContainer />
       <DraftReplyLauncher
         onOpen={openDraftReply}
+        onOpenSettings={() => openSettings('ui')}
         hidden={!!activeModal || !!processState || draftUiOpen || !!popupPosition}
       />
       {popupPosition && !activeModal && !processState && !draftUiOpen && (
         <PopupMain
           onRewrite={handleRewrite}
-          onOpenSettings={() => setActiveModal('settings')}
+          onOpenSettings={() => openSettings('profiles')}
           onOpenCustom={() => setActiveModal('custom')}
         />
       )}
@@ -76,6 +82,7 @@ export default function App() {
       {settingsLayerVisible && (
         <SettingsModal
           suspended={activeModal !== 'settings'}
+          initialTab={settingsInitialTab}
           onClose={() => setActiveModal(null)}
           openEditProfile={(profile) => {
             setModalPayload({ profile, returnTo: 'settings' });
