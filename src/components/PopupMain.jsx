@@ -142,7 +142,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const { finalLeft, finalTop, finalVisibility } = usePopupPosition({
     popupPosition,
     selection,
-    sortedProfilesLength: sortedProfiles.length,
+    sortedProfilesLength: sortedProfiles.length + (autoProfile ? 1 : 0),
     colCount: layoutColCount,
     rows: config.rows,
     compact: config.compact,
@@ -218,10 +218,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           language={language}
           selection={selection}
           pinned={!!config.pinnedPos}
-          voiceIdentity={voiceIdentity}
-          identityProfile={autoProfile}
-          onRunIdentityProfile={runProfile}
-          onTooltip={showTooltip} onTooltipLeave={hideTooltip}
           onDragStart={handleDragStart}
           onTrim={openTrim}
           onPinToggle={handlePinToggle}
@@ -231,6 +227,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           <RewriteSection
             language={language}
             profiles={sortedProfiles}
+            identityProfile={autoProfile}
+            voiceIdentity={voiceIdentity}
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
