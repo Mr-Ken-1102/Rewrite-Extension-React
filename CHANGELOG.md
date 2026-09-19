@@ -30,6 +30,9 @@
 - New installs show five profile rows, keep Speaker-aware editing and Persona Reply enabled, keep Extender memory disabled, and keep automatic Character / Persona Voice Profile generation OFF as an explicit opt-in.
 - Simplified Fast Rewrite guidance around the user-visible speed/quality trade-off and made its current Marinara-only support explicit.
 - Moved transient success/warning/error feedback into a top-center notification stack so confirmations are visible without scanning the bottom edge of the browser.
+- Reworked the main popup into a compact control deck: Live Rail for Free/Fast/Stream, an always-visible Recipe for the current request, and a sliding Request Inspector for token composition and advanced context controls.
+- Reduced Character/Persona name repetition by keeping the full detected identity in the popup header while Recipe and Inspector use semantic source labels.
+- Refreshed built-in preset titles (for example Elaborate, Tighten, Inner Voice, Naturalize, and Polish) without changing preset IDs or prompts; legacy default names migrate only when the user has not renamed them.
 
 ## 3.0.2 — Identity-safe Draft Reply and release certification
 
