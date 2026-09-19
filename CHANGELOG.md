@@ -28,6 +28,8 @@
 - Added real SSE progress for Marinara/Sidecar and OpenAI-compatible streaming for Direct/Extender, with stronger continuous waiting-state feedback and reduced-motion fallback.
 - Added the adjacent Settings launcher and polished default viewport placement for Persona Reply.
 - New installs show five profile rows, keep Speaker-aware editing and Persona Reply enabled, keep Extender memory disabled, and keep automatic Character / Persona Voice Profile generation OFF as an explicit opt-in.
+- Simplified Fast Rewrite guidance around the user-visible speed/quality trade-off and made its current Marinara-only support explicit.
+- Moved transient success/warning/error feedback into a top-center notification stack so confirmations are visible without scanning the bottom edge of the browser.
 
 ## 3.0.2 — Identity-safe Draft Reply and release certification
 
