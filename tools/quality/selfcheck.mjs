@@ -705,8 +705,8 @@ ok('Draft Reply is preview-first, identity-safe with Persona or Generic mode, ca
   const popupHeader = readFileSync('./src/components/popup/PopupHeader.jsx', 'utf8');
   const popupFooter = readFileSync('./src/components/popup/PopupFooter.jsx', 'utf8');
   const localizationGuide = readFileSync('./docs/LOCALIZATION-VI.md', 'utf8');
-  assert.match(rewriteSection, /Kiểu viết lại/);
-  assert.doesNotMatch(rewriteSection, /Thiết lập sẵn|Chọn kiểu viết/);
+  assert.match(rewriteSection, /Chọn kiểu viết/);
+  assert.doesNotMatch(rewriteSection, /Thiết lập sẵn/);
   assert.match(popupFooter, /Yêu cầu tùy chỉnh/);
   assert.match(modal, /Soạn trả lời/);
   assert.match(modal, /Hồ sơ giọng/);
