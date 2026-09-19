@@ -8,6 +8,11 @@ import {
   validateProviderHttpUrl,
   withProviderNetworkHints,
 } from '../policies/providerPolicy.js';
+import {
+  LOCAL_SIDECAR_CONNECTION_ID,
+  getProviderCapabilities,
+  normalizeConnectionMode,
+} from './providerCapabilities.js';
 
 const ENDPOINTS = {
   tracker: '/sidecar/tracker',
