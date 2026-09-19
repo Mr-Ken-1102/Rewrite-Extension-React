@@ -128,6 +128,68 @@ ok('exact selected DOM Character outranks stale fallback DOM and API identities'
   assert.equal(resolved.sourceOfTruth, 'dom');
 });
 
+ok('grouped Conversation speaker ignores parent data-card-css and resolves by the visible segment name', () => {
+  const groupedName = { textContent: 'Sami 1.17' };
+  const header = {
+    querySelector: (selector) => selector.startsWith('span') ? groupedName : null,
+  };
+  let groupedMessage;
+  const groupedCard = {
+    getAttribute: (name) => name === 'data-card-css' ? 'char-parent-sami-2' : null,
+    querySelector: (selector) => selector === '.items-baseline' ? header : null,
+    closest: (selector) => {
+      if (selector === '[data-card-css]') return groupedCard;
+      if (selector === '[data-component="ConversationMessage.Grouped"]') return groupedMessage;
+      return null;
+    },
+  };
+  const anchorElement = {
+    closest: (selector) => {
+      if (selector === '[data-card-css]') return groupedCard;
+      if (selector === '[data-component="ConversationMessage.Grouped"]') return groupedMessage;
+      if (selector === '[data-message-role]') return groupedMessage;
+      return null;
+    },
+  };
+  groupedMessage = {
+    getAttribute: (name) => {
+      if (name === 'data-message-role') return 'assistant';
+      if (name === 'data-component') return 'ConversationMessage.Grouped';
+      return null;
+    },
+    contains: () => true,
+    querySelector: () => groupedCard,
+  };
+
+  const dom = readMessageDomIdentity(groupedMessage, anchorElement);
+  assert.equal(dom.detectedRole, 'assistant');
+  assert.equal(dom.detectedGroupedSpeaker, true);
+  assert.equal(dom.detectedCharacterId, null);
+  assert.equal(dom.detectedName, 'Sami 1.17');
+
+  const resolved = resolveVoiceIdentity(
+    { ...dom, cid: 'chat-group', mid: 'm-grouped' },
+    { id: 'm-grouped', role: 'assistant', characterId: 'char-parent-sami-2', characterName: 'Hương Sami 2.0' },
+    [
+      { id: 'char-parent-sami-2', name: 'Hương Sami 2.0', convoDisplayName: 'Sami 2.0' },
+      { id: 'char-sami-117', name: 'Sami 1.17', convoDisplayName: '' },
+    ],
+  );
+  assert.equal(resolved.key, 'character:char-sami-117');
+  assert.equal(resolved.name, 'Sami 1.17');
+  assert.equal(resolved.sourceOfTruth, 'grouped-dom-name');
+
+  const ambiguous = resolveVoiceIdentity(
+    { ...dom, cid: 'chat-group', mid: 'm-grouped' },
+    { id: 'm-grouped', role: 'assistant', characterId: 'char-parent-sami-2' },
+    [
+      { id: 'char-a', name: 'Sami 1.17' },
+      { id: 'char-b', name: 'Other', convoDisplayName: 'Sami 1.17' },
+    ],
+  );
+  assert.equal(ambiguous, null);
+});
+
 ok('v5 chat-wide auto profiles migrate to quarantined legacy buckets instead of matching a random identity', () => {
   const migrated = sanitizeAutoProfiles({
     'chat-old': { id: 'auto-chat-old', name: 'Old Voice', prompt: 'old prompt', order: -1, auto: true },
@@ -848,18 +910,23 @@ ok('historical user messages preserve their persona identity', () => {
   assert.match(context, /if \(snapshot\?\.personaId\) return snapshot\?\.name/);
 });
 
-ok('assistant rewrites never let a stale manual Character override the selected sender', () => {
+ok('assistant rewrites bind Character context to the selected speaker and fail closed for grouped ambiguity', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
   const domIdentity = readFileSync('./src/utils/messageDomIdentity.js', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
-  assert.match(context, /domIdentity\?\.id \|\| info\.message\?\.characterId/);
-  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
+  const coordinator = readFileSync('./src/hooks/useAutoVoiceProfileCoordinator.js', 'utf8');
+  assert.match(context, /resolveSelectionVoiceIdentity/);
+  assert.match(context, /groupedSelection \? \[\] : explicitCharacterIds/);
+  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : fallbackCharacterIds/);
   assert.match(context, /fetchCharCard\(savedSel\.cid, signal, characterIds\)/);
-  assert.match(dom, /readMessageDomIdentity/);
-  assert.match(domIdentity, /data-card-css/);
-  assert.match(domIdentity, /mari-message-name/);
-  assert.match(identity, /resolveVoiceIdentity/);
+  assert.match(dom, /detectedGroupedSpeakerAmbiguous/);
+  assert.match(domIdentity, /ConversationMessage\.Grouped/);
+  assert.match(domIdentity, /groupedSpeakerName/);
+  assert.match(identity, /voiceIdentityFromGroupedSelection/);
+  assert.match(identity, /sourceOfTruth: 'grouped-dom-name'/);
+  assert.match(coordinator, /selection\.captureId/);
+  assert.match(coordinator, /fetchChatCharacters/);
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   assert.match(popup, /voiceIdentityFromSelection\(selection\) \|\| tokenInfo\.voiceIdentity/);
 });
