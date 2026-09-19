@@ -202,7 +202,7 @@ ok('active Character or Persona profile lives in the right side of the popup hea
   assert.match(base, /\.rwa2-toolbar-actions\s*\{[\s\S]*justify-content:\s*flex-end/s);
   assert.match(base, /\.rwa2-identity-chip\s*\{/);
   assert.match(base, /text-overflow:\s*ellipsis/);
-  assert.match(responsive, /\.rwa2-identity-chip\s*\{\s*max-width:\s*112px/);
+  assert.match(responsive, /\.rwa2-identity-chip\s*\{\s*max-width:\s*108px/);
 });
 
 ok('responsive context detail stacks controls without turning token details into layout rows', () => {
