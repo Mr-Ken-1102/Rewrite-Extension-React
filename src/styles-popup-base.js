@@ -336,74 +336,6 @@ export const RWA_POPUP_BASE_CSS = `
   color: var(--rwa2-text) !important;
 }
 
-.rwa2-popup .rwa2-profile-btn-inspected:not(:disabled) {
-  border-color: rgba(209,154,69,.30) !important;
-  background:
-    linear-gradient(180deg, rgba(209,154,69,.075), rgba(209,154,69,.035)) !important;
-  color: var(--rwa2-text) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.025) !important;
-}
-
-.rwa2-preset-inspector {
-  min-height: 70px;
-  height: 70px;
-  display: grid;
-  grid-template-rows: auto minmax(0,1fr);
-  gap: 5px;
-  margin-top: 6px;
-  padding: 8px 10px 9px;
-  overflow: hidden;
-  border: 1px solid rgba(209,154,69,.20);
-  border-radius: 9px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(209,154,69,.065), transparent 42%),
-    rgba(8,9,13,.34);
-  box-shadow:
-    inset 2px 0 0 rgba(209,154,69,.38),
-    inset 0 1px 0 rgba(255,255,255,.018);
-}
-.rwa2-preset-inspector-head {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.rwa2-preset-inspector-name {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--rwa2-brand);
-  font-size: 11.2px;
-  line-height: 1.15;
-  font-weight: 760;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rwa2-preset-inspector-meta {
-  flex: 0 0 auto;
-  color: var(--rwa2-subtle);
-  font-size: 8px;
-  line-height: 1;
-  font-weight: 800;
-  letter-spacing: .09em;
-}
-.rwa2-preset-inspector-prompt {
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-right: 4px;
-  color: rgba(255,255,255,.78);
-  font-size: 11.5px;
-  line-height: 1.48;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.12) transparent;
-}
-.rwa2-preset-inspector-prompt::-webkit-scrollbar { width: 4px; }
-.rwa2-preset-inspector-prompt::-webkit-scrollbar-track { background: transparent; }
-.rwa2-preset-inspector-prompt::-webkit-scrollbar-thumb {
-  border-radius: 99px;
-  background: rgba(255,255,255,.12);
-}
 .rwa2-profile-name {
   width: 100%;
   min-width: 0;
@@ -479,8 +411,63 @@ export const RWA_POPUP_BASE_CSS = `
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity .08s ease;
+  transition: opacity .08s ease, transform .08s ease;
   white-space: pre-wrap;
 }
-.rwa2-tooltip-show { opacity: 1; visibility: visible; }
+.rwa2-tooltip-preset {
+  width: min(320px, calc(100vw - 16px));
+  max-width: min(320px, calc(100vw - 16px));
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px 11px;
+  border-color: rgba(209,154,69,.28);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(209,154,69,.075), transparent 42%),
+    #17181e;
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.54),
+    inset 2px 0 0 rgba(209,154,69,.42),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+.rwa2-tooltip-preset-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rwa2-tooltip-preset-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--rwa2-brand);
+  font-size: 11.2px;
+  line-height: 1.15;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rwa2-tooltip-preset-meta {
+  flex: 0 0 auto;
+  color: var(--rwa2-subtle);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .09em;
+}
+.rwa2-tooltip-preset-copy {
+  max-height: 132px;
+  overflow: hidden;
+  color: rgba(255,255,255,.80);
+  font-size: 11.5px;
+  line-height: 1.48;
+  white-space: pre-wrap;
+}
+.rwa2-tooltip-show {
+  opacity: 1;
+  visibility: visible;
+}
+.rwa2-tooltip-preset.rwa2-tooltip-show {
+  transform: translateY(-1px);
+}
 `;
