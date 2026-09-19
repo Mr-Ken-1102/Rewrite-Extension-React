@@ -247,7 +247,7 @@ ok('popup visual layer is loaded after the performance layer', () => {
 ok('popup visual system uses subdued amber and no blur paint tax', () => {
   const base = read('./src/styles-popup-base.js');
   const context = read('./src/styles-popup-context.js');
-  assert.match(base, /--rwa2-brand:\s*#d19a45/);
+  assert.match(base, /--rwa2-brand:\s*#e2a13b/);
   assert.doesNotMatch(`${base}\n${context}`, /backdrop-filter|filter:\s*blur/);
   assert.doesNotMatch(`${base}\n${context}`, /#ffb020/i);
 });
