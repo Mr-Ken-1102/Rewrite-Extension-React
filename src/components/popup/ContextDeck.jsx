@@ -63,10 +63,10 @@ export function ContextDeck({
     : source.label;
 
   return (
-    <section className={`rwa2-context-deck ${open ? 'rwa2-context-deck-open' : ''}`.trim()} aria-label={text('Context controls', 'Điều khiển ngữ cảnh')}>
+    <section className={`rwa2-context-deck ${open ? 'rwa2-context-deck-open' : ''}`.trim()} aria-label={text('This rewrite and context details', 'Lần viết lại này và chi tiết ngữ cảnh')}>
       <div className="rwa2-context-summary">
         <div className="rwa2-context-summary-left">
-          <span className="rwa2-context-title">{text('Context', 'Ngữ cảnh')}</span>
+          <span className="rwa2-context-title">{text('This rewrite', 'Lần này')}</span>
           <div className="rwa2-context-chips" role="group" aria-label={text('Sources for this rewrite', 'Nguồn cho lần viết lại này')}>
             {contextSources.map((source) => {
               const excluded = !!contextExclusions[source.key];
