@@ -20,7 +20,7 @@ export const RWA_POPUP_A11Y_CSS = `
 
 .rwa2-context-chip {
   min-height: 26px;
-  padding: 0 9px;
+  padding: 0 6px;
 }
 
 .rwa2-brand-title { font-size: 12.5px; }
