@@ -3,7 +3,7 @@ import { usePersistentStore } from '../store/usePersistentStore';
 import { useRuntimeStore } from '../store/useRuntimeStore';
 import { useToastStore } from '../store/useToastStore';
 import { APIService } from '../services/apiService';
-import { resolveVoiceIdentity, voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
+import { voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
 import { useAutoProfileGeneration } from './useAutoProfileGeneration';
 
 export function useAutoVoiceProfileCoordinator() {
@@ -50,26 +50,13 @@ export function useAutoVoiceProfileCoordinator() {
     const controller = new AbortController();
 
     const resolve = async () => {
-      const info = await APIService.getMessageInfo(selection.cid, selection.mid, controller.signal);
+      const target = await APIService.resolveVoiceProfileTarget(selection, controller.signal);
       if (!alive || controller.signal.aborted) return;
-      const message = info?.message || null;
-      const chatCharacters = selection.detectedGroupedSpeaker === true && selection.detectedGroupedSpeakerAmbiguous !== true
-        ? await APIService.fetchChatCharacters(selection.cid, controller.signal)
-        : [];
-      if (!alive || controller.signal.aborted) return;
-
-      const identity = resolveVoiceIdentity(selection, message, chatCharacters);
-      const targetMessage = identity?.kind === 'character' && selection.detectedGroupedSpeaker === true
-        ? {
-          id: selection.mid,
-          role: 'assistant',
-          characterId: identity.id,
-          characterName: identity.name || selection.detectedName || undefined,
-          content: selection.text || '',
-        }
-        : message;
-
-      setResolved({ selectionKey, identity, targetMessage });
+      setResolved({
+        selectionKey,
+        identity: target?.identity || null,
+        targetMessage: target?.targetMessage || null,
+      });
     };
 
     resolve().catch(() => {
