@@ -1,26 +1,28 @@
 import { ToggleSwitch } from '../ui/ToggleSwitch';
+import { getProviderCapabilities } from '../../services/providers/providerCapabilities.js';
 
 const CONTEXT_MODE_HELP = 'Free Mode Off: Best for character POV, direct dialogue, or inner thoughts.\nFree Mode On: Best for descriptive scenes, general actions or setting time/space.';
 const CONTEXT_MODE_HELP_VI = 'Tắt Tự do: phù hợp khi viết theo POV nhân vật, hội thoại trực tiếp hoặc nội tâm.\nBật Tự do: phù hợp với miêu tả cảnh, hành động chung hoặc bối cảnh thời gian/không gian.';
 function fastRewriteHelp(mode, vi) {
   if (mode === 'marinara') {
     return vi
-      ? 'Bật Viết lại nhanh: giảm/tắt reasoning cho riêng request viết lại khi provider hỗ trợ và nhận kết quả trực tiếp bằng SSE. Model chat và cấu hình kết nối đã lưu không bị thay đổi.\nTắt: dùng reasoning bình thường của kết nối; Marinara vẫn có thể stream kết quả.'
-      : 'Fast Rewrite On: reduce/disable reasoning for this rewrite request when the provider supports it and receive live SSE output. The chat model and saved connection settings are unchanged.\nOff: use the connection\'s normal reasoning settings; Marinara may still stream the result.';
-  }
-  if (mode === 'direct') {
-    return vi
-      ? 'Bật Viết lại nhanh: Direct OpenAI-compatible API dùng streaming để hiển thị kết quả ngay khi token đến. Không gửi tham số reasoning riêng để tránh làm hỏng provider không hỗ trợ.\nTắt: chờ phản hồi hoàn chỉnh như bình thường.'
-      : 'Fast Rewrite On: the Direct OpenAI-compatible API uses streaming so output appears as tokens arrive. No provider-specific reasoning parameter is sent, avoiding incompatibility.\nOff: wait for the normal complete response.';
-  }
-  if (mode === 'extender') {
-    return vi
-      ? 'Bật Viết lại nhanh: Extender dùng OpenAI-compatible streaming để trả kết quả trực tiếp khi token đến.\nTắt: dùng phản hồi hoàn chỉnh tiêu chuẩn.'
-      : 'Fast Rewrite On: Extender uses OpenAI-compatible streaming and delivers output as tokens arrive.\nOff: use the standard complete response.';
+      ? 'Viết lại nhanh giảm/tắt reasoning chỉ cho request rewrite khi provider hỗ trợ. Nó không thay đổi model, context, preset hoặc thiết lập connection đã lưu.'
+      : 'Fast Rewrite reduces/disables reasoning only for rewrite requests when the provider supports it. It does not change the model, context, preset, or saved connection settings.';
   }
   return vi
-    ? 'Bật Viết lại nhanh: Sidecar dùng system prompt viết lại gọn hơn để giảm overhead trên model local. Endpoint Sidecar hiện không hỗ trợ SSE hoặc điều khiển reasoning riêng.\nTắt: dùng system prompt đầy đủ.'
-    : 'Fast Rewrite On: Sidecar uses a more compact rewrite system prompt to reduce local-model overhead. The current Sidecar endpoint does not expose SSE or a reasoning control.\nOff: use the full rewrite system prompt.';
+    ? 'Backend hiện tại không có acceleration capability an toàn mà Rewrite Assistant có thể điều khiển. Fast Rewrite được giữ làm tùy chọn toàn cục nhưng không áp dụng cho mode này.'
+    : 'The current backend does not expose a safe acceleration capability that Rewrite Assistant can control. Fast Rewrite remains a global preference but is unavailable in this mode.';
+}
+
+function liveStreamingHelp(mode, vi) {
+  const transport = mode === 'sidecar'
+    ? (vi ? 'Sidecar dùng Marinara raw SSE.' : 'Sidecar uses Marinara raw SSE.')
+    : mode === 'marinara'
+      ? (vi ? 'Marinara dùng raw SSE.' : 'Marinara uses raw SSE.')
+      : (vi ? 'Endpoint OpenAI-compatible dùng SSE streaming.' : 'The OpenAI-compatible endpoint uses SSE streaming.');
+  return vi
+    ? `Streaming trực tiếp hiển thị nội dung ngay khi token đến và độc lập với Viết lại nhanh. Nó không làm giảm compute của model. ${transport}`
+    : `Live Streaming displays output as tokens arrive and is independent from Fast Rewrite. It does not reduce model compute time. ${transport}`;
 }
 
 export function ContextPanel({
@@ -41,7 +43,9 @@ export function ContextPanel({
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const contextHelp = vi ? CONTEXT_MODE_HELP_VI : CONTEXT_MODE_HELP;
+  const capabilities = getProviderCapabilities(config.connMode);
   const fastRewriteHelpText = fastRewriteHelp(config.connMode, vi);
+  const liveStreamingHelpText = liveStreamingHelp(config.connMode, vi);
   const characterNames = tokenInfo.identities?.characterNames || [];
   const personaNames = tokenInfo.identities?.personaNames || [];
   const targetCharacterName = voiceIdentity?.kind === 'character' ? String(voiceIdentity.name || '').trim() : '';
@@ -123,8 +127,9 @@ export function ContextPanel({
           <div className="rwa2-source-mode-item">
             <ToggleSwitch
               label={text('Fast Rewrite', 'Viết lại nhanh')}
-              labelStyle={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--rwa2-brand)' }}
+              labelStyle={{ fontSize: '11.5px', fontWeight: '700', color: capabilities.fastRewrite ? 'var(--rwa2-brand)' : 'var(--rwa2-muted)' }}
               checked={config.fastRewrite !== false}
+              disabled={!capabilities.fastRewrite}
               onChange={(value) => { updateConfig({ fastRewrite: value }); keepFocus(); }}
             />
             <button
@@ -136,6 +141,25 @@ export function ContextPanel({
               onBlur={onTooltipLeave}
               aria-label={text('Fast Rewrite help', 'Trợ giúp Viết lại nhanh')}
               aria-description={fastRewriteHelpText}
+            >i</button>
+          </div>
+          <div className="rwa2-source-mode-item">
+            <ToggleSwitch
+              label={text('Live Stream', 'Stream trực tiếp')}
+              labelStyle={{ fontSize: '11.5px', fontWeight: '700', color: 'var(--rwa2-brand)' }}
+              checked={config.liveStreaming !== false}
+              disabled={!capabilities.liveStreaming}
+              onChange={(value) => { updateConfig({ liveStreaming: value }); keepFocus(); }}
+            />
+            <button
+              type="button"
+              className="rwa2-info rwa2-mode-info"
+              onMouseEnter={(event) => onTooltip(event, liveStreamingHelpText)}
+              onMouseLeave={onTooltipLeave}
+              onFocus={(event) => onTooltip(event, liveStreamingHelpText)}
+              onBlur={onTooltipLeave}
+              aria-label={text('Live Streaming help', 'Trợ giúp Streaming trực tiếp')}
+              aria-description={liveStreamingHelpText}
             >i</button>
           </div>
         </div>
