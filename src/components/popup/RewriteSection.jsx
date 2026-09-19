@@ -21,11 +21,11 @@ export function RewriteSection({
   const text = (en, viText) => (vi ? viText : en);
 
   return (
-    <section className="rwa2-rewrite" aria-label={text('Rewrite styles', 'Kiểu viết lại')}>
+    <section className="rwa2-rewrite" aria-label={text('Choose a rewrite style', 'Chọn kiểu viết lại')}>
       <div className="rwa2-section-head">
         <div>
           <div className="rwa2-kicker">{text('Rewrite', 'Viết lại')}</div>
-          <div className="rwa2-section-title">{text('Rewrite styles', 'Kiểu viết lại')}</div>
+          <div className="rwa2-section-title">{text('Choose a style', 'Chọn kiểu viết')}</div>
         </div>
         <div className="rwa2-section-meta">
           {vi
