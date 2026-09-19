@@ -44,16 +44,16 @@ ok('default style labels can localize without mutating profile prompts or ids', 
   assert.match(grid, /onRun\(profile\)/);
 });
 
-ok('profile and auto-profile explanations are available from keyboard focus', () => {
+ok('profile and identity-profile explanations are available from keyboard focus', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const header = read('./src/components/popup/PopupHeader.jsx');
   assert.match(grid, /aria-description=\{profile\.prompt\}/);
   assert.match(grid, /onFocus=\{\(event\) => \{/);
   assert.match(grid, /onTooltip\(event, \{[\s\S]*kind:\s*'preset'/s);
   assert.match(grid, /onBlur=\{onTooltipLeave\}/);
-  assert.match(rewrite, /aria-description=\{autoProfile\.prompt\}/);
-  assert.match(rewrite, /onFocus=\{\(event\) => onTooltip/);
-  assert.match(rewrite, /onBlur=\{onTooltipLeave\}/);
+  assert.match(header, /aria-description=\{identityProfile\.prompt\}/);
+  assert.match(header, /onFocus=\{\(event\) => onTooltip\?\.\(event, identityTooltip\)\}/);
+  assert.match(header, /onBlur=\{onTooltipLeave\}/);
 });
 
 ok('context help tooltip is keyboard reachable and bilingual', () => {
