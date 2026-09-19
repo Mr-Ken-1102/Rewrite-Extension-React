@@ -384,7 +384,37 @@ export const RWA_SETTINGS_CSS = `
 .rwas-body .rwa-api-preset span { font-size: 10.5px; }
 .rwas-body .rwa-request-note { font-size: 10.75px; }
 
-.rwas-settings :is(.rwas-close, .rwas-nav-btn, .rwas-page-actions .rwa-btn, .rwas-done):focus-visible {
+.rwa-connection-mode-control {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+.rwa-connection-mode-control .rwa-inp { margin: 0 !important; }
+.rwas-settings .rwa-connection-test {
+  width: auto !important;
+  min-width: 148px !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--rwas-brand-border) !important;
+  border-radius: 9px !important;
+  background: var(--rwas-brand-soft) !important;
+  color: var(--rwas-brand) !important;
+  box-shadow: none !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  white-space: nowrap;
+}
+.rwas-settings .rwa-connection-test:hover:not(:disabled) {
+  border-color: rgba(209,154,69,.42) !important;
+  background: rgba(209,154,69,.14) !important;
+  color: #e3ad58 !important;
+}
+
+.rwas-settings :is(.rwas-close, .rwas-nav-btn, .rwas-page-actions .rwa-btn, .rwas-done, .rwa-connection-test):focus-visible {
   outline: 2px solid rgba(209,154,69,.72);
   outline-offset: 2px;
 }
@@ -441,6 +471,11 @@ export const RWA_SETTINGS_CSS = `
 }
 
 @media (max-width: 520px) {
+  .rwa-connection-mode-control { grid-template-columns: 1fr; }
+  .rwas-settings .rwa-connection-test {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
   .rwas-nav-copy { display: none; }
   .rwas-nav-btn { padding: 5px 7px; }
   .rwas-page-head { align-items: flex-start; flex-direction: column; }
