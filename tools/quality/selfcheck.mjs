@@ -1132,7 +1132,7 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(dom, /captureId: nextSelectionCaptureId\(\)/);
 });
 
-ok('parity part 2 adds context management without weakening provider trust', () => {
+ok('parity part 2 adds context management with requested identity-assistance defaults without weakening provider trust', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const settings = readFileSync('./src/components/modals/SettingsModal.jsx', 'utf8');
@@ -1140,9 +1140,9 @@ ok('parity part 2 adds context management without weakening provider trust', () 
   const dataTab = readFileSync('./src/components/modals/settings/TabData.jsx', 'utf8');
   const portable = readFileSync('./src/services/portableDataService.js', 'utf8');
   const debug = readFileSync('./src/services/debugLogService.js', 'utf8');
-  assert.match(schema, /speakerAware:\s*false/);
+  assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
-  assert.match(schema, /autoProfileEnabled:\s*false/);
+  assert.match(schema, /autoProfileEnabled:\s*true/);
   assert.match(schema, /charCardIds:\s*\[\]/);
   const provider = readFileSync('./src/services/providers/providerService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
@@ -1185,7 +1185,7 @@ ok('release pipeline runs dependency-free preflights before package-dependent bu
   assert.doesNotMatch(ci, /npm ci --ignore-scripts/);
 });
 
-ok('store schema v6 keeps privacy-minimal defaults and identity-scoped Voice Profiles', () => {
+ok('store schema v6 keeps bounded context defaults and identity-scoped Voice Profiles', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   const adapter = readFileSync('./src/store/persistence/storageAdapter.js', 'utf8');
   assert.match(schema, /export const STORE_VERSION = 6/);
@@ -1194,9 +1194,9 @@ ok('store schema v6 keeps privacy-minimal defaults and identity-scoped Voice Pro
   assert.match(schema, /identityKey/);
   assert.match(schema, /sourceFingerprint/);
   assert.match(schema, /legacy.*true/);
-  assert.match(schema, /autoProfileEnabled:\s*false/);
+  assert.match(schema, /autoProfileEnabled:\s*true/);
   assert.match(schema, /debugEnabled:\s*false/);
-  assert.match(schema, /speakerAware:\s*false/);
+  assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
   assert.match(schema, /charCardIds:\s*\[\]/);
 });
