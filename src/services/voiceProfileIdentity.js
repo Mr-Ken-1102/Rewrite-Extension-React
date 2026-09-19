@@ -4,8 +4,12 @@ function clean(value, max = 200) {
   return String(value || '').trim().slice(0, max);
 }
 
+function normalizeIdentityName(name) {
+  return clean(name, 160).normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' ');
+}
+
 function fallbackNameId(name) {
-  const normalized = clean(name, 160).toLocaleLowerCase().replace(/\s+/g, ' ');
+  const normalized = normalizeIdentityName(name);
   return normalized ? `name:${normalized}` : '';
 }
 
@@ -23,12 +27,46 @@ export function makeVoiceIdentityKey(identity) {
 
 export function voiceIdentityFromSelection(selection) {
   const role = clean(selection?.detectedRole, 30);
-  if (role !== 'assistant') return null;
+  if (role !== 'assistant' || selection?.detectedGroupedSpeaker === true) return null;
   const id = clean(selection?.detectedCharacterId, 220);
   if (!id) return null;
   const name = clean(selection?.detectedName, 160);
   const identity = { kind: 'character', source: 'character', id, name };
   return { ...identity, key: makeVoiceIdentityKey(identity), weak: false, sourceOfTruth: 'dom' };
+}
+
+export function voiceIdentityFromGroupedSelection(selection, chatCharacters = []) {
+  const role = clean(selection?.detectedRole, 30);
+  if (role !== 'assistant' || selection?.detectedGroupedSpeaker !== true || selection?.detectedGroupedSpeakerAmbiguous === true) {
+    return null;
+  }
+
+  const selectedName = clean(selection?.detectedName, 160);
+  const normalizedSelectedName = normalizeIdentityName(selectedName);
+  if (!normalizedSelectedName) return null;
+
+  const matches = (Array.isArray(chatCharacters) ? chatCharacters : []).filter((character) => {
+    const aliases = [
+      character?.name,
+      character?.convoDisplayName,
+      ...(Array.isArray(character?.aliases) ? character.aliases : []),
+    ].map(normalizeIdentityName).filter(Boolean);
+    return aliases.includes(normalizedSelectedName);
+  });
+
+  if (matches.length !== 1) return null;
+  const match = matches[0];
+  const id = clean(match?.id, 220);
+  if (!id) return null;
+  const name = clean(match?.name || selectedName, 160);
+  const identity = { kind: 'character', source: 'character', id, name };
+  return {
+    ...identity,
+    key: makeVoiceIdentityKey(identity),
+    weak: false,
+    sourceOfTruth: 'grouped-dom-name',
+    selectedDisplayName: selectedName,
+  };
 }
 
 export function voiceIdentityFromMessage(message) {
@@ -62,11 +100,21 @@ export function voiceIdentityFromMessage(message) {
   return null;
 }
 
-export function resolveVoiceIdentity(selection, message) {
-  // A browser selection points at the exact rendered Character segment the
-  // user highlighted. Prefer that DOM-bound identity over a later API snapshot
-  // so group-chat enrichment or stale message metadata cannot jump speakers.
-  return voiceIdentityFromSelection(selection) || voiceIdentityFromMessage(message);
+export function resolveVoiceIdentity(selection, message, chatCharacters = []) {
+  // A normal browser selection can use a DOM-bound Character id directly.
+  const direct = voiceIdentityFromSelection(selection);
+  if (direct) return direct;
+
+  // Marinara grouped Conversation messages can contain multiple visible
+  // speakers inside one assistant message while every segment still inherits
+  // the parent message.characterId. In that layout the per-segment speaker name
+  // must resolve uniquely against the active chat Character set. If it cannot,
+  // fail closed instead of falling back to the parent message Character.
+  if (selection?.detectedGroupedSpeaker === true) {
+    return voiceIdentityFromGroupedSelection(selection, chatCharacters);
+  }
+
+  return voiceIdentityFromMessage(message);
 }
 
 export function getVoiceProfile(autoProfiles, chatId, identityKey) {

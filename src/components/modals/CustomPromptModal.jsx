@@ -28,7 +28,7 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
   const handleRun = () => {
     const v = promptValue.trim();
     if (!v) {
-      showToast('⚠️ Please enter your custom prompt first!', 'warn');
+      showToast('Please enter your custom prompt first!', 'warn');
       textareaRef.current?.focus();
       return;
     }
@@ -47,7 +47,7 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
   const handleSaveAsProfile = () => {
     const value = promptValue.trim();
     if (!value) {
-      showToast('⚠️ Please enter a custom prompt first!', 'warn');
+      showToast('Please enter a custom prompt first!', 'warn');
       textareaRef.current?.focus();
       return;
     }
@@ -85,9 +85,9 @@ export const CustomPromptModal = ({ onClose, onRunRewrite, onSaveAsProfile }) =>
       const refined = unwrapMatchingOuterQuotes(response?.result).slice(0, 5000);
       if (!refined) throw new Error('The model returned an empty refinement.');
       setPromptValue(refined);
-      showToast('✓ Custom prompt refined', 'ok');
+      showToast('Custom prompt refined', 'ok');
     } catch (err) {
-      if (!controller.signal.aborted) showToast(`✕ Refine failed: ${err?.message || String(err)}`, 'err');
+      if (!controller.signal.aborted) showToast(`Refine failed: ${err?.message || String(err)}`, 'err');
     } finally {
       if (refineControllerRef.current === controller) refineControllerRef.current = null;
       if (!controller.signal.aborted) setIsRefining(false);

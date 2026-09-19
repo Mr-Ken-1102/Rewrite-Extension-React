@@ -6,6 +6,7 @@ import { makeHistoryKey } from '../../src/utils/historyKey.js';
 import { unwrapMatchingOuterQuotes } from '../../src/utils/textSanitizers.js';
 import { normalizeRewriteResult } from '../../src/services/prompt/promptService.js';
 import { DOMUtils } from '../../src/utils/domUtils.js';
+import { decodeMarinaraCharacter } from '../../src/services/context/marinaraEntityAdapter.js';
 import { readMessageDomIdentity } from '../../src/utils/messageDomIdentity.js';
 import {
   detectMarinaraChatMode,
@@ -74,6 +75,26 @@ function spliceMapped(rendered, raw, start, end, replacement) {
   return span ? raw.slice(0, span.as) + replacement + raw.slice(span.ae) : null;
 }
 
+ok('Marinara Character adapter decodes raw storage rows and Conversation display names', () => {
+  const character = decodeMarinaraCharacter({
+    id: 'char-contract',
+    data: JSON.stringify({
+      name: 'Canonical Character',
+      personality: 'measured',
+      extensions: {
+        convoDisplayName: 'Conversation Alias',
+        nameAliases: ['Alias One', 'Alias Two'],
+      },
+    }),
+  });
+
+  assert.equal(character.id, 'char-contract');
+  assert.equal(character.name, 'Canonical Character');
+  assert.equal(character.convoDisplayName, 'Conversation Alias');
+  assert.deepEqual(character.aliases, ['Alias One', 'Alias Two']);
+  assert.equal(character.data.personality, 'measured');
+});
+
 ok('history is scoped by chat + message', () => {
   assert.equal(makeHistoryKey('chat-a', '7'), 'chat-a::7');
   assert.notEqual(makeHistoryKey('chat-a', '7'), makeHistoryKey('chat-b', '7'));
@@ -126,6 +147,137 @@ ok('exact selected DOM Character outranks stale fallback DOM and API identities'
   assert.equal(resolved.key, 'character:char-new');
   assert.equal(resolved.name, 'Sami 1.17');
   assert.equal(resolved.sourceOfTruth, 'dom');
+});
+
+ok('grouped Conversation speaker ignores parent data-card-css and resolves by the visible segment name', () => {
+  const groupedName = { textContent: 'Sami 1.17' };
+  const header = {
+    querySelector: (selector) => selector.startsWith('span') ? groupedName : null,
+  };
+  let groupedMessage;
+  const groupedCard = {
+    getAttribute: (name) => name === 'data-card-css' ? 'char-parent-sami-2' : null,
+    querySelector: (selector) => selector === '.items-baseline' ? header : null,
+    closest: (selector) => {
+      if (selector === '[data-card-css]') return groupedCard;
+      if (selector === '[data-component="ConversationMessage.Grouped"]') return groupedMessage;
+      return null;
+    },
+  };
+  const anchorElement = {
+    closest: (selector) => {
+      if (selector === '[data-card-css]') return groupedCard;
+      if (selector === '[data-component="ConversationMessage.Grouped"]') return groupedMessage;
+      if (selector === '[data-message-role]') return groupedMessage;
+      return null;
+    },
+  };
+  groupedMessage = {
+    getAttribute: (name) => {
+      if (name === 'data-message-role') return 'assistant';
+      if (name === 'data-component') return 'ConversationMessage.Grouped';
+      return null;
+    },
+    contains: () => true,
+    querySelector: () => groupedCard,
+  };
+
+  const dom = readMessageDomIdentity(groupedMessage, anchorElement);
+  assert.equal(dom.detectedRole, 'assistant');
+  assert.equal(dom.detectedGroupedSpeaker, true);
+  assert.equal(dom.detectedCharacterId, null);
+  assert.equal(dom.detectedName, 'Sami 1.17');
+
+  const resolved = resolveVoiceIdentity(
+    { ...dom, cid: 'chat-group', mid: 'm-grouped' },
+    { id: 'm-grouped', role: 'assistant', characterId: 'char-parent-sami-2', characterName: 'Hương Sami 2.0' },
+    [
+      { id: 'char-parent-sami-2', name: 'Hương Sami 2.0', convoDisplayName: 'Sami 2.0' },
+      { id: 'char-sami-117', name: 'Sami 1.17', convoDisplayName: '' },
+    ],
+  );
+  assert.equal(resolved.key, 'character:char-sami-117');
+  assert.equal(resolved.name, 'Sami 1.17');
+  assert.equal(resolved.sourceOfTruth, 'grouped-dom-name');
+
+  const ambiguous = resolveVoiceIdentity(
+    { ...dom, cid: 'chat-group', mid: 'm-grouped' },
+    { id: 'm-grouped', role: 'assistant', characterId: 'char-parent-sami-2' },
+    [
+      { id: 'char-a', name: 'Sami 1.17' },
+      { id: 'char-b', name: 'Other', convoDisplayName: 'Sami 1.17' },
+    ],
+  );
+  assert.equal(ambiguous, null);
+});
+
+ok('identity resolution is Character-count agnostic and Persona-scoped without named special cases', () => {
+  const characters = Array.from({ length: 48 }, (_, index) => ({
+    id: `char-${index + 1}`,
+    name: `Character ${index + 1}`,
+    convoDisplayName: index % 3 === 0 ? `Display ${index + 1}` : '',
+  }));
+
+  for (const index of [0, 7, 23, 47]) {
+    const character = characters[index];
+    const selectedName = character.convoDisplayName || character.name;
+    const resolved = resolveVoiceIdentity(
+      {
+        cid: 'chat-many',
+        mid: 'grouped-message',
+        detectedRole: 'assistant',
+        detectedCharacterId: null,
+        detectedName: selectedName,
+        detectedGroupedSpeaker: true,
+        detectedGroupedSpeakerAmbiguous: false,
+      },
+      { id: 'grouped-message', role: 'assistant', characterId: 'parent-id' },
+      characters,
+    );
+    assert.equal(resolved?.key, `character:${character.id}`);
+    assert.equal(resolved?.id, character.id);
+  }
+
+  const duplicateCharacters = [
+    ...characters,
+    { id: 'char-duplicate', name: 'Unrelated', convoDisplayName: characters[7].name },
+  ];
+  const ambiguous = resolveVoiceIdentity(
+    {
+      detectedRole: 'assistant',
+      detectedName: characters[7].name,
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: false,
+    },
+    { role: 'assistant', characterId: 'parent-id' },
+    duplicateCharacters,
+  );
+  assert.equal(ambiguous, null);
+
+  const persona = voiceIdentityFromMessage({
+    role: 'user',
+    extra: {
+      personaSnapshot: {
+        personaId: 'persona-generic',
+        name: 'Active Persona',
+        source: 'persona',
+      },
+    },
+  });
+  assert.equal(persona?.key, 'persona:persona:persona-generic');
+  assert.equal(persona?.name, 'Active Persona');
+
+  const characterBackedPersona = voiceIdentityFromMessage({
+    role: 'user',
+    extra: {
+      personaSnapshot: {
+        personaId: 'persona-character-id',
+        name: 'Character-backed Persona',
+        source: 'character',
+      },
+    },
+  });
+  assert.equal(characterBackedPersona?.key, 'persona:character:persona-character-id');
 });
 
 ok('v5 chat-wide auto profiles migrate to quarantined legacy buckets instead of matching a random identity', () => {
@@ -235,17 +387,18 @@ ok('no persisted undo history in Zustand partialize', () => {
 });
 
 
-ok('new installs keep identity context opt-in while using the requested layout/history defaults', () => {
+ok('new installs use the requested layout and identity-assistance defaults without enabling broad context injection', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   assert.match(schema, /cols:\s*4/);
-  assert.match(schema, /rows:\s*4/);
+  assert.match(schema, /rows:\s*5/);
   assert.match(schema, /historyDepth:\s*1/);
   assert.match(schema, /contextDepth:\s*1/);
   assert.match(schema, /injectChar:\s*false/);
   assert.match(schema, /injectUser:\s*false/);
   assert.match(schema, /injectLorebook:\s*false/);
+  assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
-  assert.match(schema, /autoProfileEnabled:\s*false/);
+  assert.match(schema, /autoProfileEnabled:\s*true/);
   assert.match(schema, /draftReplyEnabled:\s*true/);
   assert.match(schema, /draftReplyHistoryDepth:\s*8/);
   assert.match(schema, /draftReplyLauncherPlacement:\s*'auto'/);
@@ -290,10 +443,11 @@ ok('Marinara private storage is preferred with legacy migration fallback', () =>
   assert.match(storage, /safeLocalStorage\.getItem\(name\)/);
 });
 
-ok('character context supports bounded multi-character chats', () => {
+ok('Character prompt context stays bounded while identity discovery scans the full chat roster', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /function normalizeIdList/);
-  assert.match(context, /\.slice\(0, 8\)/);
+  assert.match(context, /function normalizeIdList\(value, maxItems = 8\)/);
+  assert.match(context, /return unique\.slice\(0, Math\.max/);
+  assert.match(context, /fetchChatCharacters[\s\S]*Number\.POSITIVE_INFINITY/s);
   assert.match(context, /Promise\.all/);
 });
 
@@ -315,15 +469,19 @@ ok('Marinara v2.4.4 persona and lorebook contracts are pinned', () => {
   assert.match(context, /loreScan:\s*['"]\/lorebooks\/scan['"]/);
 });
 
-ok('Marinara v2.4.4 raw-generation payload stays schema-compatible', () => {
+ok('Marinara raw-generation payload stays schema-compatible for streaming and JSON transport', () => {
   const provider = readFileSync('./src/services/providers/providerService.js', 'utf8');
+  const capabilities = readFileSync('./src/services/providers/providerCapabilities.js', 'utf8');
   assert.match(provider, /generateRaw:\s*['"]\/generate\/raw['"]/);
   assert.match(provider, /connectionId,/);
   assert.match(provider, /messages:\s*\[/);
-  assert.match(provider, /streaming:\s*true/);
+  assert.match(provider, /streaming,/);
+  assert.match(provider, /Accept:\s*streaming \? 'text\/event-stream' : 'application\/json'/);
   assert.match(provider, /runId,/);
   assert.match(provider, /generateRaw\}\/abort/);
   assert.match(provider, /reasoningEffort:\s*null/);
+  assert.match(provider, /LOCAL_SIDECAR_CONNECTION_ID/);
+  assert.match(capabilities, /LOCAL_SIDECAR_CONNECTION_ID\s*=\s*'__local_sidecar__'/);
   assert.doesNotMatch(provider, /max_tokens\s*:/);
 });
 
@@ -467,11 +625,16 @@ ok('modeless Draft Reply geometry stays inside the visual viewport', () => {
       },
     },
   );
-  assert.equal(contextual.left, 190);
-  assert.ok(contextual.top >= 100 && contextual.top <= 130);
+  assert.deepEqual(contextual, { left: 180, top: 216 });
+
+  const resizedDefault = defaultDraftReplyPanelPosition(
+    { width: 620, height: 420 },
+    { left: 0, top: 0, right: 700, bottom: 520, width: 700, height: 520 },
+  );
+  assert.deepEqual(resizedDefault, { left: 40, top: 76 });
 });
 
-ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-sends', () => {
+ok('Draft Reply is preview-first, identity-safe with Persona or Generic mode, cancellable, and never auto-sends', () => {
   const app = readFileSync('./src/App.jsx', 'utf8');
   const service = readFileSync('./src/services/draftReplyService.js', 'utf8');
   const session = readFileSync('./src/hooks/useDraftReplySession.js', 'utf8');
@@ -483,9 +646,13 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   const main = readFileSync('./src/main.jsx', 'utf8');
 
   assert.match(app, /<DraftReplyLauncher/);
+  assert.match(app, /onOpenSettings=\{\(\) => openSettings\('ui'\)\}/);
+  assert.match(app, /initialTab=\{settingsInitialTab\}/);
   assert.match(app, /<DraftReplyModal/);
   assert.match(app, /draftUiOpen \|\| !!popupPosition/);
   assert.match(service, /CURRENT USER PERSONA/);
+  assert.match(service, /Generic user reply — no active Persona is selected/);
+  assert.match(service, /expectNoPersona/);
   assert.match(service, /Never write, invent, or continue dialogue/);
   assert.match(service, /ProviderService\.runInference/);
   assert.match(service, /draftReplyHistoryDepth/);
@@ -499,7 +666,12 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(session, /setChatComposerValue\(current\.result\)/);
   assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
   assert.match(launcher, /DOMUtils\.getChatComposerAnchor/);
+  assert.match(launcher, /rwa-draft-launcher-cluster/);
   assert.match(launcher, /data-rwa-feature="draft-reply"/);
+  assert.match(launcher, /data-rwa-feature="draft-reply-settings"/);
+  assert.match(launcher, /onClick=\{onOpenSettings\}/);
+  assert.match(launcher, /Mở cài đặt Rewrite Assistant/);
+  assert.ok(launcher.indexOf('data-rwa-feature="draft-reply-settings"') < launcher.indexOf('data-rwa-feature="draft-reply"'));
   assert.match(launcher, /data-rwa-chat-mode/);
   assert.match(launcher, /draftReplyLauncherPlacement/);
   assert.match(launcher, /draftReplyLauncherPositions/);
@@ -516,6 +688,7 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(dom, /resolveMarinaraChatComposerAnchor/);
   assert.match(launcher, /Trả lời theo Persona|Persona Reply/);
   const rewriteSection = readFileSync('./src/components/popup/RewriteSection.jsx', 'utf8');
+  const popupHeader = readFileSync('./src/components/popup/PopupHeader.jsx', 'utf8');
   const popupFooter = readFileSync('./src/components/popup/PopupFooter.jsx', 'utf8');
   const localizationGuide = readFileSync('./docs/LOCALIZATION-VI.md', 'utf8');
   assert.match(rewriteSection, /Thiết lập sẵn/);
@@ -532,16 +705,29 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(session, /activeChatId !== current\.chatId/);
   assert.match(session, /DraftReplyService\.resolveActivePersona\(chatId/);
   assert.match(session, /personaResolving: true/);
-  assert.match(session, /expectedPersonaKey: current\.persona\.key/);
+  assert.match(session, /expectedPersonaKey: current\.persona\?\.key \|\| ''/);
+  assert.match(session, /expectNoPersona: current\.genericMode === true/);
+  assert.match(session, /genericMode: true/);
   assert.match(session, /expectedPersonaFingerprint: current\.personaSourceFingerprint/);
   assert.match(session, /resolved\.identity\.key !== current\.persona\.key/);
   assert.match(session, /resolved\.sourceFingerprint !== current\.personaSourceFingerprint/);
   assert.match(modal, /Resolving Persona/);
-  assert.match(modal, /disabled=\{isPersonaResolving \|\| !state\.persona\?\.key\}/);
+  assert.match(modal, /Generic reply|Trả lời chung/);
+  assert.match(modal, /Chế độ chung|Generic mode/);
+  assert.match(modal, /disabled=\{isPersonaResolving \|\| \(!isGenericMode && !state\.persona\?\.key\)\}/);
+  assert.match(modal, /rwa-waiting-dots/);
+  assert.match(modal, /rwar-working-rail/);
   assert.match(modal, /useFloatingPanelDrag/);
-  assert.match(modal, /sessionPanelPositions/);
+  assert.match(modal, /draftReplyPanelPositions/);
+  assert.match(modal, /draftReplyPanelPositionResetVersion/);
+  assert.match(modal, /setDraftReplyPanelPosition/);
   assert.match(modal, /defaultDraftReplyPanelPosition/);
+  assert.match(modal, /remembered\s*\?\s*clampFloatingPanelPosition/);
+  assert.match(modal, /remembered && state\?\.chatMode/);
   assert.match(modal, /panel\.dataset\.rwaDragging === 'true'/);
+  assert.match(draftStyles, /\.rwa-draft-launcher-cluster/);
+  assert.match(draftStyles, /\.rwa-draft-settings-button/);
+  assert.match(draftStyles, /\.rwa-draft-persona-chip-generic/);
   assert.match(modal, /aria-modal="false"/);
   assert.match(modal, /data-rwa-feature="draft-reply-window"/);
   assert.match(modal, /rwa-draft-header/);
@@ -799,11 +985,13 @@ ok('history context never crosses Marinara conversation-start boundaries', () =>
   assert.doesNotMatch(buildHistoryContext(characterStart, 3, 10, null), /before char start/);
 });
 
-ok('Character context uses authoritative assistant identity with explicit fallback only when needed', () => {
+ok('Character context uses authoritative assistant identity with grouped-speaker fail-closed fallback', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(context, /const authoritativeCharacterId = role === 'assistant'[\s\S]*domIdentity\?\.id \|\| info\.message\?\.characterId/s);
+  assert.match(context, /const authoritativeCharacterId = role === 'assistant'[\s\S]*resolvedVoiceIdentity\?\.kind === 'character'/s);
+  assert.match(context, /groupedSelection \? '' : \(info\.message\?\.characterId \|\| ''\)/);
   assert.match(context, /const authoritativeSender = authoritativeCharacterId[\s\S]*normalizeIdList\(authoritativeCharacterId\)/s);
-  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
+  assert.match(context, /const fallbackCharacterIds = groupedSelection \? \[\] : explicitCharacterIds/);
+  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : fallbackCharacterIds/);
   assert.match(context, /wantsCharacter && characterIds\.length > 0/);
 });
 
@@ -844,18 +1032,23 @@ ok('historical user messages preserve their persona identity', () => {
   assert.match(context, /if \(snapshot\?\.personaId\) return snapshot\?\.name/);
 });
 
-ok('assistant rewrites never let a stale manual Character override the selected sender', () => {
+ok('assistant rewrites bind Character context to the selected speaker and fail closed for grouped ambiguity', () => {
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   const dom = readFileSync('./src/utils/domUtils.js', 'utf8');
   const domIdentity = readFileSync('./src/utils/messageDomIdentity.js', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
-  assert.match(context, /domIdentity\?\.id \|\| info\.message\?\.characterId/);
-  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : explicitCharacterIds/);
+  const coordinator = readFileSync('./src/hooks/useAutoVoiceProfileCoordinator.js', 'utf8');
+  assert.match(context, /resolveSelectionVoiceIdentity/);
+  assert.match(context, /groupedSelection \? \[\] : explicitCharacterIds/);
+  assert.match(context, /const characterIds = authoritativeSender\.length \? authoritativeSender : fallbackCharacterIds/);
   assert.match(context, /fetchCharCard\(savedSel\.cid, signal, characterIds\)/);
-  assert.match(dom, /readMessageDomIdentity/);
-  assert.match(domIdentity, /data-card-css/);
-  assert.match(domIdentity, /mari-message-name/);
-  assert.match(identity, /resolveVoiceIdentity/);
+  assert.match(dom, /detectedGroupedSpeakerAmbiguous/);
+  assert.match(domIdentity, /ConversationMessage\.Grouped/);
+  assert.match(domIdentity, /groupedSpeakerName/);
+  assert.match(identity, /voiceIdentityFromGroupedSelection/);
+  assert.match(identity, /sourceOfTruth: 'grouped-dom-name'/);
+  assert.match(coordinator, /selection\?\.captureId/);
+  assert.match(coordinator, /resolveVoiceProfileTarget/);
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   assert.match(popup, /voiceIdentityFromSelection\(selection\) \|\| tokenInfo\.voiceIdentity/);
 });
@@ -870,7 +1063,7 @@ ok('message-aware context fails closed while DOM Character metadata can avoid un
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
   assert.match(context, /const needsMessageInfo = wantsHistory \|\| wantsPersona \|\| wantsSpeaker \|\| \(wantsCharacter && !explicitCharacterIds\.length\)/);
-  assert.match(context, /const domIdentity = voiceIdentityFromSelection\(savedSel\)/);
+  assert.match(context, /resolveSelectionVoiceIdentity\(savedSel/);
   assert.match(api, /Could not assemble the enabled context/);
   assert.match(context, /The selected message is no longer available from Marinara/);
 });
@@ -939,7 +1132,7 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(dom, /captureId: nextSelectionCaptureId\(\)/);
 });
 
-ok('parity part 2 adds context management without weakening provider trust', () => {
+ok('parity part 2 adds context management with requested identity-assistance defaults without weakening provider trust', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const settings = readFileSync('./src/components/modals/SettingsModal.jsx', 'utf8');
@@ -947,9 +1140,9 @@ ok('parity part 2 adds context management without weakening provider trust', () 
   const dataTab = readFileSync('./src/components/modals/settings/TabData.jsx', 'utf8');
   const portable = readFileSync('./src/services/portableDataService.js', 'utf8');
   const debug = readFileSync('./src/services/debugLogService.js', 'utf8');
-  assert.match(schema, /speakerAware:\s*false/);
+  assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
-  assert.match(schema, /autoProfileEnabled:\s*false/);
+  assert.match(schema, /autoProfileEnabled:\s*true/);
   assert.match(schema, /charCardIds:\s*\[\]/);
   const provider = readFileSync('./src/services/providers/providerService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
@@ -992,7 +1185,7 @@ ok('release pipeline runs dependency-free preflights before package-dependent bu
   assert.doesNotMatch(ci, /npm ci --ignore-scripts/);
 });
 
-ok('store schema v6 keeps privacy-minimal defaults and identity-scoped Voice Profiles', () => {
+ok('store schema v6 keeps bounded context defaults and identity-scoped Voice Profiles', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
   const adapter = readFileSync('./src/store/persistence/storageAdapter.js', 'utf8');
   assert.match(schema, /export const STORE_VERSION = 6/);
@@ -1001,9 +1194,9 @@ ok('store schema v6 keeps privacy-minimal defaults and identity-scoped Voice Pro
   assert.match(schema, /identityKey/);
   assert.match(schema, /sourceFingerprint/);
   assert.match(schema, /legacy.*true/);
-  assert.match(schema, /autoProfileEnabled:\s*false/);
+  assert.match(schema, /autoProfileEnabled:\s*true/);
   assert.match(schema, /debugEnabled:\s*false/);
-  assert.match(schema, /speakerAware:\s*false/);
+  assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
   assert.match(schema, /charCardIds:\s*\[\]/);
 });
@@ -1019,7 +1212,7 @@ ok('auto-profile policy yields to manual rewrites and enforces a 60-second failu
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
   assert.match(app, /useAutoVoiceProfileCoordinator/);
   assert.match(coordinator, /isProcessing = useRuntimeStore/);
-  assert.match(coordinator, /voiceIdentityFromMessage/);
+  assert.match(coordinator, /resolveVoiceProfileTarget/);
   assert.match(coordinator, /useAutoProfileGeneration/);
   assert.match(hook, /shouldStartAutoProfile/);
   assert.match(hook, /autoProfileBackoffRemaining/);
@@ -1323,6 +1516,7 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   const hook = readFileSync('./src/hooks/useAutoProfileGeneration.js', 'utf8');
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   const rewriteSection = readFileSync('./src/components/popup/RewriteSection.jsx', 'utf8');
+  const popupHeader = readFileSync('./src/components/popup/PopupHeader.jsx', 'utf8');
   const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
   const identity = readFileSync('./src/services/voiceProfileIdentity.js', 'utf8');
   assert.match(api, /VoiceProfileService\.generateAutoProfile/);
@@ -1343,7 +1537,7 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.ok(context.indexOf("'Example dialogue'") < context.indexOf("'Description'"));
   assert.doesNotMatch(context.slice(context.indexOf('function buildVoiceReference'), context.indexOf('export class ContextService')), /system_prompt|post_history_instructions/);
   assert.match(coordinator, /resolved\.selectionKey === selectionKey/);
-  assert.match(coordinator, /targetMessage: message/);
+  assert.match(coordinator, /resolveVoiceProfileTarget\(selection, controller\.signal\)/);
   assert.match(hook, /const targetMessageRef = useRef\(targetMessage\)/);
   assert.match(hook, /targetMessageRef\.current = targetMessage/);
   assert.match(hook, /targetMessage: targetMessageRef\.current/);
@@ -1353,7 +1547,10 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(hook, /PROFILE_REVALIDATE_MS - \(now - lastValidated\)/);
   assert.match(hook, /setRetryTick\(\(value\) => value \+ 1\)/);
   assert.match(popup, /autoProfileBucket\[voiceIdentity\.key\]/);
-  assert.match(rewriteSection, /identityKind === 'persona'/);
+  assert.match(popup, /identityProfile=\{autoProfile\}/);
+  assert.match(popupHeader, /identityKind === 'persona'/);
+  assert.match(popupHeader, /rwa2-identity-chip/);
+  assert.doesNotMatch(rewriteSection, /autoProfile|rwa2-auto-profile/);
   assert.match(contextTab, /Automatic Character \/ Persona voice profiles/);
   assert.match(contextTab, /Generate for selected identity/);
   assert.match(identity, /persona:\$\{source\}:/);

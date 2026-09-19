@@ -1,6 +1,6 @@
-import { Button } from '../ui/Button';
 import { MultiMessageNotice } from './MultiMessageNotice';
 import { ProfileGrid } from './ProfileGrid';
+import { getProviderCapabilities } from '../../services/providers/providerCapabilities.js';
 
 export function RewriteSection({
   language = 'en',
@@ -8,8 +8,9 @@ export function RewriteSection({
   colCount,
   rows,
   compact,
-  autoProfile,
   fastRewrite = false,
+  liveStreaming = true,
+  connectionMode = 'marinara',
   selection,
   mergeMultiMsg,
   onRun,
@@ -18,9 +19,18 @@ export function RewriteSection({
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
-  const autoIdentityLabel = autoProfile
-    ? `${autoProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${autoProfile.identityName || autoProfile.name}`
-    : '';
+
+  const capabilities = getProviderCapabilities(connectionMode);
+  const fastState = capabilities.fastRewrite
+    ? (fastRewrite ? text('Reasoning reduced', 'Giảm reasoning') : text('Off', 'Tắt'))
+    : text('Unavailable', 'Không hỗ trợ');
+  const streamState = capabilities.liveStreaming
+    ? (liveStreaming ? text('Live output', 'Trực tiếp') : text('Off', 'Tắt'))
+    : text('Unavailable', 'Không hỗ trợ');
+  const performanceAria = text(
+    `Fast Rewrite: ${fastState}. Live Streaming: ${streamState}.`,
+    `Viết lại nhanh: ${fastState}. Streaming trực tiếp: ${streamState}.`,
+  );
 
   return (
     <section className="rwa2-rewrite" aria-label={text('Rewrite commands', 'Thiết lập viết lại')}>
@@ -36,36 +46,17 @@ export function RewriteSection({
         </div>
       </div>
 
-      {fastRewrite && (
-        <div className="rwa2-fast-strip" role="status" aria-label={text('Fast Rewrite enabled with live SSE streaming', 'Viết lại nhanh đang bật với SSE streaming trực tiếp')}>
-          <div className="rwa2-fast-copy">
-            <span className="rwa2-fast-title">{text('Fast Rewrite', 'Viết lại nhanh')}</span>
-            <span className="rwa2-fast-meta">{text('Fast path · SSE live', 'Đường nhanh · SSE trực tiếp')}</span>
-          </div>
-          <span className="rwa2-fast-live">{text('LIVE', 'NHANH')}</span>
-          <span className="rwa2-fast-rail" aria-hidden="true"><span></span></span>
+      <div className="rwa2-performance-strip" role="status" aria-label={performanceAria}>
+        <div className={`rwa2-performance-item ${capabilities.fastRewrite && fastRewrite ? 'rwa2-performance-on' : ''}`.trim()}>
+          <span className="rwa2-performance-key">FAST</span>
+          <span className="rwa2-performance-meta">{fastState}</span>
         </div>
-      )}
-
-      {autoProfile && (
-        <Button
-          glow={false}
-          className="rwa2-auto-profile"
-          aria-label={autoIdentityLabel}
-          aria-description={autoProfile.prompt}
-          onMouseEnter={(event) => onTooltip(event, `${autoIdentityLabel} · ${autoProfile.name}: ${autoProfile.prompt}`)}
-          onMouseLeave={onTooltipLeave}
-          onFocus={(event) => onTooltip(event, `${autoIdentityLabel} · ${autoProfile.name}: ${autoProfile.prompt}`)}
-          onBlur={onTooltipLeave}
-          onClick={(event) => {
-            event.stopPropagation();
-            onRun(autoProfile);
-          }}
-        >
-          <span aria-hidden="true">✦</span>
-          <span>{autoIdentityLabel}</span>
-        </Button>
-      )}
+        <span className="rwa2-performance-divider" aria-hidden="true"></span>
+        <div className={`rwa2-performance-item ${capabilities.liveStreaming && liveStreaming ? 'rwa2-performance-on' : ''}`.trim()}>
+          <span className="rwa2-performance-key">STREAM</span>
+          <span className="rwa2-performance-meta">{streamState}</span>
+        </div>
+      </div>
 
       <MultiMessageNotice language={language} selection={selection} mergeMultiMsg={mergeMultiMsg} />
 

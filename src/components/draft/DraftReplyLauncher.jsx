@@ -9,7 +9,29 @@ import {
 
 const LAUNCHER_WIDTH = 118;
 const LAUNCHER_HEIGHT = 30;
+const SETTINGS_BUTTON_SIZE = 30;
+const CLUSTER_GAP = 6;
+const CLUSTER_WIDTH = LAUNCHER_WIDTH + CLUSTER_GAP + SETTINGS_BUTTON_SIZE;
 const SUPPORTED_MODES = new Set(['roleplay', 'conversation', 'game']);
+
+function SettingsGlyph() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v3M12 19v3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M2 12h3M19 12h3M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12" />
+    </svg>
+  );
+}
 
 function getAutoLauncherPosition(anchor) {
   if (!anchor?.composer || !anchor?.shell) return null;
@@ -21,7 +43,7 @@ function getAutoLauncherPosition(anchor) {
   const bounds = getVisualViewportBounds(window);
   const gutter = 8;
   const gap = 8;
-  const preferredLeft = shellRect.right - LAUNCHER_WIDTH;
+  const preferredLeft = shellRect.right - CLUSTER_WIDTH;
   const aboveTop = shellRect.top - LAUNCHER_HEIGHT - gap;
   const belowTop = shellRect.bottom + gap;
   const preferredTop = aboveTop >= bounds.top + gutter
@@ -32,7 +54,7 @@ function getAutoLauncherPosition(anchor) {
 
   const clamped = clampFloatingPanelPosition(
     { left: preferredLeft, top: preferredTop },
-    { width: LAUNCHER_WIDTH, height: LAUNCHER_HEIGHT },
+    { width: CLUSTER_WIDTH, height: LAUNCHER_HEIGHT },
     bounds,
     gutter,
   );
@@ -45,13 +67,13 @@ function getRememberedLauncherPosition(anchor, savedPositions) {
   if (!saved) return null;
   const clamped = clampFloatingPanelPosition(
     saved,
-    { width: LAUNCHER_WIDTH, height: LAUNCHER_HEIGHT },
+    { width: CLUSTER_WIDTH, height: LAUNCHER_HEIGHT },
     getVisualViewportBounds(window),
   );
   return { ...clamped, mode };
 }
 
-export function DraftReplyLauncher({ onOpen, hidden = false }) {
+export function DraftReplyLauncher({ onOpen, onOpenSettings, hidden = false }) {
   const enabled = usePersistentStore((state) => state.config.draftReplyEnabled !== false);
   const language = usePersistentStore((state) => state.config.uiLanguage === 'vi' ? 'vi' : 'en');
   const placement = usePersistentStore((state) => (
@@ -61,7 +83,7 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
   const updateConfig = usePersistentStore((state) => state.updateConfig);
   const [position, setPosition] = useState(null);
   const frameRef = useRef(0);
-  const buttonRef = useRef(null);
+  const clusterRef = useRef(null);
   const modeRef = useRef(null);
   const suppressClickRef = useRef(false);
   const suppressTimerRef = useRef(0);
@@ -86,7 +108,7 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
   }, [placement, savedPositions, updateConfig]);
 
   const handleDragStart = useFloatingPanelDrag({
-    panelRef: buttonRef,
+    panelRef: clusterRef,
     onPositionChange: commitDraggedPosition,
     allowInteractiveRoot: true,
   });
@@ -159,6 +181,9 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
     : draggable
       ? 'Draft a reply as the active Persona · drag to reposition'
       : 'Draft a reply as the active Persona';
+  const settingsTitle = language === 'vi'
+    ? 'Mở cài đặt Rewrite Assistant'
+    : 'Open Rewrite Assistant settings';
 
   const handleClick = (event) => {
     if (suppressClickRef.current) {
@@ -175,21 +200,38 @@ export function DraftReplyLauncher({ onOpen, hidden = false }) {
   };
 
   return (
-    <button
-      ref={buttonRef}
-      type="button"
-      className={'rwa-draft-launcher ' + (draggable ? 'rwa-draft-launcher-draggable' : '')}
-      data-rwa-feature="draft-reply"
+    <div
+      ref={clusterRef}
+      className="rwa-draft-launcher-cluster"
       data-rwa-chat-mode={position.mode}
       data-rwa-placement={placement}
       style={{ left: position.left, top: position.top }}
-      onPointerDown={draggable ? handleDragStart : undefined}
-      onClick={handleClick}
-      title={title}
-      aria-label={title}
     >
-      <span className="rwa-draft-launcher-icon" aria-hidden="true">✦</span>
-      <span>{language === 'vi' ? 'Trả lời theo Persona' : 'Persona Reply'}</span>
-    </button>
+      <button
+        type="button"
+        className="rwa-draft-settings-button"
+        data-rwa-feature="draft-reply-settings"
+        data-rwa-no-drag="true"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={onOpenSettings}
+        title={settingsTitle}
+        aria-label={settingsTitle}
+      >
+        <SettingsGlyph />
+      </button>
+
+      <button
+        type="button"
+        className={'rwa-draft-launcher ' + (draggable ? 'rwa-draft-launcher-draggable' : '')}
+        data-rwa-feature="draft-reply"
+        onPointerDown={draggable ? handleDragStart : undefined}
+        onClick={handleClick}
+        title={title}
+        aria-label={title}
+      >
+        <span className="rwa-draft-launcher-icon" aria-hidden="true">✦</span>
+        <span>{language === 'vi' ? 'Trả lời theo Persona' : 'Persona Reply'}</span>
+      </button>
+    </div>
   );
 }

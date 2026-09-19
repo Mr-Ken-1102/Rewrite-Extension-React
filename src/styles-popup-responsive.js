@@ -74,6 +74,7 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 }
 
 @media (max-width: 419px) {
+  .rwa2-identity-chip { max-width: 128px; }
   .rwa2-popup {
     width: calc(100vw - 12px);
     min-width: calc(100vw - 12px);
@@ -111,11 +112,6 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
   .rwa2-tooltip {
     transition: none !important;
     animation: none !important;
-  }
-  .rwa2-fast-rail > span {
-    transform: none !important;
-    width: 100% !important;
-    opacity: .55 !important;
   }
 }
 `;

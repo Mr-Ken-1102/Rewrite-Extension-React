@@ -5,9 +5,12 @@ export const RWA_POPUP_CONTEXT_CSS = `
   gap: 0;
   align-items: stretch;
   min-width: 0;
-  border: 1px solid var(--rwa2-border);
-  border-radius: 10px;
-  background: var(--rwa2-surface);
+  border: 1px solid rgba(209,154,69,.08);
+  border-radius: 11px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,.010)),
+    var(--rwa2-surface);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
   overflow: hidden;
 }
 .rwa2-context-region {

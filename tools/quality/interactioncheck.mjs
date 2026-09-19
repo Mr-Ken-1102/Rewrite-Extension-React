@@ -44,15 +44,27 @@ ok('default style labels can localize without mutating profile prompts or ids', 
   assert.match(grid, /onRun\(profile\)/);
 });
 
-ok('profile and auto-profile explanations are available from keyboard focus', () => {
+ok('profile and identity-profile explanations are available from keyboard focus', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const header = read('./src/components/popup/PopupHeader.jsx');
   assert.match(grid, /aria-description=\{profile\.prompt\}/);
   assert.match(grid, /onFocus=\{\(event\) => \{/);
+  assert.match(grid, /onTooltip\(event, \{[\s\S]*kind:\s*'preset'/s);
   assert.match(grid, /onBlur=\{onTooltipLeave\}/);
-  assert.match(rewrite, /aria-description=\{autoProfile\.prompt\}/);
-  assert.match(rewrite, /onFocus=\{\(event\) => onTooltip/);
-  assert.match(rewrite, /onBlur=\{onTooltipLeave\}/);
+  assert.match(header, /aria-description=\{identityProfile\.prompt\}/);
+  assert.match(header, /onFocus=\{\(event\) => onTooltip\?\.\(event, identityTooltip\)\}/);
+  assert.match(header, /onBlur=\{onTooltipLeave\}/);
+});
+
+ok('popup header keeps drag ownership except on explicit interactive controls', () => {
+  const header = read('./src/components/popup/PopupHeader.jsx');
+  const drag = read('./src/hooks/usePopupDrag.js');
+  const css = read('./src/styles-popup-base.js');
+  assert.match(header, /<header className="rwa2-toolbar" onPointerDown=\{onDragStart\}>/);
+  assert.doesNotMatch(header, /rwa2-toolbar-actions" onPointerDown=/);
+  assert.ok((header.match(/data-rwa-no-drag="true"/g) || []).length >= 3);
+  assert.match(drag, /closest\?\.\('\[data-rwa-no-drag="true"\], button, input, textarea, select, a, \[role="button"\]'\)/);
+  assert.match(css, /\.rwa2-toolbar-actions\s*\{[\s\S]*flex:\s*0 1 auto/s);
 });
 
 ok('context help tooltip is keyboard reachable and bilingual', () => {
@@ -99,6 +111,21 @@ ok('trim-selection dialog opts out of cursor-following glow work', () => {
   assert.equal((trimBlock.match(/<Button\b[^>]*glow=\{false\}/g) || []).length, 2);
 });
 
+ok('waiting result surfaces show continuous activity without ignoring reduced-motion preferences', () => {
+  const preview = read('./src/components/modals/PreviewModal.jsx');
+  const draft = read('./src/components/draft/DraftReplyModal.jsx');
+  const resultStyles = read('./src/styles-result.js');
+  const draftStyles = read('./src/styles-draft-reply.js');
+  assert.match(preview, /rwar-working-rail/);
+  assert.match(preview, /rwa-waiting-dots/);
+  assert.match(draft, /rwar-working-rail/);
+  assert.match(draft, /rwa-waiting-dots/);
+  assert.match(resultStyles, /@keyframes rwa-waiting-dot/);
+  assert.match(resultStyles, /@keyframes rwar-selected-sheen/);
+  assert.match(resultStyles, /prefers-reduced-motion:\s*reduce/);
+  assert.match(draftStyles, /prefers-reduced-motion:\s*reduce/);
+});
+
 ok('toast feedback uses live-region semantics and readable dwell times', () => {
   const source = read('./src/components/ui/ToastContainer.jsx');
   assert.match(source, /variant === 'err'\) return 6000/);
@@ -108,6 +135,8 @@ ok('toast feedback uses live-region semantics and readable dwell times', () => {
   assert.match(source, /aria-live=\{isError \? 'assertive' : 'polite'\}/);
   assert.match(source, /aria-atomic="true"/);
   assert.match(source, /aria-hidden="true"/);
+  const customPrompt = read('./src/components/modals/CustomPromptModal.jsx');
+  assert.doesNotMatch(customPrompt, /showToast\(['\"][✓✕⚠]/);
 });
 
 ok('Escape dismisses the non-modal selection popup but never preempts an active dialog', () => {

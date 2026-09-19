@@ -1,7 +1,14 @@
 export const RWA_DRAFT_REPLY_CSS = `
-.rwa-draft-launcher {
+.rwa-draft-launcher-cluster {
   position: fixed;
   z-index: 10003;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rwa-draft-launcher {
+  position: relative;
   width: 118px;
   height: 30px;
   display: inline-flex;
@@ -29,6 +36,33 @@ export const RWA_DRAFT_REPLY_CSS = `
   border-color: var(--rwa-primary);
   background: color-mix(in srgb, var(--rwa-primary) 13%, var(--rwa-panel-bg));
   box-shadow: 0 9px 24px rgba(0,0,0,.34), 0 0 18px color-mix(in srgb, var(--rwa-primary) 28%, transparent);
+  outline: none;
+}
+.rwa-draft-settings-button {
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--rwa-primary) 34%, rgba(255,255,255,.08));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--rwa-panel-bg) 94%, black 6%);
+  color: color-mix(in srgb, var(--rwa-primary) 82%, white 18%);
+  box-shadow: 0 7px 20px rgba(0,0,0,.24);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease, box-shadow .16s ease;
+}
+.rwa-draft-settings-button:hover,
+.rwa-draft-settings-button:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--rwa-primary);
+  background: color-mix(in srgb, var(--rwa-primary) 12%, var(--rwa-panel-bg));
+  color: var(--rwa-primary);
+  box-shadow: 0 9px 24px rgba(0,0,0,.30), 0 0 16px color-mix(in srgb, var(--rwa-primary) 22%, transparent);
   outline: none;
 }
 
@@ -123,6 +157,13 @@ export const RWA_DRAFT_REPLY_CSS = `
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.rwa-draft-persona-chip-generic {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--rwa2-brand, #d19a45) 44%, transparent);
+  background: color-mix(in srgb, var(--rwa2-brand, #d19a45) 6%, var(--rwa2-bg, #111217));
+  color: color-mix(in srgb, var(--rwa2-brand, #d19a45) 82%, white 18%);
+}
+
 .rwa-draft-close {
   appearance: none;
   width: 28px;
@@ -233,12 +274,28 @@ export const RWA_DRAFT_REPLY_CSS = `
   font-size: 9.6px;
   line-height: 1.5;
 }
-.rwa-draft-generation { display: grid; gap: 9px; }
+.rwa-draft-generation {
+  display: grid;
+  gap: 9px;
+  padding-top: 2px;
+}
+.rwa-draft-generation .rwar-working-rail {
+  margin-bottom: 1px;
+}
 .rwa-draft-loading-copy {
+  min-height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   text-align: center;
   color: var(--rwa2-muted, rgba(255,255,255,.54));
   font-size: 10.5px;
   font-weight: 700;
+}
+.rwa-draft-live {
+  border-color: color-mix(in srgb, var(--rwa2-brand, #d19a45) 20%, var(--rwa2-border, rgba(255,255,255,.08))) !important;
+  box-shadow: inset 0 0 0 1px rgba(209,154,69,.025), 0 0 18px rgba(209,154,69,.035);
 }
 .rwa-draft-live,
 .rwa-draft-result {
@@ -312,6 +369,16 @@ export const RWA_DRAFT_REPLY_CSS = `
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rwa-draft-window *,
+  .rwa-draft-window,
+  .rwa-draft-launcher-cluster * {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition: none !important;
+  }
 }
 
 @media (max-width: 620px) {

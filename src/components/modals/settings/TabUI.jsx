@@ -2,6 +2,7 @@ import { usePersistentStore } from '../../../store/usePersistentStore';
 import { ToggleSwitch } from '../../ui/ToggleSwitch';
 import { Button } from '../../ui/Button';
 import { useToastStore } from '../../../store/useToastStore';
+import { useRuntimeStore } from '../../../store/useRuntimeStore';
 
 const ConfigRow = ({ label, children }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
@@ -31,10 +32,14 @@ const NumericInput = ({ min, max, value, onChangeKey, updateConfig }) => (
 export const TabUI = () => {
   const { config, updateConfig } = usePersistentStore();
   const showToast = useToastStore((state) => state.showToast);
+  const draftReplyPanelPositions = useRuntimeStore((state) => state.draftReplyPanelPositions || {});
+  const resetDraftReplyPanelPositions = useRuntimeStore((state) => state.resetDraftReplyPanelPositions);
   const vi = config.uiLanguage === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const profileColumnMax = config.compact ? 6 : 4;
   const visibleProfileColumns = Math.min(Math.max(1, config.cols || 4), profileColumnMax);
+  const hasRememberedPersonaReplyPosition = Object.keys(config.draftReplyLauncherPositions || {}).length > 0
+    || Object.keys(draftReplyPanelPositions).length > 0;
 
   return (
     <>
@@ -101,14 +106,18 @@ export const TabUI = () => {
         </select>
       </ConfigRow>
 
-      <ConfigRow label={text('Reset remembered launcher positions:', 'Đặt lại vị trí đã ghi nhớ:')}>
+      <ConfigRow label={text('Reset Persona Reply positions:', 'Đặt lại vị trí Trả lời theo Persona:')}>
         <Button
           glow={false}
-          disabled={config.draftReplyLauncherPlacement !== 'remember' && !Object.keys(config.draftReplyLauncherPositions || {}).length}
+          disabled={!hasRememberedPersonaReplyPosition}
           onClick={() => {
             updateConfig({ draftReplyLauncherPositions: {} });
+            resetDraftReplyPanelPositions();
             showToast(
-              text('✓ Remembered Persona Reply positions reset. The launcher will return to the active composer.', '✓ Đã đặt lại vị trí Trả lời theo Persona. Nút sẽ trở về vị trí theo ô nhập hiện tại.'),
+              text(
+                'Persona Reply positions reset. The launcher and Draft Reply window returned to their defaults.',
+                'Đã đặt lại vị trí Trả lời theo Persona. Nút mở và cửa sổ Soạn trả lời đã trở về vị trí mặc định.',
+              ),
               'ok',
             );
           }}
@@ -120,8 +129,8 @@ export const TabUI = () => {
 
       <div style={{ marginTop: '-8px', color: 'rgba(255,255,255,.45)', fontSize: '11px', lineHeight: 1.5 }}>
         {text(
-          'Auto keeps the launcher attached to the active composer. Remember lets you drag it; each Marinara chat mode keeps its own saved position.',
-          'Tự động đặt nút theo ô nhập hiện tại. Chế độ Ghi nhớ cho phép kéo nút và lưu vị trí riêng cho từng chế độ chat Marinara.',
+          'Auto keeps the launcher attached to the active composer. Remember lets you drag it; each Marinara chat mode keeps its own saved launcher position. Reset positions also restores the Draft Reply window.',
+          'Tự động đặt nút theo ô nhập hiện tại. Chế độ Ghi nhớ cho phép kéo nút và lưu vị trí riêng cho từng chế độ chat Marinara. Đặt lại vị trí cũng đưa cửa sổ Soạn trả lời về mặc định.',
         )}
       </div>
     </>

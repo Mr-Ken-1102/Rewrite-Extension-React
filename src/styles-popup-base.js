@@ -5,12 +5,6 @@ import {
 } from './popupGeometry';
 
 export const RWA_POPUP_BASE_CSS = `
-@keyframes rwa2-fast-sweep {
-  0% { transform: translateX(-130%); opacity: .30; }
-  42% { opacity: 1; }
-  70%, 100% { transform: translateX(310%); opacity: .28; }
-}
-
 :host {
   --rwa2-brand: #d19a45;
   --rwa2-brand-hover: #dca756;
@@ -46,12 +40,13 @@ export const RWA_POPUP_BASE_CSS = `
   gap: 6px;
   padding: 7px ${POPUP_OUTER_PADDING_X}px 8px;
   border: 1px solid var(--rwa2-border);
-  border-radius: 12px;
+  border-radius: 14px;
   background:
-    radial-gradient(circle at 14% -14%, rgba(209,154,69,.075), transparent 34%),
+    radial-gradient(circle at 12% -18%, rgba(209,154,69,.10), transparent 32%),
+    linear-gradient(180deg, rgba(255,255,255,.012), transparent 30%),
     var(--rwa2-bg);
   color: var(--rwa2-text-2);
-  box-shadow: 0 18px 48px rgba(0,0,0,.46), inset 0 1px 0 rgba(255,255,255,.03);
+  box-shadow: 0 22px 58px rgba(0,0,0,.50), inset 0 1px 0 rgba(255,255,255,.04);
   font-family: var(--rwa-host-font, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
   contain: layout paint style;
   isolation: isolate;
@@ -93,7 +88,53 @@ export const RWA_POPUP_BASE_CSS = `
   font-size: 9px;
   font-weight: 780;
 }
-.rwa2-toolbar-actions { display: flex; align-items: center; gap: 2px; }
+.rwa2-toolbar-actions {
+  min-width: 0;
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+.rwa2-identity-chip {
+  appearance: none;
+  min-width: 0;
+  max-width: min(250px, 44vw);
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 3px;
+  padding: 0 8px;
+  border: 1px solid var(--rwa2-brand-border);
+  border-radius: 999px;
+  background: rgba(209,154,69,.055);
+  color: var(--rwa2-brand);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color .10s ease, border-color .10s ease, color .10s ease;
+}
+.rwa2-identity-chip:hover,
+.rwa2-identity-chip:focus-visible {
+  border-color: rgba(209,154,69,.38);
+  background: rgba(209,154,69,.10);
+  color: var(--rwa2-brand-hover);
+  outline: none;
+}
+.rwa2-identity-chip-mark {
+  flex: 0 0 auto;
+  font-size: 9px;
+  line-height: 1;
+}
+.rwa2-identity-chip-text {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 9.5px;
+  line-height: 1;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .rwa2-icon-button {
   appearance: none;
   width: 28px;
@@ -123,10 +164,12 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-rewrite {
   min-width: 0;
   padding: 7px;
-  border: 1px solid rgba(255,255,255,.06);
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.010));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.015);
+  border: 1px solid rgba(209,154,69,.10);
+  border-radius: 11px;
+  background:
+    radial-gradient(circle at 92% -18%, rgba(209,154,69,.055), transparent 34%),
+    linear-gradient(180deg, rgba(255,255,255,.022), rgba(255,255,255,.010));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.022);
 }
 .rwa2-section-head {
   min-height: 20px;
@@ -159,100 +202,61 @@ export const RWA_POPUP_BASE_CSS = `
   white-space: nowrap;
 }
 
-.rwa2-fast-strip {
-  position: relative;
+.rwa2-performance-strip {
   min-height: 29px;
   display: grid;
-  grid-template-columns: minmax(0,1fr) auto;
+  grid-template-columns: minmax(0,1fr) 1px minmax(0,1fr);
   align-items: center;
   gap: 8px;
   margin: 0 0 6px;
-  padding: 0 8px 4px;
-  overflow: hidden;
-  border: 1px solid rgba(209,154,69,.17);
+  padding: 0 9px;
+  border: 1px solid rgba(255,255,255,.065);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(209,154,69,.045), rgba(209,154,69,.018));
+  background: linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.009));
 }
-.rwa2-fast-copy {
+.rwa2-performance-item {
   min-width: 0;
   display: flex;
   align-items: baseline;
   gap: 7px;
   overflow: hidden;
 }
-.rwa2-fast-title {
-  color: var(--rwa2-brand);
-  font-size: 10px;
+.rwa2-performance-key {
+  flex: 0 0 auto;
+  color: var(--rwa2-subtle);
+  font-size: 8px;
   line-height: 1;
-  font-weight: 800;
-  white-space: nowrap;
+  font-weight: 820;
+  letter-spacing: .08em;
 }
-.rwa2-fast-meta {
+.rwa2-performance-meta {
   min-width: 0;
   overflow: hidden;
   color: var(--rwa2-muted);
   font-size: 9px;
   line-height: 1;
+  font-weight: 620;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.rwa2-fast-live {
-  min-height: 18px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 6px;
-  border: 1px solid rgba(209,154,69,.24);
-  border-radius: 999px;
-  background: rgba(209,154,69,.07);
+.rwa2-performance-on .rwa2-performance-key {
   color: var(--rwa2-brand);
-  font-size: 8px;
-  line-height: 1;
-  font-weight: 820;
-  letter-spacing: .06em;
 }
-.rwa2-fast-rail {
-  position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 2px;
-  height: 2px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255,255,255,.035);
+.rwa2-performance-on .rwa2-performance-meta {
+  color: rgba(255,255,255,.72);
 }
-.rwa2-fast-rail > span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 28%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, transparent, var(--rwa2-brand), #ff7043, transparent);
-  box-shadow: 0 0 8px rgba(209,154,69,.22);
-  animation: rwa2-fast-sweep 2.35s cubic-bezier(.42,0,.24,1) infinite;
+.rwa2-performance-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255,255,255,.065);
 }
 
-.rwa2-popup .rwa2-auto-profile,
 .rwa2-popup .rwa2-profile-btn,
 .rwa2-popup .rwa2-action {
   box-shadow: none !important;
   transform: none !important;
   filter: none !important;
 }
-.rwa2-popup .rwa2-auto-profile {
-  width: 100% !important;
-  min-height: 30px !important;
-  height: 30px !important;
-  justify-content: flex-start !important;
-  gap: 7px !important;
-  margin: 0 0 5px !important;
-  padding: 0 10px !important;
-  border: 1px solid var(--rwa2-brand-border) !important;
-  border-radius: 8px !important;
-  background: var(--rwa2-brand-soft) !important;
-  color: var(--rwa2-brand) !important;
-  font-size: 10.5px !important;
-  font-weight: 600 !important;
-}
-
 .rwa2-multi-notice {
   min-height: 28px;
   display: flex;
@@ -316,6 +320,7 @@ export const RWA_POPUP_BASE_CSS = `
   border-color: var(--rwa2-brand-border) !important;
   color: var(--rwa2-text) !important;
 }
+
 .rwa2-profile-name {
   width: 100%;
   min-width: 0;
@@ -330,11 +335,12 @@ export const RWA_POPUP_BASE_CSS = `
 }
 
 .rwa2-actionbar {
-  min-height: 32px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding-top: 1px;
+  padding-top: 5px;
+  border-top: 1px solid rgba(255,255,255,.045);
 }
 .rwa2-popup .rwa2-action {
   min-width: 0 !important;
@@ -390,8 +396,63 @@ export const RWA_POPUP_BASE_CSS = `
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transition: opacity .08s ease;
+  transition: opacity .08s ease, transform .08s ease;
   white-space: pre-wrap;
 }
-.rwa2-tooltip-show { opacity: 1; visibility: visible; }
+.rwa2-tooltip-preset {
+  width: min(320px, calc(100vw - 16px));
+  max-width: min(320px, calc(100vw - 16px));
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px 11px;
+  border-color: rgba(209,154,69,.28);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(209,154,69,.075), transparent 42%),
+    #17181e;
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.54),
+    inset 2px 0 0 rgba(209,154,69,.42),
+    inset 0 1px 0 rgba(255,255,255,.025);
+}
+.rwa2-tooltip-preset-head {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.rwa2-tooltip-preset-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--rwa2-brand);
+  font-size: 11.2px;
+  line-height: 1.15;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rwa2-tooltip-preset-meta {
+  flex: 0 0 auto;
+  color: var(--rwa2-subtle);
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .09em;
+}
+.rwa2-tooltip-preset-copy {
+  max-height: 132px;
+  overflow: hidden;
+  color: rgba(255,255,255,.80);
+  font-size: 11.5px;
+  line-height: 1.48;
+  white-space: pre-wrap;
+}
+.rwa2-tooltip-show {
+  opacity: 1;
+  visibility: visible;
+}
+.rwa2-tooltip-preset.rwa2-tooltip-show {
+  transform: translateY(-1px);
+}
 `;

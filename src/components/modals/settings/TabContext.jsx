@@ -78,11 +78,30 @@ export const TabContext = () => {
     generateControllerRef.current = controller;
     setGenerating(true);
     try {
-      const result = await APIService.generateAutoProfile(chatId, controller.signal, {
+      let profileOptions = {
         messageId: selectedMessageId || undefined,
         preferredCharacterIds: config.charCardIds,
         force: true,
-      });
+      };
+
+      if (selectedMessageId && selection?.cid === chatId) {
+        const target = await APIService.resolveVoiceProfileTarget(selection, controller.signal);
+        if (controller.signal.aborted) return;
+        if (!target?.identity?.key || !target?.targetMessage) {
+          showToast(text(
+            'The selected Character/Persona identity could not be resolved safely. Re-select exactly one speaker message and try again.',
+            'Không thể xác định an toàn Character/Persona đã chọn. Hãy chọn lại đúng một tin nhắn của một người nói rồi thử lại.',
+          ), 'warn');
+          return;
+        }
+        profileOptions = {
+          ...profileOptions,
+          targetMessage: target.targetMessage,
+          expectedIdentityKey: target.identity.key,
+        };
+      }
+
+      const result = await APIService.generateAutoProfile(chatId, controller.signal, profileOptions);
       if (controller.signal.aborted) return;
       if (result?.profile) {
         const kind = result.profile.identityKind === 'persona' ? 'Persona' : 'Char';
@@ -116,8 +135,8 @@ export const TabContext = () => {
       <Row
         title={text('Automatic Character / Persona voice profiles', 'Tự động tạo Hồ sơ giọng cho Character / Persona')}
         note={text(
-          'OFF by default. When enabled, Rewrite Assistant identifies the exact Character or Persona that owns the selected message and keeps a separate reusable voice profile for each identity in this chat. Character-card or Persona data may be sent to your selected inference provider.',
-          'Mặc định TẮT. Khi bật, Rewrite Assistant xác định đúng Character hoặc Persona của tin nhắn đang chọn và lưu Hồ sơ giọng riêng cho từng danh tính trong chat. Dữ liệu Character Card hoặc Persona có thể được gửi tới nhà cung cấp AI bạn đang dùng.',
+          'ON by default. Rewrite Assistant identifies the exact Character or Persona that owns the selected message and keeps a separate reusable voice profile for each identity in this chat. Character-card or Persona data may be sent to your selected inference provider; you can turn this off at any time.',
+          'Mặc định BẬT. Rewrite Assistant xác định đúng Character hoặc Persona của tin nhắn đang chọn và lưu Hồ sơ giọng riêng cho từng danh tính trong chat. Dữ liệu Character Card hoặc Persona có thể được gửi tới nhà cung cấp AI bạn đang dùng; bạn có thể tắt bất kỳ lúc nào.',
         )}
       >
         <ToggleSwitch checked={config.autoProfileEnabled} onChange={(value) => updateConfig({ autoProfileEnabled: value })} />

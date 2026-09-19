@@ -56,6 +56,7 @@ export class APIService {
     return ContextService.collectMergedContext(parentSelection, segments, signal);
   }
   static inspectContext(savedSel, signal) { return ContextService.inspectContext(savedSel, signal); }
+  static resolveVoiceProfileTarget(savedSel, signal) { return ContextService.resolveVoiceProfileTarget(savedSel, signal); }
 
   static estimateTokens(text) { return estimateTokens(text); }
   static composePromptDetailed(profile, targetText, config, context = {}) {

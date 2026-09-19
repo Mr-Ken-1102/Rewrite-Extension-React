@@ -107,10 +107,12 @@ const NavGlyph = ({ type }) => {
   return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M12 10v6M12 7h.01"/></svg>;
 };
 
-export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspended = false }) => {
+export const SettingsModal = ({ onClose, openEditProfile, openAIArchitect, suspended = false, initialTab = 'profiles' }) => {
   const uiLanguage = usePersistentStore((state) => state.config.uiLanguage);
   const vi = uiLanguage === 'vi';
-  const [activeTab, setActiveTab] = useState('profiles');
+  const [activeTab, setActiveTab] = useState(() => (
+    SETTINGS_SECTIONS.some((section) => section.id === initialTab) ? initialTab : 'profiles'
+  ));
   const [specialPage, setSpecialPage] = useState(null);
   const bodyRef = useRef(null);
   const dialogRef = useRef(null);

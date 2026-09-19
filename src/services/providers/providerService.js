@@ -8,9 +8,13 @@ import {
   validateProviderHttpUrl,
   withProviderNetworkHints,
 } from '../policies/providerPolicy.js';
+import {
+  LOCAL_SIDECAR_CONNECTION_ID,
+  getProviderCapabilities,
+  normalizeConnectionMode,
+} from './providerCapabilities.js';
 
 const ENDPOINTS = {
-  tracker: '/sidecar/tracker',
   connections: '/connections',
   generateRaw: '/generate/raw',
   chats: '/chats',
@@ -161,6 +165,200 @@ async function readRawStream(response, signal, onProgress, onStreamStatus) {
   return { content, streamed: true };
 }
 
+function parseOpenAIStreamData(block) {
+  return String(block || '')
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('data:'))
+    .map((line) => line.slice(5).trimStart())
+    .join('\n')
+    .trim();
+}
+
+async function readOpenAICompatibleStream(response, signal, onProgress, onStreamStatus, providerLabel) {
+  if (!response?.body?.getReader) {
+    return { error: `${providerLabel} streaming response is not readable in this browser.` };
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let streamed = '';
+  let streamError = '';
+  let done = false;
+  let lastReportedLength = 0;
+  let lastReportedAt = 0;
+
+  const emitStatus = (status, extra = {}) => {
+    if (typeof onStreamStatus !== 'function') return;
+    try { onStreamStatus({ status, ...extra }); } catch { /* UI status hooks never block inference */ }
+  };
+
+  const reportProgress = (force = false) => {
+    if (typeof onProgress !== 'function' || !streamed) return;
+    const now = Date.now();
+    if (!force && streamed.length - lastReportedLength < 48 && now - lastReportedAt < 80) return;
+    lastReportedLength = streamed.length;
+    lastReportedAt = now;
+    try { onProgress(streamed); } catch { /* UI progress must never break inference */ }
+    emitStatus('streaming', { chars: streamed.length });
+  };
+
+  const consume = (block) => {
+    const dataText = parseOpenAIStreamData(block);
+    if (!dataText) return;
+    if (dataText === '[DONE]') {
+      done = true;
+      emitStatus('done', { chars: streamed.length });
+      return;
+    }
+
+    let payload;
+    try { payload = JSON.parse(dataText); } catch { return; }
+    if (payload?.error) {
+      streamError = payload.error?.message || String(payload.error);
+      return;
+    }
+
+    const choice = Array.isArray(payload?.choices) ? payload.choices[0] : null;
+    const content = typeof choice?.delta?.content === 'string'
+      ? choice.delta.content
+      : (typeof choice?.text === 'string' ? choice.text : '');
+    if (content) {
+      streamed += content;
+      reportProgress(false);
+    }
+    if (choice?.finish_reason) {
+      emitStatus('finalizing', { chars: streamed.length });
+    }
+  };
+
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      const parts = buffer.split(/\r?\n\r?\n/);
+      buffer = parts.pop() || '';
+      parts.forEach(consume);
+      if (signal?.aborted) {
+        try { await reader.cancel(signal.reason); } catch { /* noop */ }
+        return { aborted: true };
+      }
+    }
+    buffer += decoder.decode();
+    if (buffer.trim()) consume(buffer);
+  } catch (err) {
+    if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
+    return { error: err?.message || String(err), partial: streamed };
+  } finally {
+    try { reader.releaseLock(); } catch { /* noop */ }
+  }
+
+  if (signal?.aborted) return { aborted: true };
+  if (streamError) return { error: streamError, partial: streamed };
+  if (!streamed.trim()) {
+    return { error: `${providerLabel} completed the streaming request but returned no usable text.` };
+  }
+
+  reportProgress(true);
+  if (!done) emitStatus('done', { chars: streamed.length });
+  return { content: streamed, streamed: true };
+}
+
+async function requestEngineRaw({
+  connectionId,
+  systemPrompt,
+  userPrompt,
+  parameters = null,
+  streaming = false,
+  timeout = 0,
+  signal,
+  onProgress,
+  onStreamStatus,
+  mode = 'marinara',
+}) {
+  const runId = createRawRunId();
+  if (streaming && typeof onStreamStatus === 'function') {
+    try { onStreamStatus({ status: 'connecting', runId, chars: 0 }); } catch { /* noop */ }
+  }
+
+  const body = {
+    connectionId,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    streaming,
+    runId,
+    ...(parameters ? { parameters } : {}),
+  };
+
+  let abortSent = false;
+  const abortServerRun = () => {
+    if (abortSent) return;
+    abortSent = true;
+    void MarinaraHost.apiFetch(`${ENDPOINTS.generateRaw}/abort`, {
+      method: 'POST',
+      body: JSON.stringify({ runId, connectionId }),
+    }, 5000).catch(() => {});
+  };
+
+  if (signal?.aborted) {
+    abortServerRun();
+    return { aborted: true };
+  }
+  signal?.addEventListener?.('abort', abortServerRun, { once: true });
+
+  try {
+    const response = await MarinaraHost.fetch(`/api${ENDPOINTS.generateRaw}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-marinara-csrf': '1',
+        Accept: streaming ? 'text/event-stream' : 'application/json',
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal,
+    }, timeout);
+
+    if (!response.ok) {
+      const raw = await response.text().catch(() => '');
+      let detail = raw;
+      try {
+        const parsed = JSON.parse(raw);
+        detail = parsed?.error || parsed?.message || raw;
+      } catch { /* keep raw text */ }
+      return normalizeProviderFailure(detail || `HTTP ${response.status} from Marinara.`);
+    }
+
+    if (streaming) {
+      const streamed = await readRawStream(response, signal, onProgress, onStreamStatus);
+      if (streamed.aborted) return { aborted: true };
+      if (streamed.error) {
+        debugLogService.add('inference.stream_error', {
+          mode,
+          runId,
+          partialChars: String(streamed.partial || '').length,
+          message: streamed.error,
+        });
+        return normalizeProviderFailure(streamed.error, 'Marinara streaming failed.');
+      }
+      return { result: streamed.content || '', streamed: true };
+    }
+
+    const data = await response.json().catch(() => ({}));
+    if (data?.aborted) return { aborted: true };
+    if (data?.error) return normalizeProviderFailure(data.error);
+    return { result: extractMarinaraContent(data), streamed: false };
+  } catch (err) {
+    if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
+    return normalizeProviderFailure(err, 'Marinara request failed.');
+  } finally {
+    signal?.removeEventListener?.('abort', abortServerRun);
+  }
+}
+
 async function queryLocalNetworkPermission(addressSpace) {
   const permissionName = addressSpace === 'loopback'
     ? 'loopback-network'
@@ -267,26 +465,33 @@ export class ProviderService {
 
   static async runInference(systemPrompt, userPrompt, signal, override = {}) {
     const config = { ...usePersistentStore.getState().config, ...override };
-    const mode = ['marinara', 'sidecar', 'direct', 'extender'].includes(config.connMode) ? config.connMode : 'marinara';
+    const mode = normalizeConnectionMode(config.connMode);
+    const capabilities = getProviderCapabilities(mode);
     const configuredTimeout = Math.max(5000, Math.min(180000, Number(config.requestTimeoutMs) || 45000));
     const directLocalNetwork = mode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl);
     const marinaraTimeout = mode === 'marinara'
       ? Math.max(0, Math.min(180000, Number(override.marinaraTimeoutMs) || 0))
       : configuredTimeout;
     const timeout = directLocalNetwork ? Math.max(120000, configuredTimeout) : marinaraTimeout;
+    const fastRewrite = override.rewriteRequest === true && config.fastRewrite !== false && capabilities.fastRewrite;
+    const liveStreaming = config.liveStreaming !== false
+      && capabilities.liveStreaming
+      && (override.liveStreaming === true || override.rewriteRequest === true || typeof override.onProgress === 'function');
     debugLogService.add('inference.request', {
       mode,
       systemChars: systemPrompt.length,
       userChars: userPrompt.length,
       timeoutMs: timeout,
       localNetwork: directLocalNetwork || undefined,
+      fastRewrite,
+      fastRewriteSupported: capabilities.fastRewrite,
+      liveStreaming,
     });
 
     if (mode === 'marinara') {
       const resolved = await this.resolveMarinaraConnection(config, signal, override.chatId);
       if (resolved.error || !resolved.connectionId) return { error: resolved.error || 'No Marinara connection is available.' };
       const connectionId = resolved.connectionId;
-      const fastRewrite = override.rewriteRequest === true && config.fastRewrite !== false;
       debugLogService.add('inference.connection', {
         mode,
         source: resolved.source,
@@ -295,79 +500,18 @@ export class ProviderService {
         fastRewrite,
       });
 
-      const requestRaw = async (parameters = null) => {
-        const runId = createRawRunId();
-        if (typeof override.onStreamStatus === 'function') {
-          try { override.onStreamStatus({ status: 'connecting', runId, chars: 0 }); } catch { /* noop */ }
-        }
-        const body = {
-          connectionId,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          streaming: true,
-          runId,
-          ...(parameters ? { parameters } : {}),
-        };
-
-        let abortSent = false;
-        const abortServerRun = () => {
-          if (abortSent) return;
-          abortSent = true;
-          void MarinaraHost.apiFetch(`${ENDPOINTS.generateRaw}/abort`, {
-            method: 'POST',
-            body: JSON.stringify({ runId, connectionId }),
-          }, 5000).catch(() => {});
-        };
-        if (signal?.aborted) {
-          abortServerRun();
-          return { aborted: true };
-        }
-        signal?.addEventListener?.('abort', abortServerRun, { once: true });
-
-        try {
-          const response = await MarinaraHost.fetch(`/api${ENDPOINTS.generateRaw}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-marinara-csrf': '1',
-              Accept: 'text/event-stream',
-            },
-            body: JSON.stringify(body),
-            cache: 'no-store',
-            signal,
-          }, timeout);
-
-          if (!response.ok) {
-            const raw = await response.text().catch(() => '');
-            let detail = raw;
-            try {
-              const parsed = JSON.parse(raw);
-              detail = parsed?.error || parsed?.message || raw;
-            } catch { /* keep raw text */ }
-            return normalizeProviderFailure(detail || `HTTP ${response.status} from Marinara.`);
-          }
-
-          const streamed = await readRawStream(response, signal, override.onProgress, override.onStreamStatus);
-          if (streamed.aborted) return { aborted: true };
-          if (streamed.error) {
-            debugLogService.add('inference.stream_error', {
-              mode,
-              runId,
-              partialChars: String(streamed.partial || '').length,
-              message: streamed.error,
-            });
-            return normalizeProviderFailure(streamed.error, 'Marinara streaming failed.');
-          }
-          return { result: streamed.content || '', streamed: true };
-        } catch (err) {
-          if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
-          return normalizeProviderFailure(err, 'Marinara request failed.');
-        } finally {
-          signal?.removeEventListener?.('abort', abortServerRun);
-        }
-      };
+      const requestRaw = (parameters = null) => requestEngineRaw({
+        connectionId,
+        systemPrompt,
+        userPrompt,
+        parameters,
+        streaming: liveStreaming,
+        timeout,
+        signal,
+        onProgress: override.onProgress,
+        onStreamStatus: override.onStreamStatus,
+        mode,
+      });
 
       const initialParameters = fastRewrite ? { reasoningEffort: null } : null;
       const result = await requestRaw(initialParameters);
@@ -416,14 +560,28 @@ export class ProviderService {
 
     if (mode === 'sidecar') {
       if (systemPrompt.length > 16000 || userPrompt.length > 16000) {
-        return { error: 'Marinara v2.4.4 Sidecar accepts at most 16,000 characters per prompt.', errorCode: 'RWA_PROVIDER_CONTEXT_LIMIT' };
+        return { error: 'Marinara Sidecar rewrite prompts are limited to 16,000 characters per prompt.', errorCode: 'RWA_PROVIDER_CONTEXT_LIMIT' };
       }
-      const result = await MarinaraHost.apiFetch(ENDPOINTS.tracker, {
-        method: 'POST', body: JSON.stringify({ systemPrompt, userPrompt }), signal,
-      }, timeout);
+
+      const result = await requestEngineRaw({
+        connectionId: LOCAL_SIDECAR_CONNECTION_ID,
+        systemPrompt,
+        userPrompt,
+        streaming: liveStreaming,
+        timeout,
+        signal,
+        onProgress: override.onProgress,
+        onStreamStatus: override.onStreamStatus,
+        mode,
+      });
       if (!result) return { error: 'The local sidecar returned an unreadable response.' };
-      if (result.error) return normalizeProviderFailure(result.error);
-      debugLogService.add('inference.response', { mode, resultChars: String(result.result || '').length });
+      if (result.aborted === true) return { aborted: true };
+      if (result.error) return result;
+      debugLogService.add('inference.response', {
+        mode,
+        resultChars: String(result.result || '').length,
+        streamed: result.streamed === true,
+      });
       return result;
     }
 
@@ -433,6 +591,9 @@ export class ProviderService {
       try { validateProviderHttpUrl(root, 'Extender'); } catch (err) { return { error: err?.message || String(err) }; }
       try {
         const endpoint = `${root}/v1/chat/completions`;
+        if (liveStreaming && typeof override.onStreamStatus === 'function') {
+          try { override.onStreamStatus({ status: 'connecting', chars: 0 }); } catch { /* noop */ }
+        }
         const response = await MarinaraHost.fetch(endpoint, withProviderNetworkHints(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -442,15 +603,33 @@ export class ProviderService {
               { role: 'user', content: userPrompt },
             ],
             temperature: Math.max(0, Math.min(2, Number.isFinite(Number(config.directTemp)) ? Number(config.directTemp) : 0.7)),
-            stream: false,
+            stream: liveStreaming,
           }),
           signal,
         }), timeout);
+
+        if (!response.ok) {
+          const raw = await response.text().catch(() => '');
+          let detail = raw;
+          try {
+            const parsed = JSON.parse(raw);
+            detail = parsed?.error || parsed?.message || raw;
+          } catch { /* keep raw text */ }
+          return normalizeProviderFailure(detail || `HTTP ${response.status} from Extender.`, `HTTP ${response.status} from Extender.`);
+        }
+
+        if (liveStreaming) {
+          const streamed = await readOpenAICompatibleStream(response, signal, override.onProgress, override.onStreamStatus, 'Extender');
+          if (streamed.aborted) return { aborted: true };
+          if (streamed.error) return normalizeProviderFailure(streamed.error, 'Extender streaming failed.');
+          debugLogService.add('inference.response', { mode, resultChars: streamed.content.length, streamed: true, liveStreaming: true });
+          return { result: streamed.content, streamed: true };
+        }
+
         const data = await response.json().catch(() => ({}));
-        if (!response.ok) return normalizeProviderFailure(data?.error || data || `HTTP ${response.status} from Extender.`, `HTTP ${response.status} from Extender.`);
         if (data?.error) return normalizeProviderFailure(data.error);
         const result = data?.choices?.[0]?.message?.content || '';
-        debugLogService.add('inference.response', { mode, resultChars: result.length });
+        debugLogService.add('inference.response', { mode, resultChars: result.length, streamed: false });
         return { result };
       } catch (err) {
         if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
@@ -469,6 +648,9 @@ export class ProviderService {
 
     try {
       const endpoint = `${base}/chat/completions`;
+      if (liveStreaming && typeof override.onStreamStatus === 'function') {
+        try { override.onStreamStatus({ status: 'connecting', chars: 0 }); } catch { /* noop */ }
+      }
       const response = await MarinaraHost.fetch(endpoint, withProviderNetworkHints(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -479,15 +661,33 @@ export class ProviderService {
             { role: 'user', content: userPrompt },
           ],
           temperature: Math.max(0, Math.min(2, Number.isFinite(Number(config.directTemp)) ? Number(config.directTemp) : 0.7)),
-          stream: false,
+          stream: liveStreaming,
         }),
         signal,
       }), timeout);
+
+      if (!response.ok) {
+        const raw = await response.text().catch(() => '');
+        let detail = raw;
+        try {
+          const parsed = JSON.parse(raw);
+          detail = parsed?.error || parsed?.message || raw;
+        } catch { /* keep raw text */ }
+        return normalizeProviderFailure(detail || `HTTP ${response.status} from Direct API.`, `HTTP ${response.status} from Direct API.`);
+      }
+
+      if (liveStreaming) {
+        const streamed = await readOpenAICompatibleStream(response, signal, override.onProgress, override.onStreamStatus, 'Direct API');
+        if (streamed.aborted) return { aborted: true };
+        if (streamed.error) return normalizeProviderFailure(streamed.error, 'Direct API streaming failed.');
+        debugLogService.add('inference.response', { mode, resultChars: streamed.content.length, streamed: true, liveStreaming: true });
+        return { result: streamed.content, streamed: true };
+      }
+
       const data = await response.json().catch(() => ({}));
       if (data.error) return normalizeProviderFailure(data.error);
-      if (!response.ok) return normalizeProviderFailure(data, `HTTP ${response.status} from Direct API.`);
       const result = data.choices?.[0]?.message?.content || '';
-      debugLogService.add('inference.response', { mode, resultChars: result.length });
+      debugLogService.add('inference.response', { mode, resultChars: result.length, streamed: false });
       return { result };
     } catch (err) {
       if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
