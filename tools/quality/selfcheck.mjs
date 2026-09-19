@@ -697,7 +697,9 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(modal, /Resolving Persona/);
   assert.match(modal, /disabled=\{isPersonaResolving \|\| !state\.persona\?\.key\}/);
   assert.match(modal, /useFloatingPanelDrag/);
-  assert.match(modal, /sessionPanelPositions/);
+  assert.match(modal, /draftReplyPanelPositions/);
+  assert.match(modal, /draftReplyPanelPositionResetVersion/);
+  assert.match(modal, /setDraftReplyPanelPosition/);
   assert.match(modal, /defaultDraftReplyPanelPosition/);
   assert.match(modal, /panel\.dataset\.rwaDragging === 'true'/);
   assert.match(modal, /aria-modal="false"/);
