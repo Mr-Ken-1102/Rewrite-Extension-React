@@ -178,16 +178,16 @@ ok('settings expose current-chat connection without duplicate model selection', 
   assert.match(api, /No separate model selection is required/);
 });
 
-ok('popup keeps one compact request summary with separate token and context disclosures', () => {
+ok('popup keeps identity and token status on one compact row with one unified context control block', () => {
   const context = read('./src/components/popup/ContextDeck.jsx');
-  assert.match(context, /rwa2-context-summary/);
+  const tooltip = read('./src/components/popup/PopupTooltip.jsx');
+  assert.match(context, /rwa2-context-identity-row/);
   assert.match(context, /rwa2-context-chip/);
-  assert.match(context, /≈\$\{total\.toLocaleString\(\)\} tok/);
-  assert.match(context, /aria-expanded=\{tokenOpen\}/);
-  assert.match(context, /aria-expanded=\{open\}/);
-  assert.match(context, /rwa2-token-popover/);
+  assert.match(context, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
+  assert.match(context, /kind: 'token'/);
   assert.match(context, /Estimate only — not the provider billing\/tokenizer count/);
-  assert.doesNotMatch(context, /This rewrite|Input composition|rwa2-token-detail-grid/);
+  assert.match(tooltip, /rwa2-tooltip-token/);
+  assert.doesNotMatch(context, /This rewrite|Input composition|rwa2-token-detail-grid|rwa2-token-popover/);
 });
 
 ok('context refresh keeps resolved identity and token text stable while controls re-inspect', () => {

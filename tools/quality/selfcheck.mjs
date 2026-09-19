@@ -1133,12 +1133,12 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(contextPolicy, /'history',[\s\S]{0,120}'memory',[\s\S]{0,120}'lore',[\s\S]{0,120}'character',[\s\S]{0,120}'persona',[\s\S]{0,120}'surrounding',[\s\S]{0,120}'ledger'/);
   assert.match(api, /droppedContext:\s*promptInfo\.dropped/);
   assert.match(api, /onContextTrim/);
-  assert.match(popup, /contextExclusions/);
+  assert.match(popup, /contextOverrides/);
   assert.match(popup, /selection\?\.captureId/);
   assert.match(popup, /deriveTrimmedSelection/);
   assert.match(popup, /pinnedPos/);
   assert.match(contextDeck, /rwa2-context-chip/);
-  assert.match(contextDeck, /rwa2-token-popover/);
+  assert.match(contextDeck, /kind: 'token'/);
   assert.doesNotMatch(contextDeck, /Persistent context sources/);
   assert.match(contextTab, /DEFAULT REWRITE SOURCES/);
   assert.match(contextTab, /config\.injectChar/);
@@ -1159,6 +1159,22 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(profiles, /profile\.hidden/);
   assert.match(custom, /Save as Profile/);
   assert.match(dom, /captureId: nextSelectionCaptureId\(\)/);
+});
+
+ok('popup source switches are request-scoped overrides while Settings remain persistent defaults', () => {
+  const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
+  const presentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
+  const context = readFileSync('./src/services/context/contextService.js', 'utf8');
+  assert.match(popup, /const \[contextOverrides, setContextOverrides\] = useState\(\{\}\)/);
+  assert.match(popup, /contextOverrides: \{ \.\.\.contextOverrides \}/);
+  assert.match(presentation, /Object\.prototype\.hasOwnProperty\.call\(overrides, key\)/);
+  assert.match(presentation, /enabled: disabled \? false : effectiveSource\(contextOverrides, key, fallback\)/);
+  assert.match(context, /function oneShotSourceEnabled\(savedSel, key, defaultEnabled\)/);
+  assert.match(context, /Object\.prototype\.hasOwnProperty\.call\(overrides, key\)/);
+  assert.match(context, /oneShotSourceEnabled\(savedSel, 'character', config\.injectChar\)/);
+  assert.match(context, /oneShotSourceEnabled\(savedSel, 'persona', config\.injectUser\)/);
+  assert.match(context, /oneShotSourceEnabled\(savedSel, 'lore', config\.injectLorebook\)/);
+  assert.match(context, /oneShotSourceEnabled\(savedSel, 'surrounding', config\.localContextEnabled\)/);
 });
 
 ok('parity part 2 adds context management with requested identity-assistance defaults without weakening provider trust', () => {
@@ -1287,17 +1303,17 @@ ok('debug logging is opt-in, bounded, session-only, and metadata-owned by the se
   assert.match(dataTab, /Debug logging is opt-in/);
 });
 
-ok('token preview stays compact and opens an independent token popover', () => {
+ok('token preview stays compact beside identity and uses the shared right-side hover tooltip', () => {
   const deck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
+  const tooltip = readFileSync('./src/components/popup/PopupTooltip.jsx', 'utf8');
   const hook = readFileSync('./src/hooks/useContextInspector.js', 'utf8');
-  assert.match(deck, /≈\$\{total\.toLocaleString\(\)\} tok/);
-  assert.match(deck, /Show token details/);
-  assert.match(deck, /rwa2-token-popover/);
-  assert.match(deck, /role="region"/);
+  assert.match(deck, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
+  assert.match(deck, /Show token estimate details/);
+  assert.match(deck, /kind: 'token'/);
   assert.match(deck, /Estimate only — not the provider billing\/tokenizer count/);
-  assert.match(deck, /setTokenOpen\(\(current\) => !current\)/);
-  assert.match(deck, /className="rwa2-context-toggle"/);
-  assert.doesNotMatch(deck, /rwa2-token-detail-grid|Input composition|rwa2-token-composition/);
+  assert.match(deck, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
+  assert.doesNotMatch(deck, /rwa2-token-popover|rwa2-context-toggle|rwa2-context-collapse/);
+  assert.match(tooltip, /rwa2-tooltip-token/);
   assert.match(hook, /const oneShot = rewriteSelection\(\)/);
   assert.match(hook, /APIService\.inspectContext\(oneShot/);
   assert.match(hook, /sameSelection \? current\.parts : null/);
@@ -1596,8 +1612,10 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(popup, /identityProfile=\{autoProfile\}/);
   assert.match(popup, /voiceIdentity=\{voiceIdentity\}/);
   assert.doesNotMatch(popupHeader, /identityProfile|voiceIdentity|rwa2-identity-chip/);
-  assert.match(rewriteSection, /featuredProfile=\{identityProfile\}/);
-  assert.match(rewriteSection, /featuredLabel=\{identityProfile/);
+  assert.doesNotMatch(rewriteSection, /featuredProfile|featuredLabel/);
+  const contextDeck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
+  assert.match(contextDeck, /rwa2-identity-profile-ready/);
+  assert.match(contextDeck, /identityKind === 'persona'/);
   assert.match(contextTab, /Automatic Character \/ Persona voice profiles/);
   assert.match(contextTab, /Generate for selected identity/);
   assert.match(identity, /persona:\$\{source\}:/);

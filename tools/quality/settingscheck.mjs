@@ -156,7 +156,7 @@ assert.match(context, /config\.injectChar/);
 assert.match(context, /config\.injectUser/);
 assert.match(context, /config\.injectLorebook/);
 assert.match(context, /config\.localContextEnabled/);
-assert.match(context, /The source chips in the popup can include or exclude a source for one rewrite without changing these defaults/);
+assert.match(context, /Source switches in the popup can temporarily turn a source on or off for the current rewrite without changing these defaults/);
 assert.match(context, /Surrounding context words \/ side/);
 assert.match(context, /Số từ ngữ cảnh gần \/ mỗi phía/);
 assert.match(context, /localContextWords/);
