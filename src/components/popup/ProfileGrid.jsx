@@ -24,14 +24,13 @@ function profileDisplayName(profile, language) {
   return PROFILE_LABELS_VI[profile.id] || profile.name;
 }
 
-export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact, onRun }) {
+export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact, onRun, onTooltip, onTooltipLeave }) {
   const requestedCols = Math.max(1, Number(colCount) || 1);
   const effectiveCols = compact ? Math.min(requestedCols, 6) : Math.min(requestedCols, 4);
   const viewportHeight = getProfileViewportHeight(rows, compact);
   const gridRef = useRef(null);
   const typeaheadRef = useRef({ query: '', timer: null });
   const [activeIndex, setActiveIndex] = useState(0);
-  const [inspectedIndex, setInspectedIndex] = useState(0);
   const classes = [
     'rwa2-profile-grid',
     `rwa2-cols-${effectiveCols}`,
@@ -41,11 +40,9 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
   useEffect(() => {
     if (!profiles.length) {
       setActiveIndex(0);
-      setInspectedIndex(0);
       return;
     }
     setActiveIndex((current) => Math.min(current, profiles.length - 1));
-    setInspectedIndex((current) => Math.min(current, profiles.length - 1));
   }, [profiles.length]);
 
   useEffect(() => () => {
@@ -55,10 +52,7 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
   const focusButton = (button) => {
     if (!(button instanceof HTMLElement)) return false;
     const profileIndex = Number.parseInt(button.dataset.profileIndex || '', 10);
-    if (Number.isInteger(profileIndex)) {
-      setActiveIndex(profileIndex);
-      setInspectedIndex(profileIndex);
-    }
+    if (Number.isInteger(profileIndex)) setActiveIndex(profileIndex);
     button.focus({ preventScroll: true });
     return true;
   };
@@ -127,11 +121,7 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
     focusButton(buttons[nextIndex]);
   };
 
-  const inspectedProfile = profiles[inspectedIndex] || profiles[0] || null;
-  const inspectedName = inspectedProfile ? profileDisplayName(inspectedProfile, language) : '';
-
   return (
-    <>
     <div
       ref={gridRef}
       className={classes}
@@ -149,17 +139,27 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
           <Button
             key={profile.id}
             glow={false}
-            className={`rwa2-profile-btn ${index === inspectedIndex ? 'rwa2-profile-btn-inspected' : ''}`.trim()}
+            className="rwa2-profile-btn"
             data-profile-index={index}
             data-profile-name={displayName}
             tabIndex={index === activeIndex ? 0 : -1}
             aria-label={displayName}
             aria-description={profile.prompt}
-            onMouseEnter={() => setInspectedIndex(index)}
-            onFocus={() => {
+            onMouseEnter={(event) => onTooltip(event, {
+              kind: 'preset',
+              title: displayName,
+              prompt: profile.prompt,
+            })}
+            onMouseLeave={onTooltipLeave}
+            onFocus={(event) => {
               setActiveIndex(index);
-              setInspectedIndex(index);
+              onTooltip(event, {
+                kind: 'preset',
+                title: displayName,
+                prompt: profile.prompt,
+              });
             }}
+            onBlur={onTooltipLeave}
             onClick={(event) => {
               event.stopPropagation();
               onRun(profile);
@@ -173,19 +173,5 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
       })}
     </div>
 
-    <div
-      className="rwa2-preset-inspector"
-      role="region"
-      aria-label={language === 'vi' ? 'Xem prompt của thiết lập' : 'Preset prompt preview'}
-    >
-      <div className="rwa2-preset-inspector-head">
-        <span className="rwa2-preset-inspector-name">{inspectedName || (language === 'vi' ? 'Thiết lập' : 'Preset')}</span>
-        <span className="rwa2-preset-inspector-meta">{language === 'vi' ? 'PROMPT THIẾT LẬP' : 'PRESET PROMPT'}</span>
-      </div>
-      <div className="rwa2-preset-inspector-prompt">
-        {inspectedProfile?.prompt || (language === 'vi' ? 'Di chuột hoặc dùng bàn phím để xem prompt.' : 'Hover or focus a style to inspect its prompt.')}
-      </div>
-    </div>
-    </>
   );
 }
