@@ -5,9 +5,6 @@ export const RWA_POPUP_A11Y_CSS = `
 .rwa2-version,
 .rwa2-context-chip,
 .rwa2-token-trigger,
-.rwa2-token-popover-row,
-.rwa2-token-popover-note,
-.rwa2-token-popover-empty,
 .rwa2-context-depth,
 .rwa2-context-length-head > span {
   font-size: 11px !important;
@@ -16,11 +13,11 @@ export const RWA_POPUP_A11Y_CSS = `
 .rwa2-performance-key { font-size: 10px; }
 .rwa2-performance-meta { font-size: 11px; }
 .rwa2-profile-name { font-size: 13px; }
-.rwa2-context-detail-label { font-size: 10px; }
+.rwa2-identity-chip { font-size: 10.5px; }
 
 .rwa2-context-chip {
-  min-height: 26px;
-  padding: 0 6px;
+  min-height: 24px;
+  padding: 0 7px;
 }
 
 .rwa2-brand-title { font-size: 12.5px; }
@@ -35,7 +32,6 @@ export const RWA_POPUP_A11Y_CSS = `
   .rwa2-performance-item,
   .rwa2-context-chip,
   .rwa2-token-trigger,
-  .rwa2-context-toggle,
   .rwa2-action,
   .rwa2-depth-input
 ):focus-visible {

@@ -122,8 +122,8 @@ export const TabContext = () => {
       <div className="rwa-lbl">{text('DEFAULT REWRITE SOURCES', 'NGUỒN VIẾT LẠI MẶC ĐỊNH')}</div>
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
         {text(
-          'These are the defaults for new rewrites. The source chips in the popup can include or exclude a source for one rewrite without changing these defaults.',
-          'Đây là các nguồn mặc định cho những lần viết lại mới. Các chip nguồn trong popup có thể thêm hoặc loại một nguồn cho riêng lần viết lại hiện tại mà không đổi thiết lập mặc định này.',
+          'These are the defaults for new rewrites. Source switches in the popup can temporarily turn a source on or off for the current rewrite without changing these defaults.',
+          'Đây là các nguồn mặc định cho những lần viết lại mới. Các nút nguồn trong popup có thể tạm bật hoặc tắt một nguồn cho lần viết lại hiện tại mà không đổi thiết lập mặc định này.',
         )}
       </div>
       <Row title={text('Character', 'Nhân vật')} note={text('Include the resolved Character card when available.', 'Dùng Character card đã xác định khi có.')}>

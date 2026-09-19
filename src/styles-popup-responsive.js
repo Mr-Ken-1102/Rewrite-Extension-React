@@ -55,10 +55,6 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
-  .rwa2-token-popover {
-    right: 0;
-    width: min(300px, calc(100vw - 24px));
-  }
 }
 
 @media (max-width: 419px) {
