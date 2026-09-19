@@ -178,7 +178,7 @@ export function ProfileGrid({
             onBlur={onTooltipLeave}
             onClick={(event) => {
               event.stopPropagation();
-              onRun(profile);
+              onRun(profile.__featured ? featuredProfile : profile);
             }}
           >
             <span className="rwa2-profile-name" style={profile.color ? { color: profile.color } : {}}>
