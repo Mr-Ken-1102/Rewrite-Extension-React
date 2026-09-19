@@ -7,6 +7,7 @@ import { Button } from '../../ui/Button';
 import { useToastStore } from '../../../store/useToastStore';
 import { useRuntimeStore } from '../../../store/useRuntimeStore';
 import { listVoiceProfiles } from '../../../services/voiceProfileIdentity.js';
+import { identityDiagnosticService } from '../../../services/identityDiagnosticService.js';
 
 const Row = ({ title, note, children }) => (
   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '14px', alignItems: 'center', marginBottom: '16px' }}>
@@ -32,6 +33,8 @@ export const TabContext = () => {
   const [loadingChars, setLoadingChars] = useState(false);
   const [characterLoadError, setCharacterLoadError] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [diagnosticBusy, setDiagnosticBusy] = useState(false);
+  const [diagnosticCount, setDiagnosticCount] = useState(identityDiagnosticService.count());
   const generateControllerRef = useRef(null);
   const chatId = DOMUtils.getChatId();
   const chatVoiceProfiles = useMemo(() => listVoiceProfiles(autoProfiles, chatId), [autoProfiles, chatId]);
@@ -55,6 +58,7 @@ export const TabContext = () => {
   }, [chatId]);
 
   useEffect(() => () => generateControllerRef.current?.abort(), []);
+  useEffect(() => identityDiagnosticService.subscribe(setDiagnosticCount), []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -108,13 +112,69 @@ export const TabContext = () => {
         const label = result.profile.identityName || result.profile.name;
         showToast(text(`Voice profile ready: ${kind}: ${label}`, `Hồ sơ giọng đã sẵn sàng: ${kind}: ${label}`), 'ok');
       }
-      else if (result?.error) showToast(result.error, 'err');
+      else if (result?.error) {
+        identityDiagnosticService.capture(selection, {
+          triggerReason: 'profile-generation-failure',
+          profileGenerationStatus: 'failed',
+        }).catch(() => {});
+        showToast(result.error, 'err');
+      }
+    } catch (error) {
+      identityDiagnosticService.capture(selection, {
+        triggerReason: 'profile-generation-failure',
+        profileGenerationStatus: 'threw',
+      }).catch(() => {});
+      showToast(error?.message || String(error), 'err');
     } finally {
       if (generateControllerRef.current === controller) {
         generateControllerRef.current = null;
         setGenerating(false);
       }
     }
+  };
+
+  const captureDiagnostic = async () => {
+    if (!selection?.cid || !selection?.mid) {
+      showToast(text(
+        'Select text from one Character or Persona message first.',
+        'Hãy chọn văn bản từ một tin nhắn Character hoặc Persona trước.',
+      ), 'warn');
+      return;
+    }
+    setDiagnosticBusy(true);
+    try {
+      const snapshot = await identityDiagnosticService.capture(selection, {
+        triggerReason: 'manual',
+        profileGenerationStatus: 'not-attempted',
+      });
+      if (!snapshot) {
+        showToast(text('Diagnostic capture was cancelled.', 'Đã hủy thu diagnostic.'), 'warn');
+        return;
+      }
+      showToast(text(
+        'Identity diagnostic captured. No chat message text was stored.',
+        'Đã thu diagnostic danh tính. Không lưu nội dung tin nhắn chat.',
+      ), 'ok');
+    } catch (error) {
+      showToast(error?.message || String(error), 'err');
+    } finally {
+      setDiagnosticBusy(false);
+    }
+  };
+
+  const copyDiagnostics = async () => {
+    if (!identityDiagnosticService.count()) {
+      showToast(text('No diagnostic snapshots yet.', 'Chưa có snapshot diagnostic.'), 'warn');
+      return;
+    }
+    const payload = identityDiagnosticService.exportText('clipboard');
+    const copied = await DOMUtils.safeCopy(payload);
+    if (!copied) {
+      showToast(text('Could not copy diagnostics.', 'Không thể sao chép diagnostic.'), 'err');
+      return;
+    }
+    identityDiagnosticService.markExported('clipboard');
+    showToast(text('Identity diagnostics copied.', 'Đã sao chép diagnostic danh tính.'), 'ok');
   };
 
   return (
@@ -232,6 +292,33 @@ export const TabContext = () => {
           {text(`Clear explicit character selection (${selected.size})`, `Xóa lựa chọn nhân vật (${selected.size})`)}
         </Button>
       ) : null}
+
+      <div className="rwa-lbl" style={{ marginTop: '20px' }}>{text('IDENTITY DIAGNOSTIC — TEMPORARY', 'DIAGNOSTIC DANH TÍNH — TẠM THỜI')}</div>
+      <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
+        {text(
+          'Diagnostic-only instrumentation. It records structural DOM metadata and Character identity fields, never chat message text. Up to 20 snapshots are kept in memory for this session.',
+          'Công cụ diagnostic tạm thời. Chỉ ghi metadata cấu trúc DOM và các trường danh tính Character, không ghi nội dung tin nhắn chat. Tối đa 20 snapshot được giữ trong bộ nhớ của phiên này.',
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+        <Button glow={false} onClick={captureDiagnostic} disabled={diagnosticBusy || !selection?.cid || !selection?.mid} style={{ flex: 1 }}>
+          {diagnosticBusy
+            ? text('Capturing…', 'Đang thu…')
+            : text('Capture identity diagnostic', 'Thu diagnostic danh tính')}
+        </Button>
+        <Button glow={false} onClick={copyDiagnostics} disabled={diagnosticCount === 0} style={{ flex: 1 }}>
+          {text(`Copy diagnostics (${diagnosticCount})`, `Sao chép diagnostic (${diagnosticCount})`)}
+        </Button>
+      </div>
+      <Button
+        glow={false}
+        variant="rwa-dng"
+        disabled={diagnosticCount === 0}
+        onClick={() => identityDiagnosticService.clear()}
+        style={{ width: '100%', marginBottom: '16px' }}
+      >
+        {text('Clear diagnostic snapshots', 'Xóa snapshot diagnostic')}
+      </Button>
 
       <div className="rwa-lbl" style={{ marginTop: '20px' }}>{text('VOICE PROFILES', 'HỒ SƠ GIỌNG')}</div>
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
