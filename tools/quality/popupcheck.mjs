@@ -246,7 +246,7 @@ ok('main-popup buttons disable cursor-following glow work', () => {
   const footer = read('./src/components/popup/PopupFooter.jsx');
   assert.match(button, /glow = true/);
   assert.match(button, /if \(glow && btnRef\.current/);
-  assert.match(rewrite, /glow=\{false\}/);
+  assert.doesNotMatch(rewrite, /<Button|glow=/);
   assert.match(grid, /glow=\{false\}/);
   assert.equal((footer.match(/glow=\{false\}/g) || []).length, 4);
 });
