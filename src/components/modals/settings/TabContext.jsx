@@ -119,8 +119,7 @@ export const TabContext = () => {
 
   return (
     <>
-      <div className="rwa-lbl">{text('CONTEXT BEHAVIOR', 'HÀNH VI NGỮ CẢNH')}</div>
-      <div className="rwa-lbl" style={{ marginTop: '2px' }}>{text('DEFAULT REWRITE SOURCES', 'NGUỒN VIẾT LẠI MẶC ĐỊNH')}</div>
+      <div className="rwa-lbl">{text('DEFAULT REWRITE SOURCES', 'NGUỒN VIẾT LẠI MẶC ĐỊNH')}</div>
       <div className="rwa-prev" style={{ fontSize: '10px', lineHeight: 1.5, marginBottom: '10px' }}>
         {text(
           'These are the defaults for new rewrites. The source chips in the popup can include or exclude a source for one rewrite without changing these defaults.',
