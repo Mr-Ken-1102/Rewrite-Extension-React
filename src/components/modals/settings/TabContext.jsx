@@ -124,7 +124,7 @@ export const TabContext = () => {
         triggerReason: 'profile-generation-failure',
         profileGenerationStatus: 'threw',
       }).catch(() => {});
-      showToast(error?.message || String(error), 'err');
+      throw error;
     } finally {
       if (generateControllerRef.current === controller) {
         generateControllerRef.current = null;
