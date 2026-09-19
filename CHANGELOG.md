@@ -21,6 +21,14 @@
 - Dragging the launcher uses a movement threshold and post-drag click suppression so repositioning cannot accidentally open Draft Reply.
 - Persisted launcher data is sanitized to supported modes and finite bounded coordinates only.
 
+### Final v3.0.3 polish and public defaults
+- Added explicit Generic Draft mode when no Persona is active; it uses recent chat plus the user's direction without inventing Persona-specific identity, and stale generic output is rejected if a Persona becomes active mid-run.
+- Fixed grouped Conversation Character identity resolution to use the exact visible speaker segment and unique current-chat Character mapping instead of the parent message Character id.
+- Separated Fast Rewrite from live streaming; Marinara rewrite requests can disable reasoning without changing model/context, while unsupported connection modes show Fast Rewrite as unavailable rather than pretending acceleration occurred.
+- Added real SSE progress for Marinara/Sidecar and OpenAI-compatible streaming for Direct/Extender, with stronger continuous waiting-state feedback and reduced-motion fallback.
+- Added the adjacent Settings launcher and polished default viewport placement for Persona Reply.
+- New installs show five profile rows, keep Speaker-aware editing and Persona Reply enabled, keep Extender memory disabled, and keep automatic Character / Persona Voice Profile generation OFF as an explicit opt-in.
+
 ## 3.0.2 — Identity-safe Draft Reply and release certification
 
 ### Exact Character / Voice Profile identity
