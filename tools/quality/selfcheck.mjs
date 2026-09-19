@@ -624,8 +624,13 @@ ok('modeless Draft Reply geometry stays inside the visual viewport', () => {
       },
     },
   );
-  assert.equal(contextual.left, 190);
-  assert.ok(contextual.top >= 100 && contextual.top <= 130);
+  assert.deepEqual(contextual, { left: 180, top: 216 });
+
+  const resizedDefault = defaultDraftReplyPanelPosition(
+    { width: 620, height: 420 },
+    { left: 0, top: 0, right: 700, bottom: 520, width: 700, height: 520 },
+  );
+  assert.deepEqual(resizedDefault, { left: 40, top: 76 });
 });
 
 ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-sends', () => {
@@ -640,6 +645,8 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   const main = readFileSync('./src/main.jsx', 'utf8');
 
   assert.match(app, /<DraftReplyLauncher/);
+  assert.match(app, /onOpenSettings=\{\(\) => openSettings\('ui'\)\}/);
+  assert.match(app, /initialTab=\{settingsInitialTab\}/);
   assert.match(app, /<DraftReplyModal/);
   assert.match(app, /draftUiOpen \|\| !!popupPosition/);
   assert.match(service, /CURRENT USER PERSONA/);
@@ -656,7 +663,11 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(session, /setChatComposerValue\(current\.result\)/);
   assert.doesNotMatch(session, /mari-chat-send-btn|\.click\(\)/);
   assert.match(launcher, /DOMUtils\.getChatComposerAnchor/);
+  assert.match(launcher, /rwa-draft-launcher-cluster/);
   assert.match(launcher, /data-rwa-feature="draft-reply"/);
+  assert.match(launcher, /data-rwa-feature="draft-reply-settings"/);
+  assert.match(launcher, /onClick=\{onOpenSettings\}/);
+  assert.match(launcher, /Mở cài đặt Rewrite Assistant/);
   assert.match(launcher, /data-rwa-chat-mode/);
   assert.match(launcher, /draftReplyLauncherPlacement/);
   assert.match(launcher, /draftReplyLauncherPositions/);
@@ -701,7 +712,11 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(modal, /draftReplyPanelPositionResetVersion/);
   assert.match(modal, /setDraftReplyPanelPosition/);
   assert.match(modal, /defaultDraftReplyPanelPosition/);
+  assert.match(modal, /remembered\s*\?\s*clampFloatingPanelPosition/);
+  assert.match(modal, /remembered && state\?\.chatMode/);
   assert.match(modal, /panel\.dataset\.rwaDragging === 'true'/);
+  assert.match(draftStyles, /\.rwa-draft-launcher-cluster/);
+  assert.match(draftStyles, /\.rwa-draft-settings-button/);
   assert.match(modal, /aria-modal="false"/);
   assert.match(modal, /data-rwa-feature="draft-reply-window"/);
   assert.match(modal, /rwa-draft-header/);
