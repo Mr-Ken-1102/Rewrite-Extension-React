@@ -103,8 +103,8 @@ export const PreviewModal = ({
     const copied = await DOMUtils.safeCopy(result || '');
     showToast(
       copied
-        ? text('✓ Copied result to clipboard', '✓ Đã sao chép kết quả vào clipboard')
-        : text('✕ Clipboard copy failed. The raw result remains selectable below and can also be saved as .txt.', '✕ Không thể sao chép vào clipboard. Kết quả thô bên dưới vẫn có thể chọn và lưu thành .txt.'),
+        ? text('Copied result to clipboard', 'Đã sao chép kết quả vào clipboard')
+        : text('Clipboard copy failed. The raw result remains selectable below and can also be saved as .txt.', 'Không thể sao chép vào clipboard. Kết quả thô bên dưới vẫn có thể chọn và lưu thành .txt.'),
       copied ? 'ok' : 'warn',
     );
   };
@@ -114,7 +114,7 @@ export const PreviewModal = ({
     const saved = DOMUtils.saveTextFile(result || '', `rewrite-${mid}.txt`);
     showToast(
       saved
-        ? text('✓ Saved rewrite result as a .txt file', '✓ Đã lưu kết quả viết lại thành file .txt')
+        ? text('Saved rewrite result as a .txt file', 'Đã lưu kết quả viết lại thành file .txt')
         : text('Could not create the .txt download. The result remains selectable in this window.', 'Không thể tạo file .txt. Kết quả vẫn có thể chọn trực tiếp trong cửa sổ này.'),
       saved ? 'ok' : 'warn',
     );
@@ -126,7 +126,7 @@ export const PreviewModal = ({
       const fullSel = { ...selection, source: 'textarea', text: ta.value, originalValue: ta.value, start: 0, end: ta.value.length, el: ta };
       onReplaceAll?.(result, fullSel);
     } else {
-      showToast(text('⚠️ Replace All is available only while the original edit box is still open.', '⚠️ Chỉ có thể Thay thế toàn bộ khi ô chỉnh sửa gốc vẫn đang mở.'), 'warn');
+      showToast(text('Replace All is available only while the original edit box is still open.', 'Chỉ có thể Thay thế toàn bộ khi ô chỉnh sửa gốc vẫn đang mở.'), 'warn');
     }
   };
 
@@ -146,7 +146,7 @@ export const PreviewModal = ({
       bodyClassName="rwar-body"
     >
       {isLoading ? (
-        <div className="rwar-loading">
+        <div className="rwar-loading rwa-waiting-surface">
           {progress ? <div className="rwa-prev rwar-progress">{progress}</div> : null}
           <section className="rwar-section">
             <div className="rwa-plbl rwar-label">{text('Selected Passage', 'Đoạn đã chọn')}</div>
@@ -160,9 +160,12 @@ export const PreviewModal = ({
           ) : null}
           <div className="rwar-writing" aria-live="polite">
             <div className="rwar-working-rail" aria-hidden="true"><span></span></div>
-            <div className="rwar-writing-copy">{partialResult
-              ? text('Receiving result…', 'Đang nhận kết quả…')
-              : text('Writing with Intelligence…', 'Đang viết lại…')}</div>
+            <div className="rwar-writing-copy" role="status" aria-live="polite">
+              <span>{partialResult
+                ? text('Receiving result', 'Đang nhận kết quả')
+                : text('Writing with Intelligence', 'Đang viết lại')}</span>
+              <span className="rwa-waiting-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            </div>
           </div>
           {partialResult ? (
             <section className="rwar-section rwar-streaming-section" aria-label={text('Live generated text', 'Văn bản đang được tạo')}>
