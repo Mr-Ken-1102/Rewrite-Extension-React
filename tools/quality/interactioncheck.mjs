@@ -104,10 +104,14 @@ ok('popup controls preserve switch semantics and named compact groups', () => {
   assert.match(toggle, /role="switch"/);
   assert.match(toggle, /aria-label=\{ariaLabel\}/);
   assert.match(context, /role="group" aria-label=\{text\('Persistent context sources', 'Nguồn ngữ cảnh mặc định'\)\}/);
-  assert.match(context, /role="group" aria-label=\{text\('Sources for this rewrite', 'Nguồn cho lần viết lại này'\)\}/);
+  assert.match(context, /role="group" aria-label=\{text\('Sources and parameters for this rewrite', 'Nguồn và tham số cho lần viết lại này'\)\}/);
   assert.match(context, /aria-pressed=\{!excluded\}/);
+  assert.match(context, /aria-expanded=\{tokenOpen\}/);
   assert.match(context, /aria-expanded=\{open\}/);
+  assert.match(context, /role="dialog" aria-label=\{text\('Token details', 'Chi tiết token'\)\}/);
   assert.match(performance, /aria-pressed=\{item\.active\}/);
+  assert.match(performance, /key:\s*'FREE MODE'/);
+  assert.match(performance, /key:\s*'FAST REWRITE'/);
 });
 
 ok('trim-selection dialog is isolated and opts out of cursor-following glow work', () => {
