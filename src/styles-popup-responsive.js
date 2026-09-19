@@ -51,15 +51,18 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 }
 
 @media (max-width: 459px) {
-  .rwa2-context-control-grid {
+  .rwa2-context-detail-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 7px;
   }
-  .rwa2-context-adjust {
+  .rwa2-context-sources {
+    padding-right: 0;
+    padding-bottom: 7px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255,255,255,.045);
+  }
+  .rwa2-context-modifiers {
     padding-left: 0;
     padding-top: 7px;
-    border-left: 0;
-    border-top: 1px solid rgba(255,255,255,.045);
   }
   .rwa2-token-detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -67,7 +70,7 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 }
 
 @media (max-width: 419px) {
-  .rwa2-identity-chip { max-width: 112px; }
+  .rwa2-identity-chip { max-width: 128px; }
   .rwa2-popup {
     width: calc(100vw - 12px);
     min-width: calc(100vw - 12px);
@@ -75,27 +78,9 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
     padding-left: 8px;
     padding-right: 8px;
   }
-  .rwa2-performance-item {
-    gap: 4px;
-    padding-left: 6px;
-    padding-right: 6px;
-  }
-  .rwa2-performance-meta { font-size: 0 !important; }
-  .rwa2-performance-meta::after {
-    content: attr(data-short);
-    font-size: 11px;
-  }
-  .rwa2-context-summary {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .rwa2-token-trigger {
-    width: 100%;
-    max-width: none;
-    justify-content: space-between;
-  }
-  .rwa2-context-source-grid { grid-template-columns: minmax(0,1fr); }
+  .rwa2-performance-meta { display: none; }
+  .rwa2-performance-item { padding-inline: 4px; }
+  .rwa2-source-grid { grid-template-columns: minmax(0, 1fr); }
   .rwa2-actionbar {
     flex-wrap: wrap;
     gap: 4px;
@@ -114,7 +99,7 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 @media (prefers-reduced-motion: reduce) {
   .rwa2-popup *,
   .rwa2-tooltip,
-  .rwa2-context-collapse {
+  .rwa2-context-details {
     transition: none !important;
     animation: none !important;
   }
