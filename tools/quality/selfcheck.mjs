@@ -1118,6 +1118,7 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   const api = readFileSync('./src/services/apiService.js', 'utf8');
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   const contextDeck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
+  const contextTab = readFileSync('./src/components/modals/settings/TabContext.jsx', 'utf8');
   const performanceStrip = readFileSync('./src/components/popup/PerformanceStrip.jsx', 'utf8');
   const preview = readFileSync('./src/components/modals/PreviewModal.jsx', 'utf8');
   const profiles = readFileSync('./src/components/modals/settings/TabProfiles.jsx', 'utf8');
