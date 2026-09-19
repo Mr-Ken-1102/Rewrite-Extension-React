@@ -10,6 +10,7 @@ export function RewriteSection({
   compact,
   autoProfile,
   fastRewrite = false,
+  connectionMode = 'marinara',
   selection,
   mergeMultiMsg,
   onRun,
@@ -21,6 +22,16 @@ export function RewriteSection({
   const autoIdentityLabel = autoProfile
     ? `${autoProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${autoProfile.identityName || autoProfile.name}`
     : '';
+  const fastMeta = connectionMode === 'marinara'
+    ? text('Reasoning-light · SSE live', 'Giảm reasoning · SSE trực tiếp')
+    : connectionMode === 'direct'
+      ? text('Direct stream · SSE live', 'Direct stream · SSE trực tiếp')
+      : connectionMode === 'extender'
+        ? text('Extender stream · SSE live', 'Extender stream · SSE trực tiếp')
+        : text('Compact prompt · local path', 'Prompt gọn · luồng local');
+  const fastAria = connectionMode === 'sidecar'
+    ? text('Fast Rewrite enabled with compact local rewrite instructions', 'Viết lại nhanh đang bật với prompt gọn cho model local')
+    : text('Fast Rewrite enabled with live streaming', 'Viết lại nhanh đang bật với streaming trực tiếp');
 
   return (
     <section className="rwa2-rewrite" aria-label={text('Rewrite commands', 'Thiết lập viết lại')}>
@@ -40,18 +51,16 @@ export function RewriteSection({
         className={`rwa2-fast-strip ${fastRewrite ? 'rwa2-fast-strip-active' : 'rwa2-fast-strip-idle'}`}
         role="status"
         aria-label={fastRewrite
-          ? text('Fast Rewrite enabled with live SSE streaming', 'Viết lại nhanh đang bật với SSE streaming trực tiếp')
+          ? fastAria
           : text('Standard rewrite path active', 'Đang dùng luồng viết lại tiêu chuẩn')}
       >
         <div className="rwa2-fast-copy">
           <span className="rwa2-fast-title">{text('Fast Rewrite', 'Viết lại nhanh')}</span>
           <span className="rwa2-fast-meta">
-            {fastRewrite
-              ? text('Fast path · SSE live', 'Đường nhanh · SSE trực tiếp')
-              : text('Standard path', 'Luồng tiêu chuẩn')}
+            {fastRewrite ? fastMeta : text('Standard path', 'Luồng tiêu chuẩn')}
           </span>
         </div>
-        <span className="rwa2-fast-live">{fastRewrite ? text('LIVE', 'NHANH') : text('STD', 'CHUẨN')}</span>
+        <span className="rwa2-fast-live">{fastRewrite ? text('FAST', 'NHANH') : text('STD', 'CHUẨN')}</span>
         <span className="rwa2-fast-rail" aria-hidden="true"><span></span></span>
       </div>
 
