@@ -249,7 +249,7 @@ ok('popup density removes redundant hierarchy without shrinking core controls', 
   assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*32px !important;[\s\S]*height:\s*32px !important/);
 });
 
-ok('context deck unifies compact identity, token hover, one-shot source switches, and always-visible adjustments', () => {
+ok('context deck unifies compact identity, token hover, persistent source switches, and always-visible adjustments', () => {
   const css = read('./src/styles-popup-context.js');
   const context = read('./src/components/popup/ContextDeck.jsx');
   const presentation = read('./src/hooks/useContextPresentation.js');
@@ -264,7 +264,8 @@ ok('context deck unifies compact identity, token hover, one-shot source switches
   assert.doesNotMatch(context, /rwa2-context-toggle|rwa2-context-collapse|rwa2-token-popover/);
   assert.match(presentation, /source\('character'/);
   assert.match(presentation, /source\('persona'/);
-  assert.match(presentation, /contextOverrides/);
+  assert.doesNotMatch(presentation, /contextOverrides|effectiveSource|hasOverride/);
+  assert.match(presentation, /config\.historyContextEnabled !== false/);
 });
 
 ok('footer keeps the primary custom action wide while Settings is a compact named icon', () => {

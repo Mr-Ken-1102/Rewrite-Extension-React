@@ -108,7 +108,7 @@ ok('popup controls preserve switch semantics and named compact groups', () => {
   assert.match(settingsContext, /config\.injectUser/);
   assert.match(settingsContext, /config\.injectLorebook/);
   assert.match(settingsContext, /config\.localContextEnabled/);
-  assert.match(context, /role="group"[\s\S]*Sources for this rewrite/);
+  assert.match(context, /role="group"[\s\S]*Default rewrite sources/);
   assert.doesNotMatch(context, /Persistent context sources/);
   assert.match(context, /aria-pressed=\{source\.enabled\}/);
   assert.match(context, /aria-label=\{text\('Show token estimate details'/);
