@@ -293,6 +293,118 @@ await ok('grouped Conversation selection resolves the visible speaker instead of
   }
 });
 
+await ok('grouped Character resolution scales to arbitrary chat cardinality and never selects by list position', async () => {
+  const h = await loadApiHarness();
+  try {
+    const characters = Array.from({ length: 17 }, (_, index) => ({
+      id: `char-${index + 1}`,
+      name: `Character ${index + 1}`,
+      convoDisplayName: index % 4 === 0 ? `Display ${index + 1}` : '',
+    }));
+    const selected = characters[13];
+    const selectedDisplay = selected.convoDisplayName || selected.name;
+
+    h.store.control.state.config = {
+      injectChar: true,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: [characters[0].id],
+    };
+
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/chat-many') {
+        return { id: 'chat-many', characterIds: characters.map((character) => character.id) };
+      }
+      const match = path.match(/^\\/characters\\/(char-\\d+)$/);
+      if (match) {
+        const character = characters.find((item) => item.id === match[1]);
+        if (!character) throw new Error(`unknown Character endpoint: ${path}`);
+        return {
+          id: character.id,
+          data: {
+            name: character.name,
+            convoDisplayName: character.convoDisplayName,
+            personality: character.id === selected.id ? 'selected voice evidence' : 'other voice evidence',
+          },
+        };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    const context = await h.context.ContextService.collectContext({
+      cid: 'chat-many',
+      mid: 'grouped-message',
+      text: 'selected segment',
+      detectedRole: 'assistant',
+      detectedCharacterId: null,
+      detectedName: selectedDisplay,
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: false,
+    }, new AbortController().signal);
+
+    assert.ok(context.character.includes(`Name: ${selected.name}`));
+    assert.match(context.character, /selected voice evidence/);
+    assert.equal(context.character.includes('Name: Character 1\n'), false);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('Persona identity stays message-scoped regardless of Character count', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      injectChar: false,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: [],
+    };
+
+    h.host.control.apiHandler = async (path) => {
+      if (path === '/chats/persona-many/messages') {
+        return [{
+          id: 'user-message',
+          role: 'user',
+          content: 'selected user text',
+          extra: {
+            personaSnapshot: {
+              personaId: 'persona-current',
+              name: 'Current Persona',
+              source: 'persona',
+            },
+          },
+        }];
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    const inspected = await h.context.ContextService.inspectContext({
+      cid: 'persona-many',
+      mid: 'user-message',
+      text: 'selected user text',
+      detectedRole: 'user',
+      detectedCharacterId: null,
+      detectedName: null,
+    }, new AbortController().signal);
+
+    assert.equal(inspected.voiceIdentity?.kind, 'persona');
+    assert.equal(inspected.voiceIdentity?.key, 'persona:persona:persona-current');
+    assert.equal(inspected.voiceIdentity?.name, 'Current Persona');
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 await ok('ambiguous grouped speaker never falls back to a stale manual Character profile', async () => {
   const h = await loadApiHarness();
   try {
