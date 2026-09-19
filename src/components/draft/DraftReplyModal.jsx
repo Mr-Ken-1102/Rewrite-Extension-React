@@ -3,7 +3,6 @@ import { Button } from '../ui/Button';
 import { usePersistentStore } from '../../store/usePersistentStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useRuntimeStore } from '../../store/useRuntimeStore';
-import { DOMUtils } from '../../utils/domUtils.js';
 import {
   clampFloatingPanelPosition,
   defaultDraftReplyPanelPosition,
@@ -112,7 +111,7 @@ export function DraftReplyModal({
     const bounds = getVisualViewportBounds(window);
     const next = defaultDraftReplyPanelPosition(size, bounds);
     setPosition(next);
-  }, [chatMode, panelResetVersion, setRuntimePanelPosition, state?.chatId]);
+  }, [panelResetVersion, state?.chatId]);
 
   if (!state) return null;
 
