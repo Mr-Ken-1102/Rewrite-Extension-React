@@ -36,6 +36,7 @@ const ToastItem = ({ toast }) => {
   return (
     <div
       className={`rwa-toast-container ${show ? 'rwa-toast-show' : ''}`}
+      data-variant={toast.variant || 'warn'}
       role={isError ? 'alert' : 'status'}
       aria-live={isError ? 'assertive' : 'polite'}
       aria-atomic="true"
@@ -51,11 +52,13 @@ const ToastItem = ({ toast }) => {
 export const ToastContainer = () => {
   const toasts = useToastStore((state) => state.toasts);
 
+  if (!toasts.length) return null;
+
   return (
-    <>
+    <div className="rwa-toast-stack" aria-label="Rewrite Assistant notifications">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} />
       ))}
-    </>
+    </div>
   );
 };
