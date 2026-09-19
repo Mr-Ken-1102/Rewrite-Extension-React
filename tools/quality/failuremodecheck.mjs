@@ -227,6 +227,108 @@ await ok('selected assistant Character outranks stale manual and API Character m
   }
 });
 
+await ok('grouped Conversation selection resolves the visible speaker instead of parent/API/manual Character metadata', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      injectChar: true,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: ['char-sami-2'],
+    };
+    const requested = [];
+    h.host.control.apiHandler = async (path) => {
+      requested.push(path);
+      if (path === '/chats/chat-group') {
+        return {
+          id: 'chat-group',
+          characterIds: ['char-sami-2', 'char-sami-117'],
+        };
+      }
+      if (path === '/characters/char-sami-2') {
+        return {
+          id: 'char-sami-2',
+          data: {
+            name: 'Hương Sami 2.0',
+            convoDisplayName: 'Sami 2.0',
+            personality: 'older voice',
+          },
+        };
+      }
+      if (path === '/characters/char-sami-117') {
+        return {
+          id: 'char-sami-117',
+          data: {
+            name: 'Sami 1.17',
+            personality: 'current selected speaker',
+          },
+        };
+      }
+      throw new Error(`unexpected API call: ${path}`);
+    };
+
+    const context = await h.context.ContextService.collectContext({
+      cid: 'chat-group',
+      mid: 'm-grouped',
+      text: 'selected text',
+      detectedRole: 'assistant',
+      detectedCharacterId: null,
+      detectedName: 'Sami 1.17',
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: false,
+    }, new AbortController().signal);
+
+    assert.match(context.character, /Name: Sami 1\.17/);
+    assert.match(context.character, /current selected speaker/);
+    assert.doesNotMatch(context.character, /Hương Sami 2\.0|older voice/);
+    assert.ok(requested.includes('/chats/chat-group'));
+    assert.ok(requested.filter((path) => path === '/characters/char-sami-117').length >= 1);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
+await ok('ambiguous grouped speaker never falls back to a stale manual Character profile', async () => {
+  const h = await loadApiHarness();
+  try {
+    h.store.control.state.config = {
+      injectChar: true,
+      injectUser: false,
+      injectLorebook: false,
+      localContextEnabled: false,
+      contextDepth: 0,
+      speakerAware: false,
+      useExtenderMemory: false,
+      freeMode: false,
+      charCardIds: ['char-sami-2'],
+    };
+    h.host.control.apiHandler = async (path) => {
+      throw new Error(`grouped ambiguity must fail closed without fetching a fallback Character: ${path}`);
+    };
+
+    const context = await h.context.ContextService.collectContext({
+      cid: 'chat-group',
+      mid: 'm-grouped',
+      text: 'cross-speaker selection',
+      detectedRole: 'assistant',
+      detectedCharacterId: null,
+      detectedName: null,
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: true,
+    }, new AbortController().signal);
+
+    assert.equal(context.character, '');
+    assert.equal(h.host.control.calls.length, 0);
+  } finally {
+    await rm(h.dir, { recursive: true, force: true });
+  }
+});
+
 await ok('Draft Reply writes only the active Persona and preserves named multi-character history', async () => {
   const h = await loadApiHarness();
   try {
