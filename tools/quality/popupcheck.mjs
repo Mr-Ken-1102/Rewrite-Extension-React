@@ -19,16 +19,21 @@ ok('popup geometry constants encode the rebalanced 620px / 12-column contract', 
   assert.match(source, /POPUP_NORMAL_MIN_CELL = 140/);
   assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 30/);
   assert.match(source, /POPUP_PROFILE_ROW_GAP = 5/);
-  assert.match(source, /POPUP_FIXED_HEIGHT = 270/);
+  assert.match(source, /POPUP_FIXED_HEIGHT = 145/);
+  assert.match(source, /POPUP_LIVE_RAIL_HEIGHT = 34/);
+  assert.match(source, /POPUP_RECIPE_BAR_HEIGHT = 42/);
+  assert.match(source, /POPUP_INSPECTOR_HEIGHT = 178/);
 });
 
-ok('popup geometry accounts for responsive context stacking and wrapped actions', () => {
+ok('popup geometry accounts for the live rail, recipe, inspector, and narrow controls', () => {
   const source = read('./src/popupGeometry.js');
-  assert.match(source, /POPUP_STACKED_CONTEXT_EXTRA = 78/);
+  assert.match(source, /POPUP_NARROW_CONTROL_EXTRA = 42/);
   assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 36/);
   assert.match(source, /getResponsivePopupExtra/);
-  assert.match(source, /width <= 459 \? POPUP_STACKED_CONTEXT_EXTRA : 0/);
+  assert.match(source, /width <= 459 \? POPUP_NARROW_CONTROL_EXTRA : 0/);
   assert.match(source, /width <= 419 \? POPUP_WRAPPED_ACTIONBAR_EXTRA : 0/);
+  assert.match(source, /inspectorOpen = false/);
+  assert.match(source, /inspectorOpen \? POPUP_INSPECTOR_HEIGHT : 0/);
   assert.match(source, /viewportWidth = POPUP_DESKTOP_WIDTH/);
 });
 
@@ -55,18 +60,22 @@ ok('popup root uses the isolated rwa2 namespace and preserves geometry contract'
   assert.match(css, /\.rwa2-popup\s*\{[\s\S]*width:\s*min\(\$\{POPUP_DESKTOP_WIDTH\}px/);
 });
 
-ok('context rail uses a summary row above an 8-4 working split', () => {
+ok('popup context architecture separates live controls, recipe, and progressive inspector', () => {
   const css = read('./src/styles-popup-context.js');
-  const context = read('./src/components/popup/ContextPanel.jsx');
-  assert.match(css, /grid-template-columns:\s*repeat\(12, minmax\(0, 1fr\)\)/);
-  assert.match(css, /\.rwa2-context-identity\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
-  assert.match(css, /\.rwa2-context-sources\s*\{[\s\S]*grid-column:\s*span 8/);
-  assert.match(css, /\.rwa2-context-modifiers\s*\{[\s\S]*grid-column:\s*span 4/);
-  assert.match(css, /\.rwa2-context-applied\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
-  assert.match(context, /rwa2-context-region rwa2-context-identity/);
-  assert.match(context, /rwa2-context-region rwa2-context-sources/);
-  assert.match(context, /rwa2-context-region rwa2-context-modifiers/);
-  assert.match(context, /rwa2-context-region rwa2-context-applied/);
+  const main = read('./src/components/PopupMain.jsx');
+  const live = read('./src/components/popup/LiveRail.jsx');
+  const recipe = read('./src/components/popup/RecipeBar.jsx');
+  const inspector = read('./src/components/popup/RequestInspector.jsx');
+  assert.match(main, /<LiveRail/);
+  assert.match(main, /<RecipeBar/);
+  assert.match(main, /<RequestInspector/);
+  assert.match(live, /rwa2-live-rail/);
+  assert.match(recipe, /rwa2-recipe/);
+  assert.match(inspector, /rwa2-inspector/);
+  assert.match(css, /\.rwa2-live-rail\s*\{/);
+  assert.match(css, /\.rwa2-recipe\s*\{/);
+  assert.match(css, /\.rwa2-inspector\s*\{[\s\S]*grid-template-rows:\s*0fr/);
+  assert.match(css, /\.rwa2-inspector-open\s*\{[\s\S]*grid-template-rows:\s*1fr/);
 });
 
 ok('profile grid derives viewport height from shared geometry and exposes deterministic column classes', () => {
@@ -145,17 +154,24 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /multiMessage/);
   assert.match(source, /compact/);
   assert.doesNotMatch(source, /fastRewrite/);
-  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*35/);
-  assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
-  assert.doesNotMatch(geometry, /POPUP_PRESET_INSPECTOR_HEIGHT/);
+  assert.match(geometry, /POPUP_LIVE_RAIL_HEIGHT\s*=\s*34/);
+  assert.match(geometry, /POPUP_RECIPE_BAR_HEIGHT\s*=\s*42/);
+  assert.match(geometry, /POPUP_INSPECTOR_HEIGHT\s*=\s*178/);
+  assert.match(geometry, /\+ POPUP_LIVE_RAIL_HEIGHT/);
+  assert.match(geometry, /\+ POPUP_RECIPE_BAR_HEIGHT/);
+  assert.match(geometry, /inspectorOpen \? POPUP_INSPECTOR_HEIGHT : 0/);
 });
 
 ok('popup main passes geometry-relevant state without changing rewrite semantics', () => {
   const source = read('./src/components/PopupMain.jsx');
   assert.match(source, /compact:\s*config\.compact/);
+  assert.match(source, /voiceIdentity=\{voiceIdentity\}/);
   assert.match(source, /identityProfile=\{autoProfile\}/);
   assert.match(source, /<RewriteSection/);
-  assert.match(source, /<ContextPanel/);
+  assert.match(source, /<LiveRail/);
+  assert.match(source, /<RecipeBar/);
+  assert.match(source, /<RequestInspector/);
+  assert.match(source, /inspectorOpen/);
   assert.match(source, /<PopupFooter/);
 });
 
@@ -165,11 +181,14 @@ ok('active Character or Persona profile lives in the right side of the popup hea
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   const base = read('./src/styles-popup-base.js');
   const responsive = read('./src/styles-popup-responsive.js');
+  assert.match(main, /voiceIdentity=\{voiceIdentity\}/);
   assert.match(main, /identityProfile=\{autoProfile\}/);
   assert.match(main, /onRunIdentityProfile=\{runProfile\}/);
   assert.match(header, /rwa2-toolbar-actions/);
   assert.match(header, /rwa2-identity-chip/);
+  assert.match(header, /voiceIdentity\?\.kind/);
   assert.match(header, /identityKind === 'persona'/);
+  assert.match(header, /rwa2-identity-chip-static/);
   assert.match(header, /onRunIdentityProfile\?\.\(identityProfile\)/);
   assert.doesNotMatch(rewrite, /rwa2-auto-profile|autoProfile/);
   assert.match(base, /\.rwa2-toolbar-actions\s*\{[\s\S]*justify-content:\s*flex-end/s);
@@ -178,32 +197,30 @@ ok('active Character or Persona profile lives in the right side of the popup hea
   assert.match(responsive, /\.rwa2-identity-chip\s*\{\s*max-width:\s*128px/);
 });
 
-ok('responsive context geometry stacks deliberately on narrow viewports', () => {
+ok('responsive control deck stacks the inspector and live rail deliberately on narrow viewports', () => {
   const css = read('./src/styles-popup-responsive.js');
   assert.match(css, /@media \(max-width: 559px\)/);
-  assert.match(css, /\.rwa2-source-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.rwa2-token-grid\s*\{\s*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /\.rwa2-inspector-controls\s*\{\s*grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /@media \(max-width: 459px\)/);
-  assert.match(css, /\.rwa2-context-sources,[\s\S]*\.rwa2-context-modifiers\s*\{[\s\S]*grid-column:\s*1 \/ -1/);
+  assert.match(css, /\.rwa2-live-rail\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
 });
 
-ok('performance strip separates Fast Rewrite acceleration from Live Streaming', () => {
+ok('live rail makes Free, Fast Rewrite, Streaming, and request size directly actionable', () => {
   const main = read('./src/components/PopupMain.jsx');
-  const rewrite = read('./src/components/popup/RewriteSection.jsx');
-  const base = read('./src/styles-popup-base.js');
-  assert.match(main, /fastRewrite=\{config\.fastRewrite !== false\}/);
-  assert.match(main, /liveStreaming=\{config\.liveStreaming !== false\}/);
-  assert.match(main, /connectionMode=\{config\.connMode\}/);
-  assert.match(rewrite, /getProviderCapabilities/);
-  assert.match(rewrite, /rwa2-performance-strip/);
-  assert.match(rewrite, /rwa2-performance-key">FAST/);
-  assert.match(rewrite, /rwa2-performance-key">STREAM/);
-  assert.match(rewrite, /Reasoning reduced/);
-  assert.match(rewrite, /Live output/);
-  assert.match(rewrite, /Unavailable/);
-  assert.doesNotMatch(rewrite, /SSE live|Fast path · SSE|Compact prompt · local path/);
-  assert.match(base, /\.rwa2-performance-strip\s*\{/);
-  assert.match(base, /\.rwa2-performance-item\s*\{/);
-  assert.doesNotMatch(base, /rwa2-fast-sweep|rwa2-fast-rail|rwa2-fast-strip/);
+  const live = read('./src/components/popup/LiveRail.jsx');
+  const contextCss = read('./src/styles-popup-context.js');
+  assert.match(main, /<LiveRail/);
+  assert.match(live, /getProviderCapabilities/);
+  assert.match(live, /key:\s*'FREE'/);
+  assert.match(live, /key:\s*'FAST'/);
+  assert.match(live, /key:\s*'STREAM'/);
+  assert.match(live, /updateConfig\(\{ freeMode: !config\.freeMode \}\)/);
+  assert.match(live, /updateConfig\(\{ fastRewrite: config\.fastRewrite === false \}\)/);
+  assert.match(live, /updateConfig\(\{ liveStreaming: config\.liveStreaming === false \}\)/);
+  assert.match(live, /aria-expanded=\{inspectorOpen\}/);
+  assert.match(contextCss, /\.rwa2-live-rail\s*\{/);
+  assert.match(contextCss, /\.rwa2-live-control-on \.rwa2-live-dot/);
 });
 
 ok('popup visual layer is low-paint and uses subdued amber', () => {
@@ -222,12 +239,18 @@ ok('popup density removes redundant hierarchy without shrinking core controls', 
   assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*32px !important;[\s\S]*height:\s*32px !important/);
 });
 
-ok('context controls avoid stretch-created dead space and preserve readable source labels', () => {
+ok('request inspector keeps advanced controls compact and recipe identity-free', () => {
   const css = read('./src/styles-popup-context.js');
-  assert.doesNotMatch(css, /\.rwa2-depth-row\s*\{[\s\S]*margin-top:\s*auto/);
-  assert.match(css, /\.rwa2-depth-row\s*\{[\s\S]*margin-top:\s*0/);
-  assert.match(css, /\.rwa2-source-grid\s*\{[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.doesNotMatch(css, /\.rwa2-source-grid\s*\{[\s\S]*repeat\(4, minmax\(0, 1fr\)\)/);
+  const inspector = read('./src/components/popup/RequestInspector.jsx');
+  const recipe = read('./src/components/popup/RecipeBar.jsx');
+  const presentation = read('./src/hooks/useContextPresentation.js');
+  assert.match(css, /\.rwa2-inspector-source-grid\s*\{[\s\S]*repeat\(2, minmax\(0,1fr\)\)/);
+  assert.match(inspector, /History depth/);
+  assert.match(inspector, /Rewrite length adjustment/);
+  assert.match(recipe, /source\.label/);
+  assert.doesNotMatch(recipe, /identityName|characterNames|personaNames/);
+  assert.match(presentation, /label:\s*text\('Character', 'Nhân vật'\), detail:\s*characterLabel/);
+  assert.match(presentation, /label:\s*'Persona', detail:\s*personaLabel/);
 });
 
 ok('footer fills available width without vacant grid columns', () => {
