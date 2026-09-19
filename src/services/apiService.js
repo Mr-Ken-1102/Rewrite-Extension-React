@@ -94,9 +94,13 @@ export class APIService {
     const suffix = typeof hooks?.systemPromptSuffix === 'string' && hooks.systemPromptSuffix.trim()
       ? `\n${hooks.systemPromptSuffix.trim()}` : '';
 
+    const providerPromptConfig = config.connMode === 'sidecar' && config.fastRewrite !== false
+      ? { ...config, conciseSysPrompt: true }
+      : config;
+
     let response;
     try {
-      response = await this.runInference(`${rewriteSystemPrompt(config)}${suffix}`, promptInfo.prompt, signal, {
+      response = await this.runInference(`${rewriteSystemPrompt(providerPromptConfig)}${suffix}`, promptInfo.prompt, signal, {
         chatId: savedSel?.cid || '',
         rewriteRequest: true,
         onProgress: hooks?.onProgress,
