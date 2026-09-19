@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { APIService } from '../services/apiService';
 import { autoProfileBackoffRemaining, shouldStartAutoProfile } from '../services/autoProfilePolicy';
+import { identityDiagnosticService } from '../services/identityDiagnosticService.js';
 
 const PROFILE_REVALIDATE_MS = 5 * 60_000;
 
@@ -78,12 +79,20 @@ export function useAutoProfileGeneration({
         }
       } else if (result?.error) {
         attempts.set(runKey, { state: 'failed', at: Date.now() });
+        identityDiagnosticService.capture(selection, {
+          triggerReason: 'profile-generation-failure',
+          profileGenerationStatus: 'failed',
+        }).catch(() => {});
         showToast(`Voice profile skipped: ${result.error}. Retry available in 60 seconds.`, 'warn');
         setRetryTick((value) => value + 1);
       }
     }).catch((error) => {
       if (controller.signal.aborted) return;
       attempts.set(runKey, { state: 'failed', at: Date.now() });
+      identityDiagnosticService.capture(selection, {
+        triggerReason: 'profile-generation-failure',
+        profileGenerationStatus: 'threw',
+      }).catch(() => {});
       showToast(`Voice profile skipped: ${error?.message || String(error)}. Retry available in 60 seconds.`, 'warn');
       setRetryTick((value) => value + 1);
     });
