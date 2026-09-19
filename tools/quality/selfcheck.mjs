@@ -190,6 +190,75 @@ ok('grouped Conversation speaker ignores parent data-card-css and resolves by th
   assert.equal(ambiguous, null);
 });
 
+ok('identity resolution is Character-count agnostic and Persona-scoped without named special cases', () => {
+  const characters = Array.from({ length: 48 }, (_, index) => ({
+    id: `char-${index + 1}`,
+    name: `Character ${index + 1}`,
+    convoDisplayName: index % 3 === 0 ? `Display ${index + 1}` : '',
+  }));
+
+  for (const index of [0, 7, 23, 47]) {
+    const character = characters[index];
+    const selectedName = character.convoDisplayName || character.name;
+    const resolved = resolveVoiceIdentity(
+      {
+        cid: 'chat-many',
+        mid: 'grouped-message',
+        detectedRole: 'assistant',
+        detectedCharacterId: null,
+        detectedName: selectedName,
+        detectedGroupedSpeaker: true,
+        detectedGroupedSpeakerAmbiguous: false,
+      },
+      { id: 'grouped-message', role: 'assistant', characterId: 'parent-id' },
+      characters,
+    );
+    assert.equal(resolved?.key, `character:${character.id}`);
+    assert.equal(resolved?.id, character.id);
+  }
+
+  const duplicateCharacters = [
+    ...characters,
+    { id: 'char-duplicate', name: 'Unrelated', convoDisplayName: characters[7].name },
+  ];
+  const ambiguous = resolveVoiceIdentity(
+    {
+      detectedRole: 'assistant',
+      detectedName: characters[7].name,
+      detectedGroupedSpeaker: true,
+      detectedGroupedSpeakerAmbiguous: false,
+    },
+    { role: 'assistant', characterId: 'parent-id' },
+    duplicateCharacters,
+  );
+  assert.equal(ambiguous, null);
+
+  const persona = voiceIdentityFromMessage({
+    role: 'user',
+    extra: {
+      personaSnapshot: {
+        personaId: 'persona-generic',
+        name: 'Active Persona',
+        source: 'persona',
+      },
+    },
+  });
+  assert.equal(persona?.key, 'persona:persona:persona-generic');
+  assert.equal(persona?.name, 'Active Persona');
+
+  const characterBackedPersona = voiceIdentityFromMessage({
+    role: 'user',
+    extra: {
+      personaSnapshot: {
+        personaId: 'persona-character-id',
+        name: 'Character-backed Persona',
+        source: 'character',
+      },
+    },
+  });
+  assert.equal(characterBackedPersona?.key, 'persona:character:persona-character-id');
+});
+
 ok('v5 chat-wide auto profiles migrate to quarantined legacy buckets instead of matching a random identity', () => {
   const migrated = sanitizeAutoProfiles({
     'chat-old': { id: 'auto-chat-old', name: 'Old Voice', prompt: 'old prompt', order: -1, auto: true },
@@ -582,6 +651,7 @@ ok('Draft Reply is preview-first, Persona-scoped, cancellable, and never auto-se
   assert.match(dom, /resolveMarinaraChatComposerAnchor/);
   assert.match(launcher, /Trả lời theo Persona|Persona Reply/);
   const rewriteSection = readFileSync('./src/components/popup/RewriteSection.jsx', 'utf8');
+  const popupHeader = readFileSync('./src/components/popup/PopupHeader.jsx', 'utf8');
   const popupFooter = readFileSync('./src/components/popup/PopupFooter.jsx', 'utf8');
   const localizationGuide = readFileSync('./docs/LOCALIZATION-VI.md', 'utf8');
   assert.match(rewriteSection, /Thiết lập sẵn/);
@@ -1426,7 +1496,10 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(hook, /PROFILE_REVALIDATE_MS - \(now - lastValidated\)/);
   assert.match(hook, /setRetryTick\(\(value\) => value \+ 1\)/);
   assert.match(popup, /autoProfileBucket\[voiceIdentity\.key\]/);
-  assert.match(rewriteSection, /identityKind === 'persona'/);
+  assert.match(popup, /identityProfile=\{autoProfile\}/);
+  assert.match(popupHeader, /identityKind === 'persona'/);
+  assert.match(popupHeader, /rwa2-identity-chip/);
+  assert.doesNotMatch(rewriteSection, /autoProfile|rwa2-auto-profile/);
   assert.match(contextTab, /Automatic Character \/ Persona voice profiles/);
   assert.match(contextTab, /Generate for selected identity/);
   assert.match(identity, /persona:\$\{source\}:/);
