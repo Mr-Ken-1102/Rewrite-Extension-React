@@ -63,7 +63,6 @@ export function usePopupPosition({
   popupPos,
   pinnedPos,
   hasAutoProfile,
-  fastRewrite = false,
 }) {
   const viewport = useViewportSize();
 
@@ -98,7 +97,6 @@ export function usePopupPosition({
             compact,
             hasAutoProfile,
             multiMessage,
-            fastRewrite,
             viewportWidth: viewport.width,
           }),
         );
@@ -149,7 +147,6 @@ export function usePopupPosition({
     popupPos,
     pinnedPos,
     hasAutoProfile,
-    fastRewrite,
     viewport.width,
     viewport.height,
   ]);
