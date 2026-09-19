@@ -25,35 +25,33 @@ ok('profile grid supports roving keyboard navigation without adding a tab stop p
   assert.match(source, /getComputedStyle\(gridRef\.current\)\.gridTemplateColumns/);
 });
 
-ok('profile toolbar supports low-chrome typeahead and overflow discovery', () => {
+ok('profile toolbar supports keyboard typeahead and overflow discovery without instructional chrome', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   assert.match(grid, /TYPEAHEAD_RESET_MS = 650/);
   assert.match(grid, /data-profile-name=\{displayName\}/);
   assert.match(grid, /findTypeaheadMatch/);
   assert.match(grid, /typeaheadRef\.current/);
-  assert.match(rewrite, /scroll or type/);
+  assert.doesNotMatch(rewrite, /scroll or type|13 styles/);
 });
 
 ok('default style labels can localize without mutating profile prompts or ids', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
   assert.match(grid, /PROFILE_LABELS_VI/);
-  assert.match(grid, /expand:\s*'Mở rộng'/);
-  assert.match(grid, /grammar:\s*'Sửa ngữ pháp'/);
+  assert.match(grid, /expand:\s*'Làm giàu'/);
+  assert.match(grid, /grammar:\s*'Trau chuốt'/);
   assert.match(grid, /profileDisplayName\(profile, language\)/);
-  assert.match(grid, /onRun\(profile\)/);
+  assert.match(grid, /onRun\(profile\.__featured \? featuredProfile : profile\)/);
 });
 
-ok('profile and identity-profile explanations are available from keyboard focus', () => {
+ok('preset and Voice Profile explanations are available from keyboard focus in one grid', () => {
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  const header = read('./src/components/popup/PopupHeader.jsx');
+  assert.match(grid, /featuredProfile/);
   assert.match(grid, /aria-description=\{profile\.prompt\}/);
   assert.match(grid, /onFocus=\{\(event\) => \{/);
   assert.match(grid, /onTooltip\(event, \{[\s\S]*kind:\s*'preset'/s);
   assert.match(grid, /onBlur=\{onTooltipLeave\}/);
-  assert.match(header, /aria-description=\{identityProfile\.prompt\}/);
-  assert.match(header, /onFocus=\{\(event\) => onTooltip\?\.\(event, identityTooltip\)\}/);
-  assert.match(header, /onBlur=\{onTooltipLeave\}/);
+  assert.match(grid, /rwa2-profile-btn-voice/);
 });
 
 ok('popup header keeps drag ownership except on explicit interactive controls', () => {
@@ -62,18 +60,19 @@ ok('popup header keeps drag ownership except on explicit interactive controls', 
   const css = read('./src/styles-popup-base.js');
   assert.match(header, /<header className="rwa2-toolbar" onPointerDown=\{onDragStart\}>/);
   assert.doesNotMatch(header, /rwa2-toolbar-actions" onPointerDown=/);
-  assert.ok((header.match(/data-rwa-no-drag="true"/g) || []).length >= 3);
+  assert.equal((header.match(/data-rwa-no-drag="true"/g) || []).length, 2);
   assert.match(drag, /closest\?\.\('\[data-rwa-no-drag="true"\], button, input, textarea, select, a, \[role="button"\]'\)/);
   assert.match(css, /\.rwa2-toolbar-actions\s*\{[\s\S]*flex:\s*0 1 auto/s);
 });
 
-ok('context help tooltip is keyboard reachable and bilingual', () => {
-  const source = read('./src/components/popup/ContextPanel.jsx');
-  assert.match(source, /CONTEXT_MODE_HELP/);
-  assert.match(source, /CONTEXT_MODE_HELP_VI/);
-  assert.match(source, /const contextHelp = vi \? CONTEXT_MODE_HELP_VI : CONTEXT_MODE_HELP/);
-  assert.match(source, /aria-description=\{contextHelp\}/);
-  assert.match(source, /onFocus=\{\(event\) => onTooltip\(event, contextHelp\)\}/);
+ok('three-mode strip help is keyboard reachable and bilingual', () => {
+  const source = read('./src/components/popup/PerformanceStrip.jsx');
+  assert.match(source, /FREE_MODE_HELP/);
+  assert.match(source, /FREE_MODE_HELP_VI/);
+  assert.match(source, /fastRewriteHelp\(mode, vi\)/);
+  assert.match(source, /streamingHelp\(available, vi\)/);
+  assert.match(source, /aria-description=\{item\.help\}/);
+  assert.match(source, /onFocus=\{\(event\) => onTooltip\?\.\(event, item\.help\)\}/);
   assert.match(source, /onBlur=\{onTooltipLeave\}/);
 });
 
@@ -85,7 +84,9 @@ ok('popup tooltip is collision-aware across visual viewport edges', () => {
   assert.match(source, /tooltipRef\.current\.getBoundingClientRect\(\)/);
   assert.match(source, /rect\.right > maxX/);
   assert.match(source, /rect\.bottom > maxY/);
-  assert.match(source, /role="tooltip"/);
+  const tooltip = read('./src/components/popup/PopupTooltip.jsx');
+  assert.match(source, /<PopupTooltip ref=\{tooltipRef\}/);
+  assert.match(tooltip, /role="tooltip"/);
 });
 
 ok('non-modal popup exposes a localized named region without interfering with dialog Escape ownership', () => {
@@ -94,21 +95,36 @@ ok('non-modal popup exposes a localized named region without interfering with di
   assert.doesNotMatch(source, /className="rwa2-popup"[\s\S]*role="dialog"/);
 });
 
-ok('popup switches have switch semantics and every icon-only switch is named', () => {
+ok('popup controls preserve switch semantics and named compact groups', () => {
   const toggle = read('./src/components/ui/ToggleSwitch.jsx');
-  const context = read('./src/components/popup/ContextPanel.jsx');
+  const context = read('./src/components/popup/ContextDeck.jsx');
+  const settingsContext = read('./src/components/modals/settings/TabContext.jsx');
+  const performance = read('./src/components/popup/PerformanceStrip.jsx');
   assert.match(toggle, /role="switch"/);
   assert.match(toggle, /aria-label=\{ariaLabel\}/);
-  assert.match(context, /ariaLabel=\{text\('Enable rewrite length adjustment', 'Bật điều chỉnh độ dài viết lại'\)\}/);
-  assert.match(context, /role="group" aria-label=\{text\('Persistent context sources', 'Nguồn ngữ cảnh'\)\}/);
-  assert.match(context, /role="group" aria-label=\{text\('Sources for this rewrite only', 'Nguồn dùng riêng cho lần này'\)\}/);
+  assert.match(settingsContext, /DEFAULT REWRITE SOURCES/);
+  assert.match(settingsContext, /config\.injectChar/);
+  assert.match(settingsContext, /config\.injectUser/);
+  assert.match(settingsContext, /config\.injectLorebook/);
+  assert.match(settingsContext, /config\.localContextEnabled/);
+  assert.match(context, /role="group" aria-label=\{text\('Sources and parameters for this rewrite', 'Nguồn và tham số cho lần viết lại này'\)\}/);
+  assert.doesNotMatch(context, /Persistent context sources/);
+  assert.match(context, /aria-pressed=\{!excluded\}/);
+  assert.match(context, /aria-expanded=\{tokenOpen\}/);
+  assert.match(context, /aria-expanded=\{open\}/);
+  assert.match(context, /role="region" aria-label=\{text\('Token details', 'Chi tiết token'\)\}/);
+  assert.match(performance, /aria-pressed=\{item\.active\}/);
+  assert.match(performance, /key:\s*'FREE MODE'/);
+  assert.match(performance, /key:\s*'FAST REWRITE'/);
 });
 
-ok('trim-selection dialog opts out of cursor-following glow work', () => {
+ok('trim-selection dialog is isolated and opts out of cursor-following glow work', () => {
   const source = read('./src/components/PopupMain.jsx');
+  const trim = read('./src/components/popup/TrimSelectionModal.jsx');
   assert.doesNotMatch(source, /rwa-glow-button/);
-  const trimBlock = source.match(/\{trimOpen && \([\s\S]*?<\/Modal>\s*\)\}/)?.[0] || '';
-  assert.equal((trimBlock.match(/<Button\b[^>]*glow=\{false\}/g) || []).length, 2);
+  assert.match(source, /<TrimSelectionModal/);
+  assert.equal((trim.match(/<Button\b[^>]*glow=\{false\}/g) || []).length, 2);
+  assert.doesNotMatch(trim, /rwa-glow-button/);
 });
 
 ok('waiting result surfaces show continuous activity without ignoring reduced-motion preferences', () => {

@@ -3,34 +3,27 @@ export const RWA_POPUP_A11Y_CSS = `
    Loaded after popup layout/context so these cross-cutting rules stay authoritative. */
 
 .rwa2-version,
-.rwa2-region-label,
-.rwa2-section-meta,
-.rwa2-target-chip,
-.rwa2-one-shot-label,
-.rwa2-chip,
-.rwa2-control-label,
-.rwa2-length-value {
+.rwa2-context-chip,
+.rwa2-token-trigger,
+.rwa2-token-popover-row,
+.rwa2-token-popover-note,
+.rwa2-token-popover-empty,
+.rwa2-context-depth,
+.rwa2-context-length-head > span {
   font-size: 11px !important;
 }
 
-.rwa2-profile-name {
-  font-size: 13px;
-}
+.rwa2-performance-key { font-size: 10px; }
+.rwa2-performance-meta { font-size: 11px; }
+.rwa2-profile-name { font-size: 13px; }
+.rwa2-context-detail-label { font-size: 10px; }
 
-.rwa2-token-status {
-  font-size: 12px;
-  line-height: 1.2;
-}
-
-.rwa2-chip {
+.rwa2-context-chip {
   min-height: 26px;
-  padding: 0 8px;
+  padding: 0 6px;
 }
 
-/* Readability calibration only: preserve the popup typeface and hierarchy,
-   while lifting the smallest labels one step above the previous 9.5–11px range. */
 .rwa2-brand-title { font-size: 12.5px; }
-.rwa2-section-title { font-size: 12.5px; }
 .rwa2-popup .rwa2-auto-profile,
 .rwa2-popup .rwa2-action { font-size: 11.5px !important; }
 .rwa2-multi-notice { font-size: 11px; }
@@ -38,10 +31,11 @@ export const RWA_POPUP_A11Y_CSS = `
 
 .rwa2-popup :is(
   .rwa2-icon-button,
-  .rwa2-info,
-  .rwa2-auto-profile,
   .rwa2-profile-btn,
-  .rwa2-chip,
+  .rwa2-performance-item,
+  .rwa2-context-chip,
+  .rwa2-token-trigger,
+  .rwa2-context-toggle,
   .rwa2-action,
   .rwa2-depth-input
 ):focus-visible {

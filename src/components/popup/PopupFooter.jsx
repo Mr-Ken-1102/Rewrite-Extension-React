@@ -13,7 +13,18 @@ export function PopupFooter({ language = 'en', msgHistory, onUndo, onRedo, onCus
         <span className="rwa2-action-icon" aria-hidden="true">↻</span>
       </Button>
       <Button glow={false} className="rwa2-action rwa2-custom" onClick={onCustom}>{text('Custom Prompt', 'Yêu cầu tùy chỉnh')}</Button>
-      <Button glow={false} className="rwa2-action rwa2-settings" onClick={onSettings}>{text('Settings', 'Cài đặt')}</Button>
+      <Button
+        glow={false}
+        className="rwa2-action rwa2-settings"
+        onClick={onSettings}
+        title={text('Settings', 'Cài đặt')}
+        aria-label={text('Settings', 'Cài đặt')}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.17.36.38.7.6 1 .28.32.64.54 1.05.62H21v4h-.09A1.7 1.7 0 0 0 19.4 15Z" />
+        </svg>
+      </Button>
     </footer>
   );
 }

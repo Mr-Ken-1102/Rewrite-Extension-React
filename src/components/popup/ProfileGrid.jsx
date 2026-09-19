@@ -4,19 +4,19 @@ import { Button } from '../ui/Button';
 
 const TYPEAHEAD_RESET_MS = 650;
 const PROFILE_LABELS_VI = Object.freeze({
-  expand: 'Mở rộng',
-  compress: 'Rút gọn',
-  thoughts: 'Thêm nội tâm',
-  dialogue: 'Chuyển thành hội thoại',
-  active: 'Bị động → Chủ động',
-  diffwords: 'Dùng từ khác',
-  showdont: 'Tả, đừng kể',
-  emotion: 'Tăng cảm xúc',
-  transitions: 'Sửa chuyển ý',
-  noai: 'Bỏ văn phong AI',
-  expdialogue: 'Mở rộng hội thoại',
-  romance: 'Tăng lãng mạn',
-  grammar: 'Sửa ngữ pháp',
+  expand: 'Làm giàu',
+  compress: 'Cô đọng',
+  thoughts: 'Nội tâm',
+  dialogue: 'Chuyển thoại',
+  active: 'Chủ động',
+  diffwords: 'Diễn đạt mới',
+  showdont: 'Thể hiện',
+  emotion: 'Chiều sâu cảm xúc',
+  transitions: 'Mượt chuyển ý',
+  noai: 'Tự nhiên hóa',
+  expdialogue: 'Đào sâu hội thoại',
+  romance: 'Sắc thái lãng mạn',
+  grammar: 'Trau chuốt',
 });
 
 function profileDisplayName(profile, language) {
@@ -24,7 +24,21 @@ function profileDisplayName(profile, language) {
   return PROFILE_LABELS_VI[profile.id] || profile.name;
 }
 
-export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact, onRun, onTooltip, onTooltipLeave }) {
+export function ProfileGrid({
+  language = 'en',
+  profiles,
+  featuredProfile = null,
+  featuredLabel = '',
+  colCount,
+  rows,
+  compact,
+  onRun,
+  onTooltip,
+  onTooltipLeave,
+}) {
+  const gridProfiles = featuredProfile
+    ? [...profiles, { ...featuredProfile, __featured: true, __featuredLabel: featuredLabel || featuredProfile.name }]
+    : profiles;
   const requestedCols = Math.max(1, Number(colCount) || 1);
   const effectiveCols = compact ? Math.min(requestedCols, 6) : Math.min(requestedCols, 4);
   const viewportHeight = getProfileViewportHeight(rows, compact);
@@ -38,12 +52,12 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
   ].filter(Boolean).join(' ');
 
   useEffect(() => {
-    if (!profiles.length) {
+    if (!gridProfiles.length) {
       setActiveIndex(0);
       return;
     }
-    setActiveIndex((current) => Math.min(current, profiles.length - 1));
-  }, [profiles.length]);
+    setActiveIndex((current) => Math.min(current, gridProfiles.length - 1));
+  }, [gridProfiles.length]);
 
   useEffect(() => () => {
     if (typeaheadRef.current.timer !== null) window.clearTimeout(typeaheadRef.current.timer);
@@ -133,13 +147,15 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
       style={{ maxHeight: `${viewportHeight}px` }}
       onKeyDown={moveFocus}
     >
-      {profiles.map((profile, index) => {
-        const displayName = profileDisplayName(profile, language);
+      {gridProfiles.map((profile, index) => {
+        const displayName = profile.__featured
+          ? profile.__featuredLabel
+          : profileDisplayName(profile, language);
         return (
           <Button
-            key={profile.id}
+            key={profile.__featured ? `voice:${profile.identityKey || profile.id}` : profile.id}
             glow={false}
-            className="rwa2-profile-btn"
+            className={`rwa2-profile-btn ${profile.__featured ? 'rwa2-profile-btn-voice' : ''}`.trim()}
             data-profile-index={index}
             data-profile-name={displayName}
             tabIndex={index === activeIndex ? 0 : -1}
@@ -162,11 +178,11 @@ export function ProfileGrid({ language = 'en', profiles, colCount, rows, compact
             onBlur={onTooltipLeave}
             onClick={(event) => {
               event.stopPropagation();
-              onRun(profile);
+              onRun(profile.__featured ? featuredProfile : profile);
             }}
           >
             <span className="rwa2-profile-name" style={profile.color ? { color: profile.color } : {}}>
-              {compact ? displayName.slice(0, 2).toUpperCase() : displayName}
+              {compact ? (profile.__featured ? 'VP' : displayName.slice(0, 2).toUpperCase()) : displayName}
             </span>
           </Button>
         );

@@ -2,6 +2,7 @@ import {
   POPUP_DESKTOP_WIDTH,
   POPUP_OUTER_PADDING_X,
   POPUP_PROFILE_ROW_GAP,
+  POPUP_NORMAL_MIN_CELL,
 } from './popupGeometry';
 
 export const RWA_POPUP_BASE_CSS = `
@@ -96,45 +97,6 @@ export const RWA_POPUP_BASE_CSS = `
   justify-content: flex-end;
   gap: 2px;
 }
-.rwa2-identity-chip {
-  appearance: none;
-  min-width: 0;
-  max-width: min(250px, 44vw);
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-right: 3px;
-  padding: 0 8px;
-  border: 1px solid var(--rwa2-brand-border);
-  border-radius: 999px;
-  background: rgba(209,154,69,.055);
-  color: var(--rwa2-brand);
-  font: inherit;
-  cursor: pointer;
-  transition: background-color .10s ease, border-color .10s ease, color .10s ease;
-}
-.rwa2-identity-chip:hover,
-.rwa2-identity-chip:focus-visible {
-  border-color: rgba(209,154,69,.38);
-  background: rgba(209,154,69,.10);
-  color: var(--rwa2-brand-hover);
-  outline: none;
-}
-.rwa2-identity-chip-mark {
-  flex: 0 0 auto;
-  font-size: 9px;
-  line-height: 1;
-}
-.rwa2-identity-chip-text {
-  min-width: 0;
-  overflow: hidden;
-  font-size: 9.5px;
-  line-height: 1;
-  font-weight: 650;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .rwa2-icon-button {
   appearance: none;
   width: 28px;
@@ -163,7 +125,7 @@ export const RWA_POPUP_BASE_CSS = `
 
 .rwa2-rewrite {
   min-width: 0;
-  padding: 7px;
+  padding: 6px 7px 7px;
   border: 1px solid rgba(209,154,69,.10);
   border-radius: 11px;
   background:
@@ -202,55 +164,6 @@ export const RWA_POPUP_BASE_CSS = `
   white-space: nowrap;
 }
 
-.rwa2-performance-strip {
-  min-height: 29px;
-  display: grid;
-  grid-template-columns: minmax(0,1fr) 1px minmax(0,1fr);
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 6px;
-  padding: 0 9px;
-  border: 1px solid rgba(255,255,255,.065);
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.009));
-}
-.rwa2-performance-item {
-  min-width: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  overflow: hidden;
-}
-.rwa2-performance-key {
-  flex: 0 0 auto;
-  color: var(--rwa2-subtle);
-  font-size: 8px;
-  line-height: 1;
-  font-weight: 820;
-  letter-spacing: .08em;
-}
-.rwa2-performance-meta {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--rwa2-muted);
-  font-size: 9px;
-  line-height: 1;
-  font-weight: 620;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.rwa2-performance-on .rwa2-performance-key {
-  color: var(--rwa2-brand);
-}
-.rwa2-performance-on .rwa2-performance-meta {
-  color: rgba(255,255,255,.72);
-}
-.rwa2-performance-divider {
-  width: 1px;
-  height: 14px;
-  background: rgba(255,255,255,.065);
-}
-
 .rwa2-popup .rwa2-profile-btn,
 .rwa2-popup .rwa2-action {
   box-shadow: none !important;
@@ -284,10 +197,9 @@ export const RWA_POPUP_BASE_CSS = `
   gap: ${POPUP_PROFILE_ROW_GAP}px 6px;
   min-width: 0;
   margin: 0;
-  padding: 0 2px 1px 0;
+  padding: 0 2px 0 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.14) transparent;
 }
@@ -297,7 +209,7 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-cols-1 { grid-template-columns: minmax(0, 1fr); }
 .rwa2-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rwa2-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.rwa2-cols-4 { grid-template-columns: repeat(4, minmax(140px, 1fr)); }
+.rwa2-cols-4 { grid-template-columns: repeat(4, minmax(${POPUP_NORMAL_MIN_CELL}px, 1fr)); }
 .rwa2-profile-grid-compact.rwa2-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .rwa2-profile-grid-compact.rwa2-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 
@@ -319,6 +231,21 @@ export const RWA_POPUP_BASE_CSS = `
   background: var(--rwa2-surface-hover) !important;
   border-color: var(--rwa2-brand-border) !important;
   color: var(--rwa2-text) !important;
+}
+.rwa2-popup .rwa2-profile-btn-voice {
+  border-color: rgba(209,154,69,.24) !important;
+  background:
+    linear-gradient(90deg, rgba(209,154,69,.055), transparent 72%),
+    var(--rwa2-surface) !important;
+}
+.rwa2-popup .rwa2-profile-btn-voice .rwa2-profile-name {
+  color: var(--rwa2-brand) !important;
+}
+.rwa2-popup .rwa2-profile-btn-voice:hover:not(:disabled) {
+  border-color: rgba(209,154,69,.42) !important;
+  background:
+    linear-gradient(90deg, rgba(209,154,69,.09), transparent 72%),
+    var(--rwa2-surface-hover) !important;
 }
 
 .rwa2-profile-name {
@@ -377,8 +304,15 @@ export const RWA_POPUP_BASE_CSS = `
   background: var(--rwa2-brand-soft) !important;
 }
 .rwa2-popup .rwa2-settings {
-  flex: 0 0 128px;
-  width: 128px !important;
+  flex: 0 0 34px;
+  width: 34px !important;
+  padding: 0 !important;
+  color: var(--rwa2-muted) !important;
+}
+.rwa2-popup .rwa2-settings:hover:not(:disabled) {
+  color: var(--rwa2-brand) !important;
+  border-color: var(--rwa2-brand-border) !important;
+  background: var(--rwa2-brand-soft) !important;
 }
 .rwa2-action-icon { font-size: 14px; line-height: 1; }
 

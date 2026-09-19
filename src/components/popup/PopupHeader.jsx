@@ -2,10 +2,6 @@ export function PopupHeader({
   language = 'en',
   selection,
   pinned,
-  identityProfile = null,
-  onRunIdentityProfile,
-  onTooltip,
-  onTooltipLeave,
   onDragStart,
   onTrim,
   onPinToggle,
@@ -13,12 +9,6 @@ export function PopupHeader({
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const multiCount = Array.isArray(selection?.segments) ? selection.segments.length : 0;
-  const identityLabel = identityProfile
-    ? `${identityProfile.identityKind === 'persona' ? 'Persona' : 'Char'}: ${identityProfile.identityName || identityProfile.name}`
-    : '';
-  const identityTooltip = identityProfile
-    ? `${identityLabel} · ${identityProfile.name}: ${identityProfile.prompt}`
-    : '';
   const iconProps = {
     width: 14,
     height: 14,
@@ -39,26 +29,6 @@ export function PopupHeader({
       </div>
 
       <div className="rwa2-toolbar-actions">
-        {identityProfile && (
-          <button
-            type="button"
-            data-rwa-no-drag="true"
-            className="rwa2-identity-chip"
-            aria-label={identityLabel}
-            aria-description={identityProfile.prompt}
-            onMouseEnter={(event) => onTooltip?.(event, identityTooltip)}
-            onMouseLeave={onTooltipLeave}
-            onFocus={(event) => onTooltip?.(event, identityTooltip)}
-            onBlur={onTooltipLeave}
-            onClick={(event) => {
-              event.stopPropagation();
-              onRunIdentityProfile?.(identityProfile);
-            }}
-          >
-            <span className="rwa2-identity-chip-mark" aria-hidden="true">✦</span>
-            <span className="rwa2-identity-chip-text">{identityLabel}</span>
-          </button>
-        )}
         <button
           type="button"
           data-rwa-no-drag="true"

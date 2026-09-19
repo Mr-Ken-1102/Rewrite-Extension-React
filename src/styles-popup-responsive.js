@@ -50,31 +50,18 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
   .rwa2-profile-grid-compact { grid-template-columns: minmax(0, 1fr); }
 }
 
-@media (max-width: 559px) {
-  .rwa2-context-sources { grid-column: span 7; }
-  .rwa2-context-modifiers { grid-column: span 5; }
-  .rwa2-source-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 8px;
-  }
-}
-
 @media (max-width: 459px) {
-  .rwa2-context-identity {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .rwa2-context-adjust-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
   }
-  .rwa2-context-sources,
-  .rwa2-context-modifiers {
-    grid-column: 1 / -1;
-  }
-  .rwa2-context-sources { border-right: 0; }
-  .rwa2-context-modifiers {
-    border-top: 1px solid rgba(255,255,255,.055);
+  .rwa2-token-popover {
+    right: 0;
+    width: min(300px, calc(100vw - 24px));
   }
 }
 
 @media (max-width: 419px) {
-  .rwa2-identity-chip { max-width: 128px; }
   .rwa2-popup {
     width: calc(100vw - 12px);
     min-width: calc(100vw - 12px);
@@ -82,34 +69,28 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
     padding-left: 8px;
     padding-right: 8px;
   }
-  .rwa2-context-identity {
-    grid-template-columns: minmax(0, 1fr);
+  .rwa2-performance-item {
     gap: 4px;
+    padding-inline: 5px;
   }
-  .rwa2-token-status {
-    justify-self: stretch;
-    min-width: 0;
-    max-width: none;
-  }
-  .rwa2-target-chip { max-width: 150px; }
-  .rwa2-actionbar {
-    flex-wrap: wrap;
-    gap: 4px;
-  }
+  .rwa2-performance-key { letter-spacing: .04em; }
+  .rwa2-actionbar { gap: 4px; }
   .rwa2-popup .rwa2-custom {
-    flex: 1 1 150px;
+    flex: 1 1 auto;
     width: auto !important;
     margin-left: 0 !important;
   }
-  .rwa2-popup .rwa2-settings {
-    flex: 0 1 96px;
-    width: auto !important;
-  }
+}
+
+@media (max-width: 359px) {
+  .rwa2-performance-meta { display: none; }
+  .rwa2-performance-item { padding-inline: 3px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .rwa2-popup *,
-  .rwa2-tooltip {
+  .rwa2-tooltip,
+  .rwa2-context-collapse {
     transition: none !important;
     animation: none !important;
   }

@@ -1,16 +1,18 @@
 import { MultiMessageNotice } from './MultiMessageNotice';
+import { PerformanceStrip } from './PerformanceStrip';
 import { ProfileGrid } from './ProfileGrid';
-import { getProviderCapabilities } from '../../services/providers/providerCapabilities.js';
 
 export function RewriteSection({
   language = 'en',
   profiles,
+  identityProfile = null,
+  voiceIdentity = null,
   colCount,
   rows,
   compact,
-  fastRewrite = false,
-  liveStreaming = true,
-  connectionMode = 'marinara',
+  config,
+  updateConfig,
+  keepFocus,
   selection,
   mergeMultiMsg,
   onRun,
@@ -20,49 +22,26 @@ export function RewriteSection({
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
 
-  const capabilities = getProviderCapabilities(connectionMode);
-  const fastState = capabilities.fastRewrite
-    ? (fastRewrite ? text('Reasoning reduced', 'Giảm reasoning') : text('Off', 'Tắt'))
-    : text('Unavailable', 'Không hỗ trợ');
-  const streamState = capabilities.liveStreaming
-    ? (liveStreaming ? text('Live output', 'Trực tiếp') : text('Off', 'Tắt'))
-    : text('Unavailable', 'Không hỗ trợ');
-  const performanceAria = text(
-    `Fast Rewrite: ${fastState}. Live Streaming: ${streamState}.`,
-    `Viết lại nhanh: ${fastState}. Streaming trực tiếp: ${streamState}.`,
-  );
-
   return (
-    <section className="rwa2-rewrite" aria-label={text('Rewrite commands', 'Thiết lập viết lại')}>
-      <div className="rwa2-section-head">
-        <div>
-          <div className="rwa2-kicker">Rewrite</div>
-          <div className="rwa2-section-title">{text('Choose a style', 'Thiết lập sẵn')}</div>
-        </div>
-        <div className="rwa2-section-meta">
-          {vi
-            ? `${profiles.length} thiết lập · cuộn hoặc gõ để tìm`
-            : `${profiles.length} ${profiles.length === 1 ? 'style' : 'styles'} · scroll or type`}
-        </div>
-      </div>
-
-      <div className="rwa2-performance-strip" role="status" aria-label={performanceAria}>
-        <div className={`rwa2-performance-item ${capabilities.fastRewrite && fastRewrite ? 'rwa2-performance-on' : ''}`.trim()}>
-          <span className="rwa2-performance-key">FAST</span>
-          <span className="rwa2-performance-meta">{fastState}</span>
-        </div>
-        <span className="rwa2-performance-divider" aria-hidden="true"></span>
-        <div className={`rwa2-performance-item ${capabilities.liveStreaming && liveStreaming ? 'rwa2-performance-on' : ''}`.trim()}>
-          <span className="rwa2-performance-key">STREAM</span>
-          <span className="rwa2-performance-meta">{streamState}</span>
-        </div>
-      </div>
+    <section className="rwa2-rewrite" aria-label={text('Rewrite styles', 'Kiểu viết lại')}>
+      <PerformanceStrip
+        language={language}
+        config={config}
+        updateConfig={updateConfig}
+        keepFocus={keepFocus}
+        onTooltip={onTooltip}
+        onTooltipLeave={onTooltipLeave}
+      />
 
       <MultiMessageNotice language={language} selection={selection} mergeMultiMsg={mergeMultiMsg} />
 
       <ProfileGrid
         language={language}
         profiles={profiles}
+        featuredProfile={identityProfile}
+        featuredLabel={identityProfile
+          ? `✦ ${String(voiceIdentity?.name || identityProfile.identityName || identityProfile.name || '').trim() || identityProfile.name}`
+          : ''}
         colCount={colCount}
         rows={rows}
         compact={compact}
