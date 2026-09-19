@@ -62,7 +62,6 @@ export function usePopupPosition({
   compact,
   popupPos,
   pinnedPos,
-  hasAutoProfile,
 }) {
   const viewport = useViewportSize();
 
@@ -95,7 +94,6 @@ export function usePopupPosition({
           estimatePopupHeight({
             visibleRows,
             compact,
-            hasAutoProfile,
             multiMessage,
             viewportWidth: viewport.width,
           }),
@@ -146,7 +144,6 @@ export function usePopupPosition({
     compact,
     popupPos,
     pinnedPos,
-    hasAutoProfile,
     viewport.width,
     viewport.height,
   ]);
