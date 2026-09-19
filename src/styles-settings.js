@@ -384,6 +384,19 @@ export const RWA_SETTINGS_CSS = `
 .rwas-body .rwa-api-preset span { font-size: 10.5px; }
 .rwas-body .rwa-request-note { font-size: 10.75px; }
 
+.rwa-connection-hub {
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid rgba(209,154,69,.14);
+  border-radius: 11px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(209,154,69,.055), transparent 38%),
+    rgba(255,255,255,.014);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.018);
+}
+.rwa-connection-hub .rwa-connection-mode-row {
+  margin: 0 !important;
+}
 .rwa-connection-mode-control {
   min-width: 0;
   display: grid;
@@ -412,6 +425,63 @@ export const RWA_SETTINGS_CSS = `
   border-color: rgba(209,154,69,.42) !important;
   background: rgba(209,154,69,.14) !important;
   color: #e3ad58 !important;
+}
+
+.rwa-connection-test-status {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 9px 0 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(255,255,255,.055);
+  border-radius: 8px;
+  background: rgba(0,0,0,.12);
+  color: var(--rwas-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.rwa-connection-test-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: var(--rwas-subtle);
+}
+.rwa-connection-test-status-testing {
+  border-color: rgba(209,154,69,.18);
+  color: var(--rwas-text-2);
+}
+.rwa-connection-test-status-testing .rwa-connection-test-dot {
+  background: var(--rwas-brand);
+  box-shadow: 0 0 8px rgba(209,154,69,.28);
+}
+.rwa-connection-test-status-ok {
+  border-color: rgba(119,200,167,.20);
+  background: rgba(119,200,167,.035);
+  color: #93d7bd;
+}
+.rwa-connection-test-status-ok .rwa-connection-test-dot { background: #77c8a7; }
+.rwa-connection-test-status-warn {
+  border-color: rgba(209,154,69,.20);
+  color: #d9aa60;
+}
+.rwa-connection-test-status-warn .rwa-connection-test-dot { background: var(--rwas-brand); }
+.rwa-connection-test-status-error {
+  border-color: rgba(255,107,120,.22);
+  background: rgba(255,107,120,.035);
+  color: #ff9da7;
+}
+.rwa-connection-test-status-error .rwa-connection-test-dot { background: #ff6b78; }
+
+.rwa-connection-hub .rwa-fast-rewrite-global {
+  margin: 10px 0 0 !important;
+  padding: 10px 0 0 !important;
+  border-top: 1px solid rgba(255,255,255,.055) !important;
+  border-bottom: 0 !important;
+}
+.rwa-connection-hub .rwa-fast-rewrite-global > div {
+  padding-right: 14px;
 }
 
 .rwas-settings :is(.rwas-close, .rwas-nav-btn, .rwas-page-actions .rwa-btn, .rwas-done, .rwa-connection-test):focus-visible {
