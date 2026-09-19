@@ -6,12 +6,12 @@ const CONTEXT_MODE_HELP_VI = 'Tắt Tự do: phù hợp khi viết theo POV nhâ
 function fastRewriteHelp(mode, vi) {
   if (mode === 'marinara') {
     return vi
-      ? 'Viết lại nhanh giảm/tắt reasoning chỉ cho request rewrite khi provider hỗ trợ. Nó không thay đổi model, context, preset hoặc thiết lập connection đã lưu.'
-      : 'Fast Rewrite reduces/disables reasoning only for rewrite requests when the provider supports it. It does not change the model, context, preset, or saved connection settings.';
+      ? 'Viết lại nhanh giúp tăng tốc xử lý và trả kết quả sớm hơn. Nếu bạn ưu tiên chất lượng hơn tốc độ, hãy tắt tùy chọn này. Hiện chỉ hỗ trợ kết nối Marinara.'
+      : 'Fast Rewrite speeds up rewriting and returns results sooner. Turn it off if you prefer maximum quality over speed. Currently supported only with Marinara connections.';
   }
   return vi
-    ? 'Backend hiện tại không có acceleration capability an toàn mà Rewrite Assistant có thể điều khiển. Fast Rewrite được giữ làm tùy chọn toàn cục nhưng không áp dụng cho mode này.'
-    : 'The current backend does not expose a safe acceleration capability that Rewrite Assistant can control. Fast Rewrite remains a global preference but is unavailable in this mode.';
+    ? 'Viết lại nhanh hiện chỉ hỗ trợ kết nối Marinara. Chuyển sang Marinara để sử dụng tính năng này.'
+    : 'Fast Rewrite is currently supported only with Marinara connections. Switch to Marinara to use this feature.';
 }
 
 

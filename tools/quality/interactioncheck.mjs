@@ -126,15 +126,23 @@ ok('waiting result surfaces show continuous activity without ignoring reduced-mo
   assert.match(draftStyles, /prefers-reduced-motion:\s*reduce/);
 });
 
-ok('toast feedback uses live-region semantics and readable dwell times', () => {
+ok('toast feedback is top-center, stacked, accessible, and readable long enough', () => {
   const source = read('./src/components/ui/ToastContainer.jsx');
+  const styles = read('./src/styles.js');
   assert.match(source, /variant === 'err'\) return 6000/);
   assert.match(source, /variant === 'warn'\) return 5000/);
   assert.match(source, /return 3500/);
+  assert.match(source, /className="rwa-toast-stack"/);
+  assert.match(source, /data-variant=\{toast\.variant \|\| 'warn'\}/);
   assert.match(source, /role=\{isError \? 'alert' : 'status'\}/);
   assert.match(source, /aria-live=\{isError \? 'assertive' : 'polite'\}/);
   assert.match(source, /aria-atomic="true"/);
   assert.match(source, /aria-hidden="true"/);
+  assert.match(styles, /\.rwa-toast-stack\s*\{[\s\S]*top:\s*max\(16px, env\(safe-area-inset-top\)\)[\s\S]*left:\s*50%/);
+  assert.match(styles, /\.rwa-toast-container\[data-variant="ok"\]/);
+  assert.match(styles, /\.rwa-toast-container\[data-variant="warn"\]/);
+  assert.match(styles, /\.rwa-toast-container\[data-variant="err"\]/);
+  assert.match(styles, /prefers-reduced-motion:\s*reduce/);
   const customPrompt = read('./src/components/modals/CustomPromptModal.jsx');
   assert.doesNotMatch(customPrompt, /showToast\(['\"][✓✕⚠]/);
 });
