@@ -120,6 +120,8 @@ ok('toast feedback uses live-region semantics and readable dwell times', () => {
   assert.match(source, /aria-live=\{isError \? 'assertive' : 'polite'\}/);
   assert.match(source, /aria-atomic="true"/);
   assert.match(source, /aria-hidden="true"/);
+  const customPrompt = read('./src/components/modals/CustomPromptModal.jsx');
+  assert.doesNotMatch(customPrompt, /showToast\(['\"][✓✕⚠]/);
 });
 
 ok('Escape dismisses the non-modal selection popup but never preempts an active dialog', () => {
