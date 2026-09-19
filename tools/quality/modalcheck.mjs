@@ -65,7 +65,7 @@ assert.ok(
   'Rewrite again must remain immediately after the primary Accept action',
 );
 assert.match(preview, /rwar-ready-rail/);
-assert.match(preview, /<div className="rwar-writing" aria-live="polite">[\s\S]*?<div className="rwar-working-rail" aria-hidden="true"><span><\/span><\/div>[\s\S]*?<div className="rwar-writing-copy">/);
+assert.match(preview, /<div className="rwar-writing" aria-live="polite">[\s\S]*?<div className="rwar-working-rail" aria-hidden="true"><span><\/span><\/div>[\s\S]*?<div className="rwar-writing-copy" role="status" aria-live="polite">[\s\S]*?rwa-waiting-dots/);
 assert.ok(preview.indexOf('className="rwar-rewrite-again"') < preview.indexOf('className="rwar-native-editor"'));
 assert.match(preview, /config\.typewriter && !streamed/);
 
