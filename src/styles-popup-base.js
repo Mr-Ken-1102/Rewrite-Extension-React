@@ -2,6 +2,7 @@ import {
   POPUP_DESKTOP_WIDTH,
   POPUP_OUTER_PADDING_X,
   POPUP_PROFILE_ROW_GAP,
+  POPUP_NORMAL_MIN_CELL,
 } from './popupGeometry';
 
 export const RWA_POPUP_BASE_CSS = `
@@ -244,10 +245,9 @@ export const RWA_POPUP_BASE_CSS = `
   gap: ${POPUP_PROFILE_ROW_GAP}px 6px;
   min-width: 0;
   margin: 0;
-  padding: 0 2px 1px 0;
+  padding: 0 2px 0 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.14) transparent;
 }
@@ -257,7 +257,7 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-cols-1 { grid-template-columns: minmax(0, 1fr); }
 .rwa2-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rwa2-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.rwa2-cols-4 { grid-template-columns: repeat(4, minmax(140px, 1fr)); }
+.rwa2-cols-4 { grid-template-columns: repeat(4, minmax(${POPUP_NORMAL_MIN_CELL}px, 1fr)); }
 .rwa2-profile-grid-compact.rwa2-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .rwa2-profile-grid-compact.rwa2-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 
