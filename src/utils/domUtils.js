@@ -169,20 +169,29 @@ export const DOMUtils = {
 
       if (domIdentity.detectedGroupedSpeaker) {
         const groupedNames = new Map();
+        let intersectsUnnamedGroupedScope = false;
         const scopes = [...(messageEl.querySelectorAll?.('[data-card-css]') || [])];
         for (const scope of scopes) {
           let intersects = false;
           try { intersects = range.intersectsNode(scope); } catch { intersects = false; }
           if (!intersects) continue;
           const candidate = readMessageDomIdentity(messageEl, scope);
+          if (!candidate?.detectedGroupedSpeaker) continue;
           const name = String(candidate?.detectedName || '').trim();
-          if (!candidate?.detectedGroupedSpeaker || !name) continue;
-          groupedNames.set(name.toLocaleLowerCase().replace(/\s+/g, ' '), name);
+          if (!name) {
+            intersectsUnnamedGroupedScope = true;
+            continue;
+          }
+          groupedNames.set(name.normalize('NFKC').toLocaleLowerCase().replace(/\s+/g, ' '), name);
         }
-        if (groupedNames.size === 1) {
+        if (!intersectsUnnamedGroupedScope && groupedNames.size === 1) {
           domIdentity = { ...domIdentity, detectedName: [...groupedNames.values()][0], detectedGroupedSpeakerAmbiguous: false };
-        } else if (groupedNames.size > 1) {
-          domIdentity = { ...domIdentity, detectedName: null, detectedGroupedSpeakerAmbiguous: true };
+        } else {
+          domIdentity = {
+            ...domIdentity,
+            detectedName: null,
+            detectedGroupedSpeakerAmbiguous: groupedNames.size > 1 || intersectsUnnamedGroupedScope,
+          };
         }
       }
 
