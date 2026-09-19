@@ -180,10 +180,11 @@ export const RWA_POPUP_CONTEXT_CSS = `
   height: 27px;
   display: inline-grid;
   place-items: center;
+  margin-left: 1px;
   padding: 0;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255,255,255,.065);
   border-radius: 7px;
-  background: transparent;
+  background: rgba(255,255,255,.014);
   color: var(--rwa2-muted);
   cursor: pointer;
   transition: border-color .10s ease, background-color .10s ease, color .10s ease;
