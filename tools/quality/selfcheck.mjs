@@ -392,6 +392,7 @@ ok('new installs use the requested layout and identity-assistance defaults witho
   assert.match(schema, /cols:\s*3/);
   assert.match(schema, /rows:\s*5/);
   assert.match(schema, /historyDepth:\s*1/);
+  assert.match(schema, /historyContextEnabled:\s*true/);
   assert.match(schema, /contextDepth:\s*1/);
   assert.match(schema, /injectChar:\s*false/);
   assert.match(schema, /injectUser:\s*false/);
@@ -1133,7 +1134,8 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(contextPolicy, /'history',[\s\S]{0,120}'memory',[\s\S]{0,120}'lore',[\s\S]{0,120}'character',[\s\S]{0,120}'persona',[\s\S]{0,120}'surrounding',[\s\S]{0,120}'ledger'/);
   assert.match(api, /droppedContext:\s*promptInfo\.dropped/);
   assert.match(api, /onContextTrim/);
-  assert.match(popup, /contextOverrides/);
+  assert.doesNotMatch(popup, /contextOverrides|setContextOverrides/);
+  assert.match(popup, /historyContextEnabled: value/);
   assert.match(popup, /selection\?\.captureId/);
   assert.match(popup, /deriveTrimmedSelection/);
   assert.match(popup, /pinnedPos/);
@@ -1161,20 +1163,26 @@ ok('parity foundation preserves Rewrite strengths while adding safe reference fe
   assert.match(dom, /captureId: nextSelectionCaptureId\(\)/);
 });
 
-ok('popup source switches are request-scoped overrides while Settings remain persistent defaults', () => {
+ok('popup source switches directly update persistent defaults used by later rewrites', () => {
   const popup = readFileSync('./src/components/PopupMain.jsx', 'utf8');
   const presentation = readFileSync('./src/hooks/useContextPresentation.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
-  assert.match(popup, /const \[contextOverrides, setContextOverrides\] = useState\(\{\}\)/);
-  assert.match(popup, /contextOverrides: \{ \.\.\.contextOverrides \}/);
-  assert.match(presentation, /Object\.prototype\.hasOwnProperty\.call\(overrides, key\)/);
-  assert.match(presentation, /enabled: disabled \? false : effectiveSource\(contextOverrides, key, fallback\)/);
-  assert.match(context, /function oneShotSourceEnabled\(savedSel, key, defaultEnabled\)/);
-  assert.match(context, /Object\.prototype\.hasOwnProperty\.call\(overrides, key\)/);
-  assert.match(context, /oneShotSourceEnabled\(savedSel, 'character', config\.injectChar\)/);
-  assert.match(context, /oneShotSourceEnabled\(savedSel, 'persona', config\.injectUser\)/);
-  assert.match(context, /oneShotSourceEnabled\(savedSel, 'lore', config\.injectLorebook\)/);
-  assert.match(context, /oneShotSourceEnabled\(savedSel, 'surrounding', config\.localContextEnabled\)/);
+  const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
+  assert.doesNotMatch(popup, /contextOverrides|setContextOverrides/);
+  assert.match(popup, /injectChar: value/);
+  assert.match(popup, /injectUser: value/);
+  assert.match(popup, /injectLorebook: value/);
+  assert.match(popup, /localContextEnabled: value/);
+  assert.match(popup, /historyContextEnabled: value/);
+  assert.doesNotMatch(presentation, /effectiveSource|hasOverride|contextOverrides/);
+  assert.match(presentation, /config\.historyContextEnabled !== false/);
+  assert.doesNotMatch(context, /oneShotSourceEnabled|contextOverrides|contextExclusions/);
+  assert.match(context, /const wantsCharacter = !config\.freeMode && config\.injectChar/);
+  assert.match(context, /const wantsPersona = !config\.freeMode && config\.injectUser/);
+  assert.match(context, /const wantsLore = !config\.freeMode && config\.injectLorebook/);
+  assert.match(context, /const wantsSurrounding = config\.localContextEnabled/);
+  assert.match(context, /const wantsHistory = config\.historyContextEnabled !== false && config\.contextDepth > 0/);
+  assert.match(schema, /historyContextEnabled:\s*true/);
 });
 
 ok('parity part 2 adds context management with requested identity-assistance defaults without weakening provider trust', () => {

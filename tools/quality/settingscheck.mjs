@@ -156,7 +156,8 @@ assert.match(context, /config\.injectChar/);
 assert.match(context, /config\.injectUser/);
 assert.match(context, /config\.injectLorebook/);
 assert.match(context, /config\.localContextEnabled/);
-assert.match(context, /Source switches in the popup can temporarily turn a source on or off for the current rewrite without changing these defaults/);
+assert.match(context, /config\.historyContextEnabled/);
+assert.match(context, /These defaults are shared with the source switches in the popup\. Changing either place is saved and applies to future rewrites/);
 assert.match(context, /Surrounding context words \/ side/);
 assert.match(context, /Số từ ngữ cảnh gần \/ mỗi phía/);
 assert.match(context, /localContextWords/);
@@ -219,6 +220,7 @@ assert.match(providerCapabilities, /extender:[\s\S]*fastRewrite:\s*false[\s\S]*l
 assert.match(schema, /cols:\s*3/);
 assert.match(schema, /rows:\s*5/);
 assert.match(schema, /historyDepth:\s*1/);
+assert.match(schema, /historyContextEnabled:\s*true/);
 assert.match(schema, /contextDepth:\s*1/);
 assert.match(schema, /speakerAware:\s*true/);
 assert.match(schema, /useExtenderMemory:\s*false/);
