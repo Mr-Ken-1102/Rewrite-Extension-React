@@ -376,6 +376,36 @@ export class ContextService {
     return resolveVoiceIdentity(savedSel, message);
   }
 
+  static async resolveVoiceProfileTarget(savedSel, signal) {
+    if (!savedSel?.cid || !savedSel?.mid) {
+      return { identity: null, targetMessage: null, messageInfo: null };
+    }
+
+    const messageInfo = await this.getMessageInfo(savedSel.cid, savedSel.mid, signal);
+    const message = messageInfo?.message || null;
+    const identity = await this.resolveSelectionVoiceIdentity(savedSel, message, signal);
+
+    if (!identity?.key) {
+      return { identity: null, targetMessage: message, messageInfo };
+    }
+
+    // Grouped Conversation messages can expose a speaker that differs from the
+    // parent message.characterId. Voice-profile generation must therefore use
+    // the exact selection-resolved Character instead of re-reading the parent
+    // identity from the message API.
+    const targetMessage = identity.kind === 'character' && savedSel.detectedGroupedSpeaker === true
+      ? {
+        id: savedSel.mid,
+        role: 'assistant',
+        characterId: identity.id,
+        characterName: identity.name || savedSel.detectedName || undefined,
+        content: savedSel.text || '',
+      }
+      : message;
+
+    return { identity, targetMessage, messageInfo };
+  }
+
   static buildHistoryContext(messages, targetIndex, depth, audienceCharacterId = null) {
     return buildSafeHistoryContext(messages, targetIndex, depth, audienceCharacterId);
   }
@@ -494,15 +524,9 @@ export class ContextService {
   static async inspectContext(savedSel, signal) {
     if (!savedSel?.text?.trim()) return { error: 'No text is selected.' };
     try {
-      let messageInfo = null;
-      if (savedSel?.cid && savedSel?.mid) {
-        messageInfo = await this.getMessageInfo(savedSel.cid, savedSel.mid, signal);
-      }
-      let voiceIdentity = await this.resolveSelectionVoiceIdentity(
-        savedSel,
-        messageInfo?.message || null,
-        signal,
-      );
+      const resolvedTarget = await this.resolveVoiceProfileTarget(savedSel, signal);
+      const messageInfo = resolvedTarget.messageInfo;
+      let voiceIdentity = resolvedTarget.identity;
       const context = await this.collectContext(
         savedSel,
         signal,
