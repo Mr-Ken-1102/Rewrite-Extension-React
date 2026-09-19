@@ -49,7 +49,7 @@ export function PerformanceStrip({
     {
       key: 'FAST',
       state: capabilities.fastRewrite
-        ? (config.fastRewrite !== false ? text('Reasoning reduced', 'Giảm reasoning') : text('Off', 'Tắt'))
+        ? (config.fastRewrite !== false ? text('On', 'Bật') : text('Off', 'Tắt'))
         : text('Unavailable', 'Không hỗ trợ'),
       active: capabilities.fastRewrite && config.fastRewrite !== false,
       disabled: !capabilities.fastRewrite,
@@ -59,7 +59,7 @@ export function PerformanceStrip({
     {
       key: 'STREAM',
       state: capabilities.liveStreaming
-        ? (config.liveStreaming !== false ? text('Live output', 'Trực tiếp') : text('Off', 'Tắt'))
+        ? (config.liveStreaming !== false ? text('On', 'Bật') : text('Off', 'Tắt'))
         : text('Unavailable', 'Không hỗ trợ'),
       active: capabilities.liveStreaming && config.liveStreaming !== false,
       disabled: !capabilities.liveStreaming,
