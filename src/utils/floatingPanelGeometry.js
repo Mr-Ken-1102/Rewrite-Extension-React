@@ -50,9 +50,10 @@ export const DRAFT_REPLY_BOTTOM_GAP = 24;
 export function defaultDraftReplyPanelPosition(
   size,
   bounds,
-  _anchor = null,
+  anchor = null,
   gutter = FLOATING_PANEL_GUTTER,
 ) {
+  void anchor;
   const width = Math.max(1, Number(size?.width) || 1);
   const height = Math.max(1, Number(size?.height) || 1);
   const bottomGap = Math.max(gutter, DRAFT_REPLY_BOTTOM_GAP);
