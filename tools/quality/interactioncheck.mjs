@@ -61,7 +61,7 @@ ok('popup header keeps drag ownership except on explicit interactive controls', 
   const css = read('./src/styles-popup-base.js');
   assert.match(header, /<header className="rwa2-toolbar" onPointerDown=\{onDragStart\}>/);
   assert.doesNotMatch(header, /rwa2-toolbar-actions" onPointerDown=/);
-  assert.equal((header.match(/data-rwa-no-drag="true"/g) || []).length, 2);
+  assert.equal((header.match(/data-rwa-no-drag="true"/g) || []).length, 3);
   assert.match(drag, /closest\?\.\('\[data-rwa-no-drag="true"\], button, input, textarea, select, a, \[role="button"\]'\)/);
   assert.match(css, /\.rwa2-toolbar-actions\s*\{[\s\S]*flex:\s*0 1 auto/s);
 });
