@@ -1623,9 +1623,9 @@ ok('Character and Persona Voice Profiles are message-identity scoped in group ch
   assert.match(popup, /voiceIdentity=\{voiceIdentity\}/);
   assert.doesNotMatch(popupHeader, /identityProfile|voiceIdentity|rwa2-identity-chip/);
   assert.doesNotMatch(rewriteSection, /featuredProfile|featuredLabel/);
-  const contextDeck = readFileSync('./src/components/popup/ContextDeck.jsx', 'utf8');
-  assert.match(contextDeck, /rwa2-identity-profile-ready/);
-  assert.match(contextDeck, /identityKind === 'persona'/);
+  const identityStatus = readFileSync('./src/components/popup/IdentityStatusRow.jsx', 'utf8');
+  assert.match(identityStatus, /rwa2-identity-profile-ready/);
+  assert.match(identityStatus, /identityKind === 'persona'/);
   assert.match(contextTab, /Automatic Character \/ Persona voice profiles/);
   assert.match(contextTab, /Generate for selected identity/);
   assert.match(identity, /persona:\$\{source\}:/);
