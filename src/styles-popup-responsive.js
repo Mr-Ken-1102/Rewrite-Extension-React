@@ -62,7 +62,6 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 }
 
 @media (max-width: 419px) {
-  .rwa2-identity-chip { max-width: 108px; }
   .rwa2-popup {
     width: calc(100vw - 12px);
     min-width: calc(100vw - 12px);
