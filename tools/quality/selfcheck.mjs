@@ -398,7 +398,7 @@ ok('new installs use the requested layout and identity-assistance defaults witho
   assert.match(schema, /injectLorebook:\s*false/);
   assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
-  assert.match(schema, /autoProfileEnabled:\s*true/);
+  assert.match(schema, /autoProfileEnabled:\s*false/);
   assert.match(schema, /draftReplyEnabled:\s*true/);
   assert.match(schema, /draftReplyHistoryDepth:\s*8/);
   assert.match(schema, /draftReplyLauncherPlacement:\s*'auto'/);
@@ -1142,7 +1142,7 @@ ok('parity part 2 adds context management with requested identity-assistance def
   const debug = readFileSync('./src/services/debugLogService.js', 'utf8');
   assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
-  assert.match(schema, /autoProfileEnabled:\s*true/);
+  assert.match(schema, /autoProfileEnabled:\s*false/);
   assert.match(schema, /charCardIds:\s*\[\]/);
   const provider = readFileSync('./src/services/providers/providerService.js', 'utf8');
   const context = readFileSync('./src/services/context/contextService.js', 'utf8');
@@ -1194,7 +1194,7 @@ ok('store schema v6 keeps bounded context defaults and identity-scoped Voice Pro
   assert.match(schema, /identityKey/);
   assert.match(schema, /sourceFingerprint/);
   assert.match(schema, /legacy.*true/);
-  assert.match(schema, /autoProfileEnabled:\s*true/);
+  assert.match(schema, /autoProfileEnabled:\s*false/);
   assert.match(schema, /debugEnabled:\s*false/);
   assert.match(schema, /speakerAware:\s*true/);
   assert.match(schema, /useExtenderMemory:\s*false/);
