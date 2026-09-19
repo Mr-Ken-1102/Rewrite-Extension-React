@@ -128,9 +128,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   }), [contextExclusions, selection]);
 
   const tokenInfo = useContextInspector(selection, rewriteSelection, config);
-  const voiceIdentity = selection?.multiMessage
-    ? null
-    : (voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null);
+  const voiceIdentity = selection?.multiMessage ? null : (voiceIdentityFromSelection(selection) || tokenInfo.voiceIdentity || null);
   const autoProfile = voiceIdentity?.key && autoProfileBucket
     ? autoProfileBucket[voiceIdentity.key] || null
     : null;
@@ -221,10 +219,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           language={language}
           selection={selection}
           pinned={!!config.pinnedPos}
-          identityProfile={autoProfile}
-          onRunIdentityProfile={runProfile}
-          onTooltip={showTooltip}
-          onTooltipLeave={hideTooltip}
+          identityProfile={autoProfile} onRunIdentityProfile={runProfile}
+          onTooltip={showTooltip} onTooltipLeave={hideTooltip}
           onDragStart={handleDragStart}
           onTrim={openTrim}
           onPinToggle={handlePinToggle}
