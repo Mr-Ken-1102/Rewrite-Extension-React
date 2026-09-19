@@ -119,31 +119,33 @@ ok('Marinara routing makes chat-following and fixed connection selection explici
   assert.match(settings, /Use a specific Marinara connection/);
 });
 
-ok('Marinara streaming preserves empty-output recovery without duplicating fast rewrites', () => {
+ok('Marinara raw transport preserves empty-output recovery with independent streaming', () => {
   const source = read('./src/services/providers/providerService.js');
-  assert.match(source, /const requestRaw = async \(parameters = null\) =>/);
-  assert.match(source, /streaming:\s*true/);
-  assert.match(source, /runId,/);
-  assert.match(source, /readRawStream\(response, signal, override\.onProgress, override\.onStreamStatus\)/);
+  assert.match(source, /const requestRaw = \(parameters = null\) => requestEngineRaw\(/);
+  assert.match(source, /streaming:\s*liveStreaming/);
+  assert.match(source, /Accept:\s*streaming \? 'text\/event-stream' : 'application\/json'/);
   assert.match(source, /requestRaw\(\{ reasoningEffort: null \}\)/);
   assert.match(source, /if \(!content\.trim\(\) && !fastRewrite\)/);
   assert.match(source, /inference\.empty_response/);
   assert.match(source, /RWA_PROVIDER_EMPTY_RESPONSE/);
 });
 
-ok('Fast Rewrite has provider-aware execution paths across Marinara, Direct, Extender, and Sidecar', () => {
+ok('Fast Rewrite and Live Streaming have separate provider capability contracts', () => {
   const provider = read('./src/services/providers/providerService.js');
+  const caps = read('./src/services/providers/providerCapabilities.js');
   const api = read('./src/services/apiService.js');
   const settings = read('./src/components/modals/settings/TabAPI.jsx');
-  assert.match(provider, /const fastRewrite = override\.rewriteRequest === true && config\.fastRewrite !== false/);
+  assert.match(provider, /const fastRewrite = override\.rewriteRequest === true && config\.fastRewrite !== false && capabilities\.fastRewrite/);
+  assert.match(provider, /const liveStreaming = config\.liveStreaming !== false/);
+  assert.match(provider, /stream:\s*liveStreaming/g);
+  assert.match(provider, /LOCAL_SIDECAR_CONNECTION_ID/);
   assert.match(provider, /readOpenAICompatibleStream/);
-  assert.equal((provider.match(/stream:\s*fastRewrite/g) || []).length, 2);
-  assert.match(provider, /Direct API streaming failed/);
-  assert.match(provider, /Extender streaming failed/);
-  assert.match(api, /config\.connMode === 'sidecar' && config\.fastRewrite !== false/);
-  assert.match(api, /conciseSysPrompt:\s*true/);
+  assert.doesNotMatch(api, /providerPromptConfig|config\.connMode === 'sidecar' && config\.fastRewrite/);
+  assert.match(caps, /fastRewriteStrategy:\s*'reasoning-override'/);
+  assert.match(caps, /liveStreamingStrategy:\s*'marinara-raw-sse'/);
+  assert.match(caps, /liveStreamingStrategy:\s*'openai-compatible-sse'/);
   assert.match(settings, /fastRewriteDescription\(config\.connMode, language\)/);
-  assert.match(settings, /rwa-fast-rewrite-global/);
+  assert.match(settings, /liveStreamingDescription\(config\.connMode, language\)/);
 });
 
 ok('rewrite and auto-profile inference carry chat identity to the provider', () => {
