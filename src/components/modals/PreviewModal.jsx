@@ -159,7 +159,7 @@ export const PreviewModal = ({
             </div>
           ) : null}
           <div className="rwar-writing" aria-live="polite">
-            <div className="rwa-pulse" />
+            <div className="rwar-working-rail" aria-hidden="true"><span></span></div>
             <div className="rwar-writing-copy">{partialResult
               ? text('Receiving result…', 'Đang nhận kết quả…')
               : text('Writing with Intelligence…', 'Đang viết lại…')}</div>
