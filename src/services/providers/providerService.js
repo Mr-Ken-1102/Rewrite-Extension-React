@@ -466,14 +466,18 @@ export class ProviderService {
 
   static async runInference(systemPrompt, userPrompt, signal, override = {}) {
     const config = { ...usePersistentStore.getState().config, ...override };
-    const mode = ['marinara', 'sidecar', 'direct', 'extender'].includes(config.connMode) ? config.connMode : 'marinara';
+    const mode = normalizeConnectionMode(config.connMode);
+    const capabilities = getProviderCapabilities(mode);
     const configuredTimeout = Math.max(5000, Math.min(180000, Number(config.requestTimeoutMs) || 45000));
     const directLocalNetwork = mode === 'direct' && isLikelyLocalNetworkUrl(config.ollamaUrl);
     const marinaraTimeout = mode === 'marinara'
       ? Math.max(0, Math.min(180000, Number(override.marinaraTimeoutMs) || 0))
       : configuredTimeout;
     const timeout = directLocalNetwork ? Math.max(120000, configuredTimeout) : marinaraTimeout;
-    const fastRewrite = override.rewriteRequest === true && config.fastRewrite !== false;
+    const fastRewrite = override.rewriteRequest === true && config.fastRewrite !== false && capabilities.fastRewrite;
+    const liveStreaming = config.liveStreaming !== false
+      && capabilities.liveStreaming
+      && (override.rewriteRequest === true || typeof override.onProgress === 'function');
     debugLogService.add('inference.request', {
       mode,
       systemChars: systemPrompt.length,
@@ -481,6 +485,8 @@ export class ProviderService {
       timeoutMs: timeout,
       localNetwork: directLocalNetwork || undefined,
       fastRewrite,
+      fastRewriteSupported: capabilities.fastRewrite,
+      liveStreaming,
     });
 
     if (mode === 'marinara') {
@@ -495,79 +501,18 @@ export class ProviderService {
         fastRewrite,
       });
 
-      const requestRaw = async (parameters = null) => {
-        const runId = createRawRunId();
-        if (typeof override.onStreamStatus === 'function') {
-          try { override.onStreamStatus({ status: 'connecting', runId, chars: 0 }); } catch { /* noop */ }
-        }
-        const body = {
-          connectionId,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt },
-          ],
-          streaming: true,
-          runId,
-          ...(parameters ? { parameters } : {}),
-        };
-
-        let abortSent = false;
-        const abortServerRun = () => {
-          if (abortSent) return;
-          abortSent = true;
-          void MarinaraHost.apiFetch(`${ENDPOINTS.generateRaw}/abort`, {
-            method: 'POST',
-            body: JSON.stringify({ runId, connectionId }),
-          }, 5000).catch(() => {});
-        };
-        if (signal?.aborted) {
-          abortServerRun();
-          return { aborted: true };
-        }
-        signal?.addEventListener?.('abort', abortServerRun, { once: true });
-
-        try {
-          const response = await MarinaraHost.fetch(`/api${ENDPOINTS.generateRaw}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-marinara-csrf': '1',
-              Accept: 'text/event-stream',
-            },
-            body: JSON.stringify(body),
-            cache: 'no-store',
-            signal,
-          }, timeout);
-
-          if (!response.ok) {
-            const raw = await response.text().catch(() => '');
-            let detail = raw;
-            try {
-              const parsed = JSON.parse(raw);
-              detail = parsed?.error || parsed?.message || raw;
-            } catch { /* keep raw text */ }
-            return normalizeProviderFailure(detail || `HTTP ${response.status} from Marinara.`);
-          }
-
-          const streamed = await readRawStream(response, signal, override.onProgress, override.onStreamStatus);
-          if (streamed.aborted) return { aborted: true };
-          if (streamed.error) {
-            debugLogService.add('inference.stream_error', {
-              mode,
-              runId,
-              partialChars: String(streamed.partial || '').length,
-              message: streamed.error,
-            });
-            return normalizeProviderFailure(streamed.error, 'Marinara streaming failed.');
-          }
-          return { result: streamed.content || '', streamed: true };
-        } catch (err) {
-          if (signal?.aborted || MarinaraHost.isAbortError(err)) return { aborted: true };
-          return normalizeProviderFailure(err, 'Marinara request failed.');
-        } finally {
-          signal?.removeEventListener?.('abort', abortServerRun);
-        }
-      };
+      const requestRaw = (parameters = null) => requestEngineRaw({
+        connectionId,
+        systemPrompt,
+        userPrompt,
+        parameters,
+        streaming: liveStreaming,
+        timeout,
+        signal,
+        onProgress: override.onProgress,
+        onStreamStatus: override.onStreamStatus,
+        mode,
+      });
 
       const initialParameters = fastRewrite ? { reasoningEffort: null } : null;
       const result = await requestRaw(initialParameters);
