@@ -131,6 +131,21 @@ ok('Marinara streaming preserves empty-output recovery without duplicating fast 
   assert.match(source, /RWA_PROVIDER_EMPTY_RESPONSE/);
 });
 
+ok('Fast Rewrite has provider-aware execution paths across Marinara, Direct, Extender, and Sidecar', () => {
+  const provider = read('./src/services/providers/providerService.js');
+  const api = read('./src/services/apiService.js');
+  const settings = read('./src/components/modals/settings/TabAPI.jsx');
+  assert.match(provider, /const fastRewrite = override\.rewriteRequest === true && config\.fastRewrite !== false/);
+  assert.match(provider, /readOpenAICompatibleStream/);
+  assert.equal((provider.match(/stream:\s*fastRewrite/g) || []).length, 2);
+  assert.match(provider, /Direct API streaming failed/);
+  assert.match(provider, /Extender streaming failed/);
+  assert.match(api, /config\.connMode === 'sidecar' && config\.fastRewrite !== false/);
+  assert.match(api, /conciseSysPrompt:\s*true/);
+  assert.match(settings, /fastRewriteDescription\(config\.connMode, language\)/);
+  assert.match(settings, /rwa-fast-rewrite-global/);
+});
+
 ok('rewrite and auto-profile inference carry chat identity to the provider', () => {
   const source = read('./src/services/apiService.js');
   const voiceProfile = read('./src/services/voiceProfileService.js');
