@@ -315,15 +315,19 @@ ok('Marinara v2.4.4 persona and lorebook contracts are pinned', () => {
   assert.match(context, /loreScan:\s*['"]\/lorebooks\/scan['"]/);
 });
 
-ok('Marinara v2.4.4 raw-generation payload stays schema-compatible', () => {
+ok('Marinara raw-generation payload stays schema-compatible for streaming and JSON transport', () => {
   const provider = readFileSync('./src/services/providers/providerService.js', 'utf8');
+  const capabilities = readFileSync('./src/services/providers/providerCapabilities.js', 'utf8');
   assert.match(provider, /generateRaw:\s*['"]\/generate\/raw['"]/);
   assert.match(provider, /connectionId,/);
   assert.match(provider, /messages:\s*\[/);
-  assert.match(provider, /streaming:\s*true/);
+  assert.match(provider, /streaming,/);
+  assert.match(provider, /Accept:\s*streaming \? 'text\/event-stream' : 'application\/json'/);
   assert.match(provider, /runId,/);
   assert.match(provider, /generateRaw\}\/abort/);
   assert.match(provider, /reasoningEffort:\s*null/);
+  assert.match(provider, /LOCAL_SIDECAR_CONNECTION_ID/);
+  assert.match(capabilities, /LOCAL_SIDECAR_CONNECTION_ID\s*=\s*'__local_sidecar__'/);
   assert.doesNotMatch(provider, /max_tokens\s*:/);
 });
 
