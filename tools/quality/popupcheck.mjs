@@ -254,7 +254,7 @@ ok('context deck separates current-request chips, token popover, and advanced co
   const presentation = read('./src/hooks/useContextPresentation.js');
   assert.match(css, /\.rwa2-context-source-grid\s*\{[\s\S]*repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(context, /rwa2-token-popover/);
-  assert.match(context, /role="dialog"/);
+  assert.match(context, /role="region"/));
   assert.match(context, /setTokenOpen\(\(current\) => !current\)/);
   assert.match(context, /className="rwa2-context-toggle"/);
   assert.doesNotMatch(context, /rwa2-token-detail-grid|Input composition/);
