@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 
 const PART_LABELS = Object.freeze({
@@ -10,11 +11,6 @@ const PART_LABELS = Object.freeze({
   memory: ['Memory', 'Bộ nhớ'],
   speaker: ['Speaker', 'Vai nói'],
 });
-
-function messageCount(selection) {
-  if (Array.isArray(selection?.segments) && selection.segments.length > 1) return selection.segments.length;
-  return selection?.source === 'message' ? 1 : 0;
-}
 
 function tokenParts(parts, vi) {
   if (!parts) return [];
@@ -34,7 +30,6 @@ export function ContextDeck({
   updateConfig,
   keepFocus,
   tokenInfo,
-  selection,
   contextSources,
   contextExclusions,
   onToggleContext,
@@ -42,114 +37,163 @@ export function ContextDeck({
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
+  const [tokenOpen, setTokenOpen] = useState(false);
+  const rootRef = useRef(null);
   const parts = tokenParts(tokenInfo.parts, vi);
   const total = Math.max(0, Number(tokenInfo.parts?.total) || 0);
-  const count = messageCount(selection);
-  const countLabel = count > 0
-    ? (vi ? `${count} tin` : `${count} ${count === 1 ? 'msg' : 'msgs'}`)
-    : text('selection', 'vùng chọn');
   const tokenLabel = tokenInfo.loading && !tokenInfo.parts
-    ? `${countLabel} · ${text('calculating…', 'đang tính…')}`
+    ? text('calculating…', 'đang tính…')
     : tokenInfo.parts
-      ? `${countLabel} · ≈${total.toLocaleString()} tok`
-      : `${countLabel} · ≈— tok`;
-  const tokenHelp = tokenInfo.error || text(
-    'Show the estimated token breakdown for this rewrite.',
-    'Hiện chi tiết ước lượng token của lần viết lại này.',
-  );
+      ? `≈${total.toLocaleString()} tok`
+      : '≈— tok';
+  const lengthLabel = config.lengthEnabled
+    ? `${text('Length', 'Độ dài')} ${config.lengthPct >= 0 ? '+' : ''}${config.lengthPct || 0}%`
+    : text('Length Auto', 'Độ dài Auto');
+
+  useEffect(() => {
+    if (!tokenOpen) return undefined;
+    const onPointerDown = (event) => {
+      if (!rootRef.current?.contains(event.target)) setTokenOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setTokenOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [tokenOpen]);
+
+  useEffect(() => {
+    if (open) setTokenOpen(false);
+  }, [open]);
 
   const summaryLabel = (source) => source.key === 'history'
     ? `${source.label} ${Math.max(0, Number(config.contextDepth) || 0)}`
     : source.label;
 
   return (
-    <section className={`rwa2-context-deck ${open ? 'rwa2-context-deck-open' : ''}`.trim()} aria-label={text('This rewrite and context details', 'Lần viết lại này và chi tiết ngữ cảnh')}>
+    <section
+      ref={rootRef}
+      className={`rwa2-context-deck ${open ? 'rwa2-context-deck-open' : ''}`.trim()}
+      aria-label={text('Current rewrite context', 'Ngữ cảnh của lần viết lại hiện tại')}
+    >
       <div className="rwa2-context-summary">
-        <div className="rwa2-context-summary-left">
-          <span className="rwa2-context-title">{text('This rewrite', 'Lần này')}</span>
-          <div className="rwa2-context-chips" role="group" aria-label={text('Sources for this rewrite', 'Nguồn cho lần viết lại này')}>
-            {contextSources.map((source) => {
-              const excluded = !!contextExclusions[source.key];
-              return (
-                <button
-                  key={source.key}
-                  type="button"
-                  className={`rwa2-context-chip ${excluded ? 'rwa2-context-chip-off' : ''}`.trim()}
-                  aria-pressed={!excluded}
-                  title={text(
-                    `${source.detail || source.label} — ${excluded ? 'excluded from' : 'included in'} this rewrite only`,
-                    `${source.detail || source.label} — ${excluded ? 'đã loại khỏi' : 'đang dùng trong'} lần viết lại này`,
-                  )}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onToggleContext(source.key);
-                  }}
-                >
-                  <span className="rwa2-context-chip-dot" aria-hidden="true"></span>
-                  {summaryLabel(source)}
-                </button>
-              );
-            })}
-          </div>
+        <div className="rwa2-context-chips" role="group" aria-label={text('Sources and parameters for this rewrite', 'Nguồn và tham số cho lần viết lại này')}>
+          {contextSources.map((source) => {
+            const excluded = !!contextExclusions[source.key];
+            return (
+              <button
+                key={source.key}
+                type="button"
+                className={`rwa2-context-chip ${excluded ? 'rwa2-context-chip-off' : ''}`.trim()}
+                aria-pressed={!excluded}
+                title={text(
+                  `${source.detail || source.label} — ${excluded ? 'excluded from' : 'included in'} this rewrite only`,
+                  `${source.detail || source.label} — ${excluded ? 'đã loại khỏi' : 'đang dùng trong'} lần viết lại này`,
+                )}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setTokenOpen(false);
+                  onToggleContext(source.key);
+                }}
+              >
+                <span className="rwa2-context-chip-dot" aria-hidden="true"></span>
+                {summaryLabel(source)}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            className="rwa2-context-chip rwa2-context-param-chip"
+            title={text('Open Length controls', 'Mở điều chỉnh độ dài')}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setTokenOpen(false);
+              if (!open) onToggleOpen();
+            }}
+          >
+            {lengthLabel}
+          </button>
         </div>
 
-        <button
-          type="button"
-          className="rwa2-token-trigger"
-          aria-expanded={open}
-          aria-controls="rwa2-context-detail"
-          aria-description={tokenHelp}
-          title={tokenHelp}
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onToggleOpen();
-          }}
-        >
-          <span>{tokenLabel}</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
-        </button>
+        <div className="rwa2-context-summary-actions">
+          <button
+            type="button"
+            className={`rwa2-token-trigger ${tokenOpen ? 'rwa2-token-trigger-open' : ''}`.trim()}
+            aria-expanded={tokenOpen}
+            aria-controls="rwa2-token-popover"
+            title={text('Show token details', 'Xem chi tiết token')}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setTokenOpen((current) => !current);
+            }}
+          >
+            {tokenLabel}
+          </button>
+
+          <button
+            type="button"
+            className="rwa2-context-toggle"
+            aria-expanded={open}
+            aria-controls="rwa2-context-detail"
+            title={open
+              ? text('Hide context options', 'Ẩn tùy chọn ngữ cảnh')
+              : text('Show context options', 'Hiện tùy chọn ngữ cảnh')}
+            aria-label={open
+              ? text('Hide context options', 'Ẩn tùy chọn ngữ cảnh')
+              : text('Show context options', 'Hiện tùy chọn ngữ cảnh')}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setTokenOpen(false);
+              onToggleOpen();
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        </div>
       </div>
+
+      {tokenOpen && (
+        <div id="rwa2-token-popover" className="rwa2-token-popover" role="dialog" aria-label={text('Token details', 'Chi tiết token')}>
+          <div className="rwa2-token-popover-head">
+            <span>{text('Request size', 'Kích thước yêu cầu')}</span>
+            <strong>{tokenLabel}</strong>
+          </div>
+          {parts.length > 0 ? (
+            <div className="rwa2-token-popover-grid">
+              {parts.map((part) => (
+                <div className="rwa2-token-popover-row" key={part.key}>
+                  <span>{part.label}</span>
+                  <strong>≈{part.value.toLocaleString()}</strong>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rwa2-token-popover-empty">
+              {tokenInfo.error || text('No token estimate available yet.', 'Chưa có ước lượng token.')}
+            </div>
+          )}
+          <div className="rwa2-token-popover-note">
+            {text(
+              'Estimate only — not the provider billing/tokenizer count.',
+              'Chỉ là ước lượng — không phải số token tính phí/tokenizer chính xác của nhà cung cấp.',
+            )}
+          </div>
+        </div>
+      )}
 
       <div id="rwa2-context-detail" className="rwa2-context-collapse" inert={open ? undefined : true}>
         <div className="rwa2-context-detail">
-          <div className="rwa2-token-detail">
-            <div className="rwa2-context-detail-head">
-              <span className="rwa2-context-detail-label">{text('Token details', 'Chi tiết token')}</span>
-              <span className="rwa2-context-detail-total">
-                {tokenInfo.loading && !tokenInfo.parts
-                  ? text('Calculating…', 'Đang tính…')
-                  : total > 0
-                    ? `≈${total.toLocaleString()} tok`
-                    : '≈— tok'}
-              </span>
-            </div>
-
-            {parts.length > 0 ? (
-              <div className="rwa2-token-detail-grid">
-                {parts.map((part) => (
-                  <div className="rwa2-token-detail-item" key={part.key}>
-                    <span className="rwa2-token-detail-dot" aria-hidden="true"></span>
-                    <span className="rwa2-token-detail-name">{part.label}</span>
-                    <span className="rwa2-token-detail-value">≈{part.value.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rwa2-token-detail-empty">{tokenInfo.error || text('No token estimate available yet.', 'Chưa có ước lượng token.')}</div>
-            )}
-
-            <div className="rwa2-token-detail-note">
-              {text(
-                'Estimate only — not the provider billing/tokenizer count.',
-                'Chỉ là ước lượng — không phải số token tính phí/tokenizer chính xác của nhà cung cấp.',
-              )}
-            </div>
-          </div>
-
           <div className="rwa2-context-control-grid">
             <div className="rwa2-context-control-block">
               <div className="rwa2-context-detail-label">{text('Sources', 'Nguồn')}</div>
