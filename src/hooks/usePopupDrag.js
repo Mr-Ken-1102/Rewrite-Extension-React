@@ -10,6 +10,9 @@ export function usePopupDrag({ popupRef, pinnedPos, updateConfig }) {
 
   const handleDragStart = useCallback((event) => {
     if (event.button !== undefined && event.button !== 0) return;
+    const eventTarget = event.target instanceof Element ? event.target : null;
+    if (eventTarget?.closest?.('[data-rwa-no-drag="true"], button, input, textarea, select, a, [role="button"]')) return;
+
     const el = popupRef.current;
     if (!el) return;
 
