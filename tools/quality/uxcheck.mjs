@@ -178,24 +178,24 @@ ok('settings expose current-chat connection without duplicate model selection', 
   assert.match(api, /No separate model selection is required/);
 });
 
-ok('popup keeps explicit recipe controls and compact token estimate contracts', () => {
-  const recipe = read('./src/components/popup/RecipeBar.jsx');
-  const live = read('./src/components/popup/LiveRail.jsx');
-  const inspector = read('./src/components/popup/RequestInspector.jsx');
-  assert.match(recipe, /Recipe/);
-  assert.match(recipe, /rwa2-recipe-chip/);
-  assert.match(live, /≈\$\{tokenInfo\.parts\.total\.toLocaleString\(\)\} tok/);
-  assert.match(live, /aria-expanded=\{inspectorOpen\}/);
-  assert.match(inspector, /Estimate only — not the provider billing\/tokenizer count/);
+ok('popup keeps one compact context summary whose token trigger opens direct details', () => {
+  const context = read('./src/components/popup/ContextDeck.jsx');
+  assert.match(context, /rwa2-context-summary/);
+  assert.match(context, /rwa2-context-chip/);
+  assert.match(context, /≈\$\{total\.toLocaleString\(\)\} tok/);
+  assert.match(context, /aria-expanded=\{open\}/);
+  assert.match(context, /Token details/);
+  assert.match(context, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.doesNotMatch(context, /Input composition|rwa2-token-composition/);
 });
 
 ok('context refresh keeps resolved identity and token text stable while controls re-inspect', () => {
   const hook = read('./src/hooks/useContextInspector.js');
-  const live = read('./src/components/popup/LiveRail.jsx');
+  const context = read('./src/components/popup/ContextDeck.jsx');
   assert.match(hook, /const sameSelection = current\.selectionKey === selectionKey/);
   assert.match(hook, /identities: sameSelection \? current\.identities : null/);
   assert.match(hook, /parts: sameSelection \? current\.parts : null/);
-  assert.match(live, /tokenInfo\.loading && !tokenInfo\.parts/);
+  assert.match(context, /tokenInfo\.loading && !tokenInfo\.parts/);
   assert.doesNotMatch(hook, /loading: true, identities: null/);
 });
 
@@ -210,7 +210,7 @@ ok('profile columns are configurable beyond two on the wide popup', () => {
   assert.doesNotMatch(settings, /Math\.min\(config\.cols \|\| 2, 2\)/);
 });
 
-ok('popup geometry is delegated to the rebalanced 620px isolated visual contract', () => {
+ok('popup geometry is delegated to the compact 520px isolated visual contract', () => {
   const popup = read('./src/components/PopupMain.jsx');
   const position = read('./src/hooks/usePopupPosition.js');
   const geometry = read('./src/popupGeometry.js');
@@ -218,7 +218,7 @@ ok('popup geometry is delegated to the rebalanced 620px isolated visual contract
   assert.match(popup, /className="rwa2-popup"/);
   assert.match(popup, /rwa2-workbench/);
   assert.match(position, /POPUP_DESKTOP_WIDTH/);
-  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 620/);
+  assert.match(geometry, /POPUP_DESKTOP_WIDTH = 520/);
   assert.match(geometry, /POPUP_GRID_COLUMNS = 12/);
   assert.match(css, /POPUP_DESKTOP_WIDTH/);
 });
