@@ -6,14 +6,15 @@ import { Button } from './ui/Button';
 import { Modal } from './ui/Modal';
 import { makeHistoryKey } from '../utils/historyKey';
 import { deriveTrimmedSelection } from '../utils/selectionContext';
-import { useRoleRadar } from '../hooks/useRoleRadar';
 import { useContextInspector } from '../hooks/useContextInspector';
 import { useContextPresentation } from '../hooks/useContextPresentation';
 import { usePopupDrag } from '../hooks/usePopupDrag';
 import { usePopupPosition } from '../hooks/usePopupPosition';
 import { PopupHeader } from './popup/PopupHeader';
 import { RewriteSection } from './popup/RewriteSection';
-import { ContextPanel } from './popup/ContextPanel';
+import { LiveRail } from './popup/LiveRail';
+import { RecipeBar } from './popup/RecipeBar';
+import { RequestInspector } from './popup/RequestInspector';
 import { PopupFooter } from './popup/PopupFooter';
 import { voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
 
@@ -52,10 +53,12 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const [contextExclusions, setContextExclusions] = useState({});
   const [trimOpen, setTrimOpen] = useState(false);
   const [trimText, setTrimText] = useState(selection?.text || '');
+  const [inspectorOpen, setInspectorOpen] = useState(false);
 
   useEffect(() => {
     setContextExclusions({});
     setTrimOpen(false);
+    setInspectorOpen(false);
     setTrimText(selection?.text || '');
   }, [selection?.captureId, selection?.text]);
 
@@ -120,8 +123,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     .slice()
     .sort((a, b) => ((a.order || 0) - (b.order || 0)) || String(a.id).localeCompare(String(b.id))), [profiles]);
 
-  const activeRole = useRoleRadar(selection);
-
   const rewriteSelection = useCallback(() => ({
     ...selection,
     contextExclusions: Object.keys(contextExclusions).filter((key) => contextExclusions[key]),
@@ -132,8 +133,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
   const autoProfile = voiceIdentity?.key && autoProfileBucket
     ? autoProfileBucket[voiceIdentity.key] || null
     : null;
-  const { radarText, radarColor, contextSources } = useContextPresentation({
-    activeRole,
+  const { contextSources } = useContextPresentation({
     config,
     tokenInfo,
     voiceIdentity,
@@ -150,6 +150,7 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
     compact: config.compact,
     popupPos: config.popupPos,
     pinnedPos: config.pinnedPos,
+    inspectorOpen,
   });
 
   const runProfile = useCallback((profile) => {
@@ -219,7 +220,9 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           language={language}
           selection={selection}
           pinned={!!config.pinnedPos}
-          identityProfile={autoProfile} onRunIdentityProfile={runProfile}
+          voiceIdentity={voiceIdentity}
+          identityProfile={autoProfile}
+          onRunIdentityProfile={runProfile}
           onTooltip={showTooltip} onTooltipLeave={hideTooltip}
           onDragStart={handleDragStart}
           onTrim={openTrim}
@@ -233,7 +236,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
-            fastRewrite={config.fastRewrite !== false} liveStreaming={config.liveStreaming !== false} connectionMode={config.connMode}
             selection={selection}
             mergeMultiMsg={config.mergeMultiMsg}
             onRun={runProfile}
@@ -241,20 +243,38 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             onTooltipLeave={hideTooltip}
           />
 
-          <ContextPanel
+          <LiveRail
             language={language}
             config={config}
             updateConfig={updateConfig}
             keepFocus={keepFocus}
-            radarText={radarText}
-            radarColor={radarColor}
             tokenInfo={tokenInfo}
-            voiceIdentity={voiceIdentity}
+            selection={selection}
+            inspectorOpen={inspectorOpen}
+            onToggleInspector={() => setInspectorOpen((open) => !open)}
+            onTooltip={showTooltip}
+            onTooltipLeave={hideTooltip}
+          />
+
+          <RecipeBar
+            language={language}
+            config={config}
             contextSources={contextSources}
             contextExclusions={contextExclusions}
             onToggleContext={toggleContextExclusion}
+            onOpenInspector={() => setInspectorOpen(true)}
             onTooltip={showTooltip}
             onTooltipLeave={hideTooltip}
+          />
+
+          <RequestInspector
+            open={inspectorOpen}
+            language={language}
+            config={config}
+            updateConfig={updateConfig}
+            keepFocus={keepFocus}
+            tokenInfo={tokenInfo}
+            onClose={() => setInspectorOpen(false)}
           />
         </main>
 
