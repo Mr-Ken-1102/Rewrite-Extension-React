@@ -111,6 +111,21 @@ ok('trim-selection dialog opts out of cursor-following glow work', () => {
   assert.equal((trimBlock.match(/<Button\b[^>]*glow=\{false\}/g) || []).length, 2);
 });
 
+ok('waiting result surfaces show continuous activity without ignoring reduced-motion preferences', () => {
+  const preview = read('./src/components/modals/PreviewModal.jsx');
+  const draft = read('./src/components/draft/DraftReplyModal.jsx');
+  const resultStyles = read('./src/styles-result.js');
+  const draftStyles = read('./src/styles-draft-reply.js');
+  assert.match(preview, /rwar-working-rail/);
+  assert.match(preview, /rwa-waiting-dots/);
+  assert.match(draft, /rwar-working-rail/);
+  assert.match(draft, /rwa-waiting-dots/);
+  assert.match(resultStyles, /@keyframes rwa-waiting-dot/);
+  assert.match(resultStyles, /@keyframes rwar-selected-sheen/);
+  assert.match(resultStyles, /prefers-reduced-motion:\s*reduce/);
+  assert.match(draftStyles, /prefers-reduced-motion:\s*reduce/);
+});
+
 ok('toast feedback uses live-region semantics and readable dwell times', () => {
   const source = read('./src/components/ui/ToastContainer.jsx');
   assert.match(source, /variant === 'err'\) return 6000/);
