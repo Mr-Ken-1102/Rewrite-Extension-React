@@ -1,7 +1,14 @@
 export const RWA_DRAFT_REPLY_CSS = `
-.rwa-draft-launcher {
+.rwa-draft-launcher-cluster {
   position: fixed;
   z-index: 10003;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rwa-draft-launcher {
+  position: relative;
   width: 118px;
   height: 30px;
   display: inline-flex;
@@ -29,6 +36,33 @@ export const RWA_DRAFT_REPLY_CSS = `
   border-color: var(--rwa-primary);
   background: color-mix(in srgb, var(--rwa-primary) 13%, var(--rwa-panel-bg));
   box-shadow: 0 9px 24px rgba(0,0,0,.34), 0 0 18px color-mix(in srgb, var(--rwa-primary) 28%, transparent);
+  outline: none;
+}
+.rwa-draft-settings-button {
+  appearance: none;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--rwa-primary) 34%, rgba(255,255,255,.08));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--rwa-panel-bg) 94%, black 6%);
+  color: color-mix(in srgb, var(--rwa-primary) 82%, white 18%);
+  box-shadow: 0 7px 20px rgba(0,0,0,.24);
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, color .16s ease, box-shadow .16s ease;
+}
+.rwa-draft-settings-button:hover,
+.rwa-draft-settings-button:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--rwa-primary);
+  background: color-mix(in srgb, var(--rwa-primary) 12%, var(--rwa-panel-bg));
+  color: var(--rwa-primary);
+  box-shadow: 0 9px 24px rgba(0,0,0,.30), 0 0 16px color-mix(in srgb, var(--rwa-primary) 22%, transparent);
   outline: none;
 }
 
