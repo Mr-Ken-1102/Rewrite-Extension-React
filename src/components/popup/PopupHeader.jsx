@@ -75,7 +75,6 @@ export function PopupHeader({
             </button>
           ) : (
             <div
-              data-rwa-no-drag="true"
               className="rwa2-identity-chip rwa2-identity-chip-static"
               aria-label={identityLabel}
               onMouseEnter={(event) => onTooltip?.(event, identityTooltip)}
