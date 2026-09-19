@@ -3,7 +3,7 @@ import { usePersistentStore } from '../store/usePersistentStore';
 import { useRuntimeStore } from '../store/useRuntimeStore';
 import { useToastStore } from '../store/useToastStore';
 import { APIService } from '../services/apiService';
-import { voiceIdentityFromMessage, voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
+import { resolveVoiceIdentity, voiceIdentityFromSelection } from '../services/voiceProfileIdentity.js';
 import { useAutoProfileGeneration } from './useAutoProfileGeneration';
 
 export function useAutoVoiceProfileCoordinator() {
@@ -15,7 +15,9 @@ export function useAutoVoiceProfileCoordinator() {
   ));
   const showToast = useToastStore((state) => state.showToast);
   const [resolved, setResolved] = useState({ selectionKey: '', identity: null, targetMessage: null });
-  const selectionKey = selection?.cid && selection?.mid ? `${selection.cid}\u0000${selection.mid}` : '';
+  const selectionKey = selection?.cid && selection?.mid
+    ? `${selection.cid}\u0000${selection.mid}\u0000${selection.captureId || ''}`
+    : '';
   const domIdentity = voiceIdentityFromSelection(selection);
   const resolvedIdentity = resolved.selectionKey === selectionKey ? resolved.identity : null;
   const resolvedMessage = resolved.selectionKey === selectionKey ? resolved.targetMessage : null;
@@ -38,27 +40,41 @@ export function useAutoVoiceProfileCoordinator() {
 
     let alive = true;
     const controller = new AbortController();
-    APIService.getMessageInfo(selection.cid, selection.mid, controller.signal)
-      .then((info) => {
-        if (!alive || controller.signal.aborted) return;
-        const message = info?.message || null;
-        setResolved({
-          selectionKey,
-          identity: voiceIdentityFromMessage(message),
-          targetMessage: message,
-        });
-      })
-      .catch(() => {
-        if (alive && !controller.signal.aborted) {
-          setResolved({ selectionKey, identity: null, targetMessage: null });
+
+    const resolve = async () => {
+      const info = await APIService.getMessageInfo(selection.cid, selection.mid, controller.signal);
+      if (!alive || controller.signal.aborted) return;
+      const message = info?.message || null;
+      const chatCharacters = selection.detectedGroupedSpeaker === true && selection.detectedGroupedSpeakerAmbiguous !== true
+        ? await APIService.fetchChatCharacters(selection.cid, controller.signal)
+        : [];
+      if (!alive || controller.signal.aborted) return;
+
+      const identity = resolveVoiceIdentity(selection, message, chatCharacters);
+      const targetMessage = identity?.kind === 'character' && selection.detectedGroupedSpeaker === true
+        ? {
+          id: selection.mid,
+          role: 'assistant',
+          characterId: identity.id,
+          characterName: identity.name || selection.detectedName || undefined,
+          content: selection.text || '',
         }
-      });
+        : message;
+
+      setResolved({ selectionKey, identity, targetMessage });
+    };
+
+    resolve().catch(() => {
+      if (alive && !controller.signal.aborted) {
+        setResolved({ selectionKey, identity: null, targetMessage: null });
+      }
+    });
 
     return () => {
       alive = false;
       controller.abort();
     };
-  }, [config.autoProfileEnabled, selection?.cid, selection?.mid, selectionKey]);
+  }, [config.autoProfileEnabled, selection, selectionKey]);
 
   const profile = identity?.key && bucket ? bucket[identity.key] || null : null;
 
