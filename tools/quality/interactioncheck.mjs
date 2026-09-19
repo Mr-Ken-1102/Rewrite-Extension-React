@@ -108,7 +108,7 @@ ok('popup controls preserve switch semantics and named compact groups', () => {
   assert.match(context, /aria-pressed=\{!excluded\}/);
   assert.match(context, /aria-expanded=\{tokenOpen\}/);
   assert.match(context, /aria-expanded=\{open\}/);
-  assert.match(context, /role="dialog" aria-label=\{text\('Token details', 'Chi tiết token'\)\}/);
+  assert.match(context, /role="region" aria-label=\{text\('Token details', 'Chi tiết token'\)\}/);
   assert.match(performance, /aria-pressed=\{item\.active\}/);
   assert.match(performance, /key:\s*'FREE MODE'/);
   assert.match(performance, /key:\s*'FAST REWRITE'/);
