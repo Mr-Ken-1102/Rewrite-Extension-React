@@ -25,7 +25,7 @@ assert.match(a11y, /:focus-visible/);
 assert.match(a11y, /prefers-contrast:\s*more/);
 assert.doesNotMatch(a11y, /font-size:\s*(?:[0-9](?:\.[0-9]+)?)px/);
 assert.match(a11y, /\.rwa2-performance-key\s*\{\s*font-size:10px/);
-assert.match(a11y, /\.rwa2-popup \.rwa2-action\s*\{\s*font-size:11px !important/);
+assert.match(a11y, /\.rwa2-popup \.rwa2-action\s*\{\s*font-size:10\.5px !important/);
 assert.match(base, /\.rwa2-brand-title\s*\{[\s\S]*font-size:16px;[\s\S]*font-weight:740;[\s\S]*letter-spacing:-\.015em/);
 assert.match(base, /\.rwa2-profile-name\s*\{[\s\S]*font-weight:560;[\s\S]*letter-spacing:-\.005em/);
 assert.match(base, /\.rwa2-popup \.rwa2-action\s*\{[\s\S]*font-weight:560 !important/);
