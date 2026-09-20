@@ -1320,7 +1320,7 @@ ok('token preview stays compact beside identity and uses the shared right-side h
   assert.match(status, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
   assert.match(status, /Show token estimate details/);
   assert.match(status, /kind: 'token'/);
-  assert.match(status, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.match(status, /Estimate only — provider billing may differ/);
   assert.match(status, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.doesNotMatch(deck, /rwa2-token-popover|rwa2-context-toggle|rwa2-context-collapse/);
   assert.match(tooltip, /rwa2-tooltip-token/);
