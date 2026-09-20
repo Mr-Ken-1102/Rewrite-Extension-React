@@ -31,7 +31,7 @@ function SparkleIcon({ size = 14 }) {
 
 function InfoIcon() {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="8.25" />
       <path d="M12 10.5v5" />
       <path d="M12 7.7h.01" />
@@ -72,8 +72,8 @@ export function IdentityStatusRow({
     total: tokenLabel,
     parts,
     note: tokenInfo.error || text(
-      'Estimate only — not the provider billing/tokenizer count.',
-      'Chỉ là ước lượng — không phải số token tính phí/tokenizer chính xác của nhà cung cấp.',
+      'Estimate only — provider billing may differ.',
+      'Chỉ ước lượng — token tính phí có thể khác.',
     ),
   };
 
