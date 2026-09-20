@@ -37,8 +37,8 @@ export const RWA_POPUP_BASE_CSS = `
   max-width: min(${POPUP_DESKTOP_WIDTH}px, calc(100vw - 16px));
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  padding: 8px ${POPUP_OUTER_PADDING_X}px 9px;
+  gap: 6px;
+  padding: 7px ${POPUP_OUTER_PADDING_X}px 8px;
   border: 1px solid rgba(226,161,59,.24);
   border-radius: 15px;
   background:
@@ -58,12 +58,12 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-workbench { display: contents; }
 
 .rwa2-toolbar {
-  min-height: 38px;
+  min-height: 35px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 0 1px 6px;
+  gap: 9px;
+  padding: 0 1px 5px;
   border-bottom: 1px solid rgba(255,255,255,.10);
   cursor: grab;
   user-select: none;
@@ -138,18 +138,16 @@ export const RWA_POPUP_BASE_CSS = `
 
 .rwa2-trim-button {
   appearance:none;
-  min-width:56px;
+  width:30px;
+  min-width:30px;
   height:30px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:5px;
-  padding:0 8px;
+  display:inline-grid;
+  place-items:center;
+  padding:0;
   border:1px solid var(--rwa2-border);
   border-radius:8px;
   background:rgba(255,255,255,.014);
   color:rgba(255,255,255,.76);
-  font:600 10.5px/1 var(--rwa-host-font,system-ui,sans-serif);
   cursor:pointer;
   transition:background-color .12s ease,border-color .12s ease,color .12s ease,transform .12s ease;
 }
@@ -164,12 +162,12 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-trim-button:disabled { opacity:.28; cursor:not-allowed; }
 
 .rwa2-status-row {
-  min-height:32px;
+  min-height:29px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:8px;
-  padding:0 3px 5px;
+  gap:7px;
+  padding:0 2px 4px;
   border-bottom:1px solid rgba(255,255,255,.08);
 }
 .rwa2-status-identity-slot {
@@ -181,16 +179,16 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-identity-chip {
   min-width:0;
   max-width:min(76%,330px);
-  height:27px;
+  height:25px;
   display:inline-flex;
   align-items:center;
-  gap:7px;
-  padding:0 12px;
+  gap:6px;
+  padding:0 10px;
   border:1px solid rgba(226,161,59,.40);
   border-radius:999px;
   background:linear-gradient(180deg,rgba(226,161,59,.075),rgba(226,161,59,.035));
   color:var(--rwa2-brand);
-  font:660 12px/1 var(--rwa-host-font,system-ui,sans-serif);
+  font:660 11.5px/1 var(--rwa-host-font,system-ui,sans-serif);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
 }
 .rwa2-identity-persona {
@@ -229,18 +227,18 @@ export const RWA_POPUP_BASE_CSS = `
 }
 .rwa2-token-trigger {
   appearance:none;
-  min-height:27px;
+  min-height:25px;
   flex:0 0 auto;
   display:inline-flex;
   align-items:center;
-  gap:8px;
-  padding:0 3px 0 12px;
+  gap:6px;
+  padding:0 2px 0 10px;
   border:0;
   border-left:1px solid rgba(255,255,255,.10);
   border-radius:0;
   background:transparent;
   color:rgba(255,255,255,.84);
-  font:650 13px/1 var(--rwa-host-font,system-ui,sans-serif);
+  font:650 12px/1 var(--rwa-host-font,system-ui,sans-serif);
   white-space:nowrap;
   cursor:help;
   transition:color .12s ease;
@@ -252,7 +250,7 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-rewrite {
   min-width:0;
   display:grid;
-  gap:9px;
+  gap:7px;
   padding:0;
   border:0;
   background:transparent;
@@ -313,15 +311,15 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-profile-placeholder {
   width:100% !important;
   min-width:0 !important;
-  min-height:44px !important;
-  height:44px !important;
+  min-height:41px !important;
+  height:41px !important;
   margin:0 !important;
   border-radius:10px !important;
 }
 .rwa2-popup .rwa2-profile-btn {
   justify-content:flex-start !important;
-  gap:9px !important;
-  padding:0 8px !important;
+  gap:7px !important;
+  padding:0 7px !important;
   border:1px solid rgba(255,255,255,.105) !important;
   background:linear-gradient(180deg,rgba(255,255,255,.017),rgba(255,255,255,.006)),var(--rwa2-surface) !important;
   color:var(--rwa2-text-2) !important;
@@ -334,9 +332,9 @@ export const RWA_POPUP_BASE_CSS = `
 }
 .rwa2-popup .rwa2-profile-btn:active:not(:disabled) { transform:translateY(1px) !important; }
 .rwa2-profile-icon {
-  width:19px;
-  height:19px;
-  flex:0 0 19px;
+  width:17px;
+  height:17px;
+  flex:0 0 17px;
   display:inline-grid;
   place-items:center;
   color:var(--rwa2-brand);
@@ -348,7 +346,7 @@ export const RWA_POPUP_BASE_CSS = `
   text-overflow:ellipsis;
   white-space:nowrap;
   text-align:left;
-  font-size:11.5px;
+  font-size:10.8px;
   line-height:1.15;
   font-weight:560;
   letter-spacing:-.005em;
@@ -364,18 +362,18 @@ export const RWA_POPUP_BASE_CSS = `
 }
 
 .rwa2-actionbar {
-  min-height:42px;
+  min-height:38px;
   display:grid;
-  grid-template-columns:64px 64px minmax(0,1fr) 38px;
+  grid-template-columns:60px 60px minmax(0,1fr) 34px;
   align-items:center;
-  gap:6px;
-  padding-top:7px;
+  gap:5px;
+  padding-top:5px;
   border-top:1px solid rgba(255,255,255,.075);
 }
 .rwa2-popup .rwa2-action {
   min-width:0 !important;
-  min-height:34px !important;
-  height:34px !important;
+  min-height:32px !important;
+  height:32px !important;
   margin:0 !important;
   padding:0 11px !important;
   border:1px solid var(--rwa2-border) !important;
@@ -411,7 +409,7 @@ export const RWA_POPUP_BASE_CSS = `
 }
 .rwa2-custom-icon { color:var(--rwa2-brand); }
 .rwa2-popup .rwa2-settings {
-  width:38px !important;
+  width:34px !important;
   padding:0 !important;
   color:rgba(255,255,255,.70) !important;
 }
