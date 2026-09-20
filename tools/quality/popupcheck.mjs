@@ -23,7 +23,7 @@ ok('popup geometry constants encode the balanced 488px / three-column-first cont
   assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 27/);
   assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 35/);
   assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 26/);
-  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 32/);
+  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 31/);
 });
 
 ok('popup geometry accounts for collapsed context, optional detail, and narrow stacking', () => {
@@ -174,7 +174,7 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*27/);
   assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*35/);
   assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*26/);
-  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*32/);
+  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*31/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
   assert.match(geometry, /contextSummaryCount > 5 \? POPUP_CONTEXT_WRAP_EXTRA : 0/);
@@ -279,7 +279,11 @@ ok('context deck uses five persistent icon toggles and always-visible History/Le
   assert.match(context, /commitDepth/);
   assert.doesNotMatch(context, /<select/);
   assert.match(context, /disabled=\{!config\.lengthEnabled\}/);
+  assert.match(context, /const lengthFill = \(\(lengthValue \+ 99\) \/ 299\) \* 100/);
+  assert.match(context, /const lengthPercent = lengthValue > 0/);
+  assert.match(context, /className="rwa2-length-value"/);
   assert.match(context, /--rwa2-range-fill/);
+  assert.doesNotMatch(context, /lengthEnabled: true, lengthPct/);
   assert.match(context, /rwa2-length-toggle/);
   assert.match(context, /aria-pressed=\{config\.lengthEnabled\}/);
   assert.match(context, /\{config\.lengthEnabled \? 'ON' : 'OFF'\}/);
