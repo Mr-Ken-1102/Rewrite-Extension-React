@@ -73,7 +73,6 @@ export function PopupHeader({
             : text('Trim selection before sending', 'Cắt vùng chọn trước khi gửi')}
         >
           <TrimIcon />
-          <span>{text('Trim', 'Cắt')}</span>
         </button>
       </div>
     </header>
