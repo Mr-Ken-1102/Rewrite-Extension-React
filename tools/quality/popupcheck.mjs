@@ -232,8 +232,9 @@ ok('three-mode performance strip makes Free, Fast Rewrite, and Streaming directl
   assert.match(strip, /updateConfig\(\{ fastRewrite: config\.fastRewrite === false \}\)/);
   assert.match(strip, /updateConfig\(\{ liveStreaming: config\.liveStreaming === false \}\)/);
   assert.match(strip, /aria-pressed=\{item\.active\}/);
-  assert.match(contextCss, /\.rwa2-performance-strip\s*\{[\s\S]*border:\s*1px solid/);
-  assert.match(contextCss, /\.rwa2-performance-item \+ \.rwa2-performance-item/);
+  assert.match(contextCss, /\.rwa2-performance-strip\s*\{[\s\S]*gap:3px;[\s\S]*border:1px solid rgba\(255,255,255,\.09\)/);
+  assert.match(contextCss, /\.rwa2-performance-on\s*\{[\s\S]*border-color:rgba\(226,161,59,\.24\)/);
+  assert.doesNotMatch(strip, /rwa2-performance-meta|rwa2-performance-divider/);
   assert.match(contextCss, /\.rwa2-performance-dot\s*\{/);
 });
 
@@ -261,7 +262,9 @@ ok('context deck uses five persistent icon toggles and always-visible History/Le
   const status = read('./src/components/popup/IdentityStatusRow.jsx');
   const presentation = read('./src/hooks/useContextPresentation.js');
   assert.match(css, /\.rwa2-context-chips\s*\{[\s\S]*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
-  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:minmax\(0,\.78fr\) 1px minmax\(0,1\.22fr\)/);
+  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:minmax\(0,\.76fr\) minmax\(0,1\.24fr\)/);
+  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*border:0;[\s\S]*background:transparent/);
+  assert.doesNotMatch(css, /\.rwa2-context-adjust-row::before/);
   assert.match(status, /kind: 'token'/);
   assert.match(status, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.match(context, /aria-pressed=\{source\.enabled\}/);
