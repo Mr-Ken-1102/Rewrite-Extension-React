@@ -20,10 +20,10 @@ ok('popup geometry constants encode the balanced 488px / three-column-first cont
   assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 38/);
   assert.match(source, /POPUP_PROFILE_ROW_GAP = 4/);
   assert.match(source, /POPUP_FIXED_HEIGHT = 114/);
-  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 30/);
+  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 27/);
   assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 35/);
   assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 26/);
-  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 34/);
+  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 32/);
 });
 
 ok('popup geometry accounts for collapsed context, optional detail, and narrow stacking', () => {
@@ -67,11 +67,11 @@ ok('preset card removes redundant Choose-a-style and style-count chrome', () => 
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   assert.doesNotMatch(rewrite, /rwa2-section-head|rwa2-section-title|rwa2-section-meta/);
   assert.doesNotMatch(rewrite, /Choose a style|styles · scroll or type|kiểu · cuộn hoặc gõ để tìm/);
-  assert.match(rewrite, /<PerformanceStrip/);
+  assert.doesNotMatch(rewrite, /<PerformanceStrip/);
   assert.match(rewrite, /<ProfileGrid/);
 });
 
-ok('popup architecture follows the approved status → modes → presets → context → footer stack', () => {
+ok('popup architecture follows status → presets → unified controls → footer hierarchy', () => {
   const base = read('./src/styles-popup-base.js');
   const main = read('./src/components/PopupMain.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
@@ -84,8 +84,9 @@ ok('popup architecture follows the approved status → modes → presets → con
   assert.match(main, /<PopupFooter/);
   assert.match(status, /rwa2-status-row/);
   assert.match(status, /rwa2-token-trigger/);
-  assert.match(rewrite, /<PerformanceStrip/);
+  assert.doesNotMatch(rewrite, /<PerformanceStrip/);
   assert.match(performance, /rwa2-performance-strip/);
+  assert.match(context, /<PerformanceStrip/);
   assert.match(context, /rwa2-context-deck/);
   assert.match(context, /rwa2-context-adjust-row/);
   assert.match(base, /\.rwa2-status-row\s*\{/);
@@ -170,10 +171,10 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /multiMessage/);
   assert.match(source, /compact/);
   assert.doesNotMatch(source, /fastRewrite/);
-  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*30/);
+  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*27/);
   assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*35/);
   assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*26/);
-  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*34/);
+  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*32/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
   assert.match(geometry, /contextSummaryCount > 5 \? POPUP_CONTEXT_WRAP_EXTRA : 0/);
@@ -220,10 +221,10 @@ ok('responsive context detail stacks controls without turning token details into
 });
 
 ok('three-mode performance strip makes Free, Fast Rewrite, and Streaming directly actionable', () => {
-  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const context = read('./src/components/popup/ContextDeck.jsx');
   const strip = read('./src/components/popup/PerformanceStrip.jsx');
   const contextCss = read('./src/styles-popup-context.js');
-  assert.match(rewrite, /<PerformanceStrip/);
+  assert.match(context, /<PerformanceStrip/);
   assert.match(strip, /getProviderCapabilities/);
   assert.match(strip, /key:\s*'FREE MODE'/);
   assert.match(strip, /key:\s*'FAST REWRITE'/);
