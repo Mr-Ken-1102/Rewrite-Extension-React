@@ -121,6 +121,11 @@ ok('popup controls preserve persistent mode semantics, editable Depth, and ON/OF
   assert.match(context, /Decrease history depth/);
   assert.doesNotMatch(context, /<option|<select/);
   assert.match(context, /disabled=\{!config\.lengthEnabled\}/);
+  assert.match(context, /const lengthZero = \(99 \/ 299\) \* 100/);
+  assert.match(context, /className="rwa2-range-wrap"/);
+  assert.match(context, /className="rwa2-length-value"/);
+  assert.match(context, /const nextEnabled = !config\.lengthEnabled/);
+  assert.match(context, /updateConfig\(\{ lengthEnabled: nextEnabled, lengthPct: 0 \}\)/);
   assert.match(status, /aria-label=\{text\('Show token estimate details'/);
   assert.match(status, /onFocus=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.match(performance, /aria-pressed=\{item\.active\}/);
