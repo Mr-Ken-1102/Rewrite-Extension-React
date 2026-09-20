@@ -233,7 +233,7 @@ ok('three-mode performance strip makes Free, Fast Rewrite, and Streaming directl
   assert.match(strip, /updateConfig\(\{ fastRewrite: config\.fastRewrite === false \}\)/);
   assert.match(strip, /updateConfig\(\{ liveStreaming: config\.liveStreaming === false \}\)/);
   assert.match(strip, /aria-pressed=\{item\.active\}/);
-  assert.match(contextCss, /\.rwa2-performance-strip\s*\{[\s\S]*gap:3px;[\s\S]*border:1px solid rgba\(255,255,255,\.09\)/);
+  assert.match(contextCss, /\.rwa2-performance-strip\s*\{[\s\S]*gap:4px;[\s\S]*border:0;[\s\S]*background:transparent/);
   assert.match(contextCss, /\.rwa2-performance-on\s*\{[\s\S]*border-color:rgba\(226,161,59,\.24\)/);
   assert.doesNotMatch(strip, /rwa2-performance-meta|rwa2-performance-divider/);
   assert.match(contextCss, /\.rwa2-performance-dot\s*\{/);
