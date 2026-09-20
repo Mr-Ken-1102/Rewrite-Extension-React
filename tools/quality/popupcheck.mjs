@@ -17,18 +17,18 @@ ok('popup geometry constants encode the balanced 488px / three-column-first cont
   assert.match(source, /POPUP_GRID_COLUMNS = 12/);
   assert.match(source, /POPUP_GRID_GAP = 8/);
   assert.match(source, /POPUP_NORMAL_MIN_CELL = 110/);
-  assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 41/);
-  assert.match(source, /POPUP_PROFILE_ROW_GAP = 5/);
-  assert.match(source, /POPUP_FIXED_HEIGHT = 120/);
-  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 34/);
-  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 36/);
-  assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 29/);
-  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 48/);
+  assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 38/);
+  assert.match(source, /POPUP_PROFILE_ROW_GAP = 4/);
+  assert.match(source, /POPUP_FIXED_HEIGHT = 114/);
+  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 30/);
+  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 35/);
+  assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 26/);
+  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 34/);
 });
 
 ok('popup geometry accounts for collapsed context, optional detail, and narrow stacking', () => {
   const source = read('./src/popupGeometry.js');
-  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 40/);
+  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 36/);
   assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 27/);
   assert.match(source, /getResponsivePopupExtra/);
   assert.match(source, /contextOpen && width <= 459 \? POPUP_NARROW_CONTEXT_EXTRA : 0/);
@@ -170,10 +170,10 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /multiMessage/);
   assert.match(source, /compact/);
   assert.doesNotMatch(source, /fastRewrite/);
-  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*34/);
-  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*36/);
-  assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*29/);
-  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*48/);
+  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*30/);
+  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*35/);
+  assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*26/);
+  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*34/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
   assert.match(geometry, /contextSummaryCount > 5 \? POPUP_CONTEXT_WRAP_EXTRA : 0/);
@@ -248,8 +248,8 @@ ok('popup visual layer is low-paint and uses subdued amber', () => {
 ok('approved popup density compresses chrome while keeping readable controls', () => {
   const base = read('./src/styles-popup-base.js');
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  assert.match(base, /\.rwa2-toolbar\s*\{[\s\S]*min-height:\s*35px/);
-  assert.match(base, /rwa2-profile-btn,[\s\S]*min-height:\s*41px !important;[\s\S]*height:\s*41px !important/);
+  assert.match(base, /\.rwa2-toolbar\s*\{[\s\S]*min-height:\s*32px/);
+  assert.match(base, /rwa2-profile-btn,[\s\S]*min-height:\s*38px !important;[\s\S]*height:\s*38px !important/);
   assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*32px !important;[\s\S]*height:\s*32px !important/);
   assert.match(grid, /rwa2-profile-icon/);
   assert.match(grid, /rwa2-profile-placeholder/);
