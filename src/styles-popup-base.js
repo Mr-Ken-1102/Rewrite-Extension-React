@@ -37,8 +37,8 @@ export const RWA_POPUP_BASE_CSS = `
   max-width: min(${POPUP_DESKTOP_WIDTH}px, calc(100vw - 16px));
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 7px ${POPUP_OUTER_PADDING_X}px 8px;
+  gap: 5px;
+  padding: 6px ${POPUP_OUTER_PADDING_X}px 7px;
   border: 1px solid rgba(226,161,59,.24);
   border-radius: 15px;
   background:
@@ -58,19 +58,19 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-workbench { display: contents; }
 
 .rwa2-toolbar {
-  min-height: 35px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 9px;
-  padding: 0 1px 5px;
+  gap: 8px;
+  padding: 0 1px 4px;
   border-bottom: 1px solid rgba(255,255,255,.10);
   cursor: grab;
   user-select: none;
   touch-action: none;
 }
 .rwa2-toolbar:active { cursor: grabbing; }
-.rwa2-brand { display:flex; align-items:center; gap:8px; min-width:0; }
+.rwa2-brand { display:flex; align-items:center; gap:7px; min-width:0; }
 .rwa2-brand-mark {
   flex:0 0 auto;
   display:inline-grid;
@@ -80,7 +80,7 @@ export const RWA_POPUP_BASE_CSS = `
 }
 .rwa2-brand-title {
   color:var(--rwa2-text);
-  font-size:16px;
+  font-size:14.5px;
   line-height:1;
   font-weight:740;
   letter-spacing:-.015em;
@@ -90,13 +90,13 @@ export const RWA_POPUP_BASE_CSS = `
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  height:22px;
-  padding:0 8px;
+  height:20px;
+  padding:0 7px;
   border:1px solid var(--rwa2-border);
   border-radius:999px;
   background:rgba(255,255,255,.018);
   color:rgba(255,255,255,.67);
-  font-size:10px;
+  font-size:9.5px;
   font-weight:650;
   letter-spacing:.02em;
 }
@@ -106,12 +106,12 @@ export const RWA_POPUP_BASE_CSS = `
   display:flex;
   align-items:center;
   justify-content:flex-end;
-  gap:5px;
+  gap:4px;
 }
 .rwa2-icon-button {
   appearance:none;
-  width:30px;
-  height:30px;
+  width:27px;
+  height:27px;
   display:inline-grid;
   place-items:center;
   padding:0;
@@ -138,9 +138,9 @@ export const RWA_POPUP_BASE_CSS = `
 
 .rwa2-trim-button {
   appearance:none;
-  width:30px;
-  min-width:30px;
-  height:30px;
+  width:27px;
+  min-width:27px;
+  height:27px;
   display:inline-grid;
   place-items:center;
   padding:0;
@@ -311,15 +311,15 @@ export const RWA_POPUP_BASE_CSS = `
 .rwa2-profile-placeholder {
   width:100% !important;
   min-width:0 !important;
-  min-height:41px !important;
-  height:41px !important;
+  min-height:38px !important;
+  height:38px !important;
   margin:0 !important;
-  border-radius:10px !important;
+  border-radius:9px !important;
 }
 .rwa2-popup .rwa2-profile-btn {
   justify-content:flex-start !important;
-  gap:7px !important;
-  padding:0 7px !important;
+  gap:6px !important;
+  padding:0 6px !important;
   border:1px solid rgba(255,255,255,.105) !important;
   background:linear-gradient(180deg,rgba(255,255,255,.017),rgba(255,255,255,.006)),var(--rwa2-surface) !important;
   color:var(--rwa2-text-2) !important;
@@ -332,9 +332,9 @@ export const RWA_POPUP_BASE_CSS = `
 }
 .rwa2-popup .rwa2-profile-btn:active:not(:disabled) { transform:translateY(1px) !important; }
 .rwa2-profile-icon {
-  width:17px;
-  height:17px;
-  flex:0 0 17px;
+  width:16px;
+  height:16px;
+  flex:0 0 16px;
   display:inline-grid;
   place-items:center;
   color:var(--rwa2-brand);
@@ -346,7 +346,7 @@ export const RWA_POPUP_BASE_CSS = `
   text-overflow:ellipsis;
   white-space:nowrap;
   text-align:left;
-  font-size:10.8px;
+  font-size:10.5px;
   line-height:1.15;
   font-weight:560;
   letter-spacing:-.005em;
@@ -357,7 +357,7 @@ export const RWA_POPUP_BASE_CSS = `
   border:1px dashed rgba(255,255,255,.13);
   background:rgba(255,255,255,.006);
   color:rgba(255,255,255,.20);
-  font-size:22px;
+  font-size:20px;
   font-weight:250;
 }
 

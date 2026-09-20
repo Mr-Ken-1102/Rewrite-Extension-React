@@ -70,7 +70,7 @@ export function PerformanceStrip({
 
   return (
     <div className="rwa2-performance-strip" role="group" aria-label={text('Rewrite modes', 'Chế độ viết lại')}>
-      {items.map((item, index) => (
+      {items.map((item) => (
         <button
           key={item.key}
           type="button"
@@ -92,8 +92,6 @@ export function PerformanceStrip({
         >
           <span className="rwa2-performance-dot" aria-hidden="true"></span>
           <span className="rwa2-performance-key">{item.key}</span>
-          <span className="rwa2-performance-meta">{item.state}</span>
-          {index < items.length - 1 && <span className="rwa2-performance-divider" aria-hidden="true"></span>}
         </button>
       ))}
     </div>
