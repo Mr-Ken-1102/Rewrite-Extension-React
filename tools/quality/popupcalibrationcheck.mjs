@@ -17,7 +17,7 @@ assert.match(
 assert.match(a11y, /\.rwa2-token-trigger,[\s\S]*font-size:\s*11px !important/);
 assert.match(a11y, /\.rwa2-profile-name\s*\{[\s\S]*font-size:\s*10\.5px/);
 assert.match(context, /\.rwa2-context-chip\s*\{[\s\S]*min-height:27px/);
-assert.match(context, /\.rwa2-performance-item\s*\{[\s\S]*min-height:24px/);
+assert.match(context, /\.rwa2-performance-item\s*\{[\s\S]*min-height:25px/);
 assert.match(base, /\.rwa2-token-trigger\s*\{[\s\S]*min-height:25px/);
 assert.match(base, /\.rwa2-status-row\s*\{[\s\S]*min-height:29px/);
 assert.match(context, /\.rwa2-tooltip-token\s*\{[\s\S]*width:\s*min\(254px/);
