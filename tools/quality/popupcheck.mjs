@@ -284,7 +284,7 @@ ok('context deck uses five persistent icon toggles and always-visible History/Le
 ok('footer matches the approved Undo / Redo / Custom Prompt / Settings composition', () => {
   const base = read('./src/styles-popup-base.js');
   const footer = read('./src/components/popup/PopupFooter.jsx');
-  assert.match(base, /\.rwa2-actionbar\s*\{[\s\S]*display:grid;[\s\S]*grid-template-columns:64px 64px minmax\(0,1fr\) 38px/);
+  assert.match(base, /\.rwa2-actionbar\s*\{[\s\S]*display:grid;[\s\S]*grid-template-columns:60px 60px minmax\(0,1fr\) 34px/);
   assert.match(base, /\.rwa2-popup \.rwa2-custom\s*\{[\s\S]*border-color:rgba\(226,161,59,\.48\)/);
   assert.match(footer, />\{text\('Undo', 'Hoàn tác'\)\}<\/span>/);
   assert.match(footer, />\{text\('Redo', 'Làm lại'\)\}<\/span>/);
