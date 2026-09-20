@@ -13,23 +13,23 @@ const ok = (name, fn) => {
 ok('popup geometry constants encode the balanced 488px / three-column-first contract', () => {
   const source = read('./src/popupGeometry.js');
   assert.match(source, /POPUP_DESKTOP_WIDTH = 488/);
-  assert.match(source, /POPUP_OUTER_PADDING_X = 12/);
+  assert.match(source, /POPUP_OUTER_PADDING_X = 10/);
   assert.match(source, /POPUP_GRID_COLUMNS = 12/);
   assert.match(source, /POPUP_GRID_GAP = 8/);
   assert.match(source, /POPUP_NORMAL_MIN_CELL = 110/);
-  assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 54/);
-  assert.match(source, /POPUP_PROFILE_ROW_GAP = 7/);
-  assert.match(source, /POPUP_FIXED_HEIGHT = 148/);
-  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 42/);
-  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 47/);
-  assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 38/);
-  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 66/);
+  assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 44/);
+  assert.match(source, /POPUP_PROFILE_ROW_GAP = 6/);
+  assert.match(source, /POPUP_FIXED_HEIGHT = 132/);
+  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 36/);
+  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 39/);
+  assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 32/);
+  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 58/);
 });
 
 ok('popup geometry accounts for collapsed context, optional detail, and narrow stacking', () => {
   const source = read('./src/popupGeometry.js');
-  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 54/);
-  assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 34/);
+  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 46/);
+  assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 30/);
   assert.match(source, /getResponsivePopupExtra/);
   assert.match(source, /contextOpen && width <= 459 \? POPUP_NARROW_CONTEXT_EXTRA : 0/);
   assert.match(source, /width <= 419 \? POPUP_WRAPPED_ACTIONBAR_EXTRA : 0/);
@@ -170,10 +170,10 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /multiMessage/);
   assert.match(source, /compact/);
   assert.doesNotMatch(source, /fastRewrite/);
-  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*42/);
-  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*47/);
-  assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*38/);
-  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*66/);
+  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*36/);
+  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*39/);
+  assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*32/);
+  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*58/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
   assert.match(geometry, /contextSummaryCount > 5 \? POPUP_CONTEXT_WRAP_EXTRA : 0/);
@@ -245,12 +245,12 @@ ok('popup visual layer is low-paint and uses subdued amber', () => {
   assert.doesNotMatch(`${base}\n${context}`, /#ffb020/i);
 });
 
-ok('approved popup density uses full icon cards and readable toolbar controls', () => {
+ok('approved popup density compresses chrome while keeping readable controls', () => {
   const base = read('./src/styles-popup-base.js');
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  assert.match(base, /\.rwa2-toolbar\s*\{[\s\S]*min-height:\s*45px/);
-  assert.match(base, /rwa2-profile-btn,[\s\S]*min-height:\s*54px !important;[\s\S]*height:\s*54px !important/);
-  assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*39px !important;[\s\S]*height:\s*39px !important/);
+  assert.match(base, /\.rwa2-toolbar\s*\{[\s\S]*min-height:\s*38px/);
+  assert.match(base, /rwa2-profile-btn,[\s\S]*min-height:\s*44px !important;[\s\S]*height:\s*44px !important/);
+  assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*34px !important;[\s\S]*height:\s*34px !important/);
   assert.match(grid, /rwa2-profile-icon/);
   assert.match(grid, /rwa2-profile-placeholder/);
 });
@@ -267,6 +267,12 @@ ok('context deck uses five persistent icon toggles and always-visible History/Le
   assert.match(context, /aria-pressed=\{source\.enabled\}/);
   assert.match(context, /onToggleContext\(source\.key, !source\.enabled\)/);
   assert.match(context, /History depth/);
+  assert.match(context, /rwa2-depth-stepper/);
+  assert.match(context, /setDepth\(depth \+ 1\)/);
+  assert.match(context, /setDepth\(depth - 1\)/);
+  assert.doesNotMatch(context, /<select/);
+  assert.match(context, /disabled=\{!config\.lengthEnabled\}/);
+  assert.match(context, /Switch to manual length adjustment/);
   assert.match(context, /Rewrite length adjustment/);
   assert.match(context, /rwa2-context-chip-icon/);
   assert.doesNotMatch(context, /rwa2-context-toggle|rwa2-context-collapse|rwa2-token-popover/);
