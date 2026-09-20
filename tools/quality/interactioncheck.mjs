@@ -100,7 +100,7 @@ ok('non-modal popup exposes a localized named region without interfering with di
   assert.doesNotMatch(source, /className="rwa2-popup"[\s\S]*role="dialog"/);
 });
 
-ok('popup controls preserve switch semantics, steppers, and Auto-disabled length behavior', () => {
+ok('popup controls preserve persistent mode semantics, editable Depth, and ON/OFF Length behavior', () => {
   const toggle = read('./src/components/ui/ToggleSwitch.jsx');
   const context = read('./src/components/popup/ContextDeck.jsx');
   const status = read('./src/components/popup/IdentityStatusRow.jsx');
