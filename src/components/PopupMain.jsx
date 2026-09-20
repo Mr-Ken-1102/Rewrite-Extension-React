@@ -253,9 +253,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             colCount={layoutColCount}
             rows={config.rows}
             compact={config.compact}
-            config={config}
-            updateConfig={updateConfig}
-            keepFocus={keepFocus}
             selection={selection}
             mergeMultiMsg={config.mergeMultiMsg}
             onRun={runProfile}
@@ -270,6 +267,8 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
             keepFocus={keepFocus}
             contextSources={contextSources}
             onToggleContext={toggleContextSource}
+            onTooltip={showTooltip}
+            onTooltipLeave={hideTooltip}
           />
         </main>
 

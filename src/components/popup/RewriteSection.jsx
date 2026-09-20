@@ -1,5 +1,4 @@
 import { MultiMessageNotice } from './MultiMessageNotice';
-import { PerformanceStrip } from './PerformanceStrip';
 import { ProfileGrid } from './ProfileGrid';
 
 export function RewriteSection({
@@ -8,9 +7,6 @@ export function RewriteSection({
   colCount,
   rows,
   compact,
-  config,
-  updateConfig,
-  keepFocus,
   selection,
   mergeMultiMsg,
   onRun,
@@ -22,14 +18,6 @@ export function RewriteSection({
 
   return (
     <section className="rwa2-rewrite" aria-label={text('Rewrite styles', 'Kiểu viết lại')}>
-      <PerformanceStrip
-        language={language}
-        config={config}
-        updateConfig={updateConfig}
-        keepFocus={keepFocus}
-        onTooltip={onTooltip}
-        onTooltipLeave={onTooltipLeave}
-      />
       <MultiMessageNotice language={language} selection={selection} mergeMultiMsg={mergeMultiMsg} />
       <ProfileGrid
         language={language}

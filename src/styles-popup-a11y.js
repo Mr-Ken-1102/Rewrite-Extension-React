@@ -4,7 +4,7 @@ export const RWA_POPUP_A11Y_CSS = `
 .rwa2-token-trigger,
 .rwa2-context-depth,
 .rwa2-length-label,
-.rwa2-length-auto { font-size:11px !important; }
+.rwa2-length-toggle { font-size:11px !important; }
 
 .rwa2-performance-key { font-size:10px; }
 .rwa2-performance-meta { font-size:10px; }
@@ -24,7 +24,7 @@ export const RWA_POPUP_A11Y_CSS = `
   .rwa2-token-trigger,
   .rwa2-action,
   .rwa2-depth-step,
-  .rwa2-length-auto
+  .rwa2-length-toggle
 ):focus-visible {
   outline:2px solid rgba(226,161,59,.72);
   outline-offset:2px;

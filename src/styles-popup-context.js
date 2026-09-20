@@ -1,22 +1,22 @@
 export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-performance-strip {
-  min-height:30px;
+  min-height:27px;
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   align-items:stretch;
-  gap:3px;
+  gap:4px;
   margin:0;
-  padding:2px;
-  border:1px solid rgba(255,255,255,.09);
-  border-radius:9px;
-  background:rgba(255,255,255,.012);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.018);
+  padding:0 0 2px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
 }
 .rwa2-performance-item {
   appearance:none;
   position:relative;
   min-width:0;
-  min-height:24px;
+  min-height:25px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -67,7 +67,7 @@ export const RWA_POPUP_CONTEXT_CSS = `
   position:relative;
   min-width:0;
   display:grid;
-  gap:3px;
+  gap:4px;
   overflow:visible;
   padding:5px 7px 4px;
   border:1px solid rgba(255,255,255,.10);
@@ -148,13 +148,23 @@ export const RWA_POPUP_CONTEXT_CSS = `
   background:var(--rwa2-surface);
   color:var(--rwa2-text);
 }
-.rwa2-depth-value {
-  display:grid;
-  place-items:center;
-  font-size:10.5px;
-  font-weight:680;
+.rwa2-depth-input {
+  min-width:0;
+  width:100%;
+  height:100%;
+  padding:0 2px 0 6px;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--rwa2-text);
+  font:680 10.5px/1 var(--rwa-host-font,system-ui,sans-serif);
   font-variant-numeric:tabular-nums;
+  text-align:center;
+  -moz-appearance:textfield;
 }
+.rwa2-depth-input::-webkit-inner-spin-button,
+.rwa2-depth-input::-webkit-outer-spin-button { margin:0; appearance:none; -webkit-appearance:none; }
+.rwa2-depth-input:focus-visible { background:rgba(226,161,59,.04); }
 .rwa2-depth-step-buttons {
   display:grid;
   grid-template-rows:1fr 1fr;
@@ -198,11 +208,11 @@ export const RWA_POPUP_CONTEXT_CSS = `
   outline:none;
 }
 .rwa2-range:disabled { opacity:.28; cursor:not-allowed; }
-.rwa2-context-length-auto .rwa2-length-label { opacity:.56; }
+.rwa2-context-length-off .rwa2-length-label { opacity:.56; }
 .rwa2-range::-webkit-slider-runnable-track {
   height:3px;
   border-radius:99px;
-  background:linear-gradient(90deg,rgba(226,161,59,.92),rgba(226,161,59,.92) 56%,rgba(255,255,255,.14) 56%,rgba(255,255,255,.14));
+  background:linear-gradient(90deg,rgba(226,161,59,.92) 0%,rgba(226,161,59,.92) var(--rwa2-range-fill,0%),rgba(255,255,255,.14) var(--rwa2-range-fill,0%),rgba(255,255,255,.14) 100%);
 }
 .rwa2-range::-webkit-slider-thumb {
   width:10px;
@@ -215,7 +225,27 @@ export const RWA_POPUP_CONTEXT_CSS = `
   background:var(--rwa2-brand);
   box-shadow:0 0 10px rgba(226,161,59,.20);
 }
-.rwa2-length-auto {
+.rwa2-range::-moz-range-track {
+  height:3px;
+  border:0;
+  border-radius:99px;
+  background:rgba(255,255,255,.14);
+}
+.rwa2-range::-moz-range-progress {
+  height:3px;
+  border-radius:99px;
+  background:rgba(226,161,59,.92);
+}
+.rwa2-range::-moz-range-thumb {
+  width:10px;
+  height:10px;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:50%;
+  background:var(--rwa2-brand);
+  box-shadow:0 0 10px rgba(226,161,59,.20);
+}
+
+.rwa2-length-toggle {
   appearance:none;
   min-width:40px;
   height:24px;
@@ -223,13 +253,20 @@ export const RWA_POPUP_CONTEXT_CSS = `
   border:1px solid var(--rwa2-border);
   border-radius:999px;
   background:var(--rwa2-surface);
-  color:rgba(255,255,255,.70);
-  font:560 10px/1 var(--rwa-host-font,system-ui,sans-serif);
+  color:rgba(255,255,255,.58);
+  font:700 9.5px/1 var(--rwa-host-font,system-ui,sans-serif);
+  letter-spacing:.035em;
   cursor:pointer;
+  transition:border-color .12s ease,background-color .12s ease,color .12s ease;
 }
-.rwa2-length-auto:hover,
-.rwa2-length-auto:focus-visible { border-color:var(--rwa2-brand-border); color:var(--rwa2-brand); outline:none; }
-.rwa2-length-auto-active { color:var(--rwa2-text); background:rgba(255,255,255,.02); }
+.rwa2-length-toggle:hover,
+.rwa2-length-toggle:focus-visible { border-color:var(--rwa2-brand-border); color:var(--rwa2-brand); outline:none; }
+.rwa2-length-toggle-on {
+  border-color:rgba(226,161,59,.42);
+  background:rgba(226,161,59,.07);
+  color:var(--rwa2-brand);
+}
+.rwa2-length-toggle-off { color:rgba(255,255,255,.48); }
 
 .rwa2-tooltip-token {
   width:min(254px,calc(100vw - 16px));
