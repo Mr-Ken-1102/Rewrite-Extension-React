@@ -185,7 +185,7 @@ ok('popup keeps identity and token status on the approved row above modes and pr
   assert.match(status, /rwa2-status-row/);
   assert.match(status, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
   assert.match(status, /kind: 'token'/);
-  assert.match(status, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.match(status, /Estimate only — provider billing may differ/);
   assert.match(context, /rwa2-context-chip/);
   assert.match(tooltip, /rwa2-tooltip-token/);
   assert.doesNotMatch(context, /This rewrite|Input composition|rwa2-token-detail-grid|rwa2-token-popover/);
