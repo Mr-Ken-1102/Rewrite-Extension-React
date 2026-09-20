@@ -55,7 +55,7 @@ export const DEFAULT_CONFIG = {
   injectLorebook: false,
   freeMode: false,
   historyContextEnabled: true,
-  contextDepth: 1,
+  contextDepth: 3,
   onlyAltR: false,
   speakerAware: true,
   useExtenderMemory: false,

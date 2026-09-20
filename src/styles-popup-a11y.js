@@ -7,6 +7,7 @@ export const RWA_POPUP_A11Y_CSS = `
 .rwa2-length-toggle { font-size:11px !important; }
 
 .rwa2-performance-key { font-size:10px; }
+.rwa2-length-value { font-size:10px; }
 .rwa2-performance-meta { font-size:10px; }
 .rwa2-profile-name { font-size:10.5px; }
 .rwa2-identity-chip { font-size:11.5px; }

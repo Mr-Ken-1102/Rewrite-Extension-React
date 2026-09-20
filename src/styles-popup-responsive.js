@@ -41,7 +41,7 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
 @media (max-width:${POPUP_COMPACT_BREAKPOINTS.twoToOne - 1}px) { .rwa2-profile-grid-compact { grid-template-columns:minmax(0,1fr); } }
 
 @media (max-width:459px) {
-  .rwa2-context-adjust-row { grid-template-columns:minmax(0,1fr); gap:5px; }
+  .rwa2-context-adjust-row { grid-template-columns:minmax(0,1fr); gap:4px; }
   .rwa2-context-depth,
   .rwa2-context-length { grid-column:1; }
 }

@@ -56,9 +56,8 @@ export function ContextDeck({
   const depth = clampDepth(config.contextDepth);
   const [depthDraft, setDepthDraft] = useState(String(depth));
   const lengthValue = Math.min(200, Math.max(-99, Number(config.lengthPct) || 0));
-  const lengthFill = config.lengthEnabled
-    ? ((lengthValue + 99) / 299) * 100
-    : 0;
+  const lengthFill = ((lengthValue + 99) / 299) * 100;
+  const lengthPercent = lengthValue > 0 ? `+${lengthValue}%` : `${lengthValue}%`;
 
   useEffect(() => {
     setDepthDraft(String(depth));
@@ -182,6 +181,13 @@ export function ContextDeck({
             <span className="rwa2-adjust-icon"><LengthIcon /></span>
             <span>{text('Length', 'Độ dài')}</span>
           </div>
+          <output
+            className="rwa2-length-value"
+            aria-live="polite"
+            aria-label={text('Length adjustment value', 'Giá trị điều chỉnh độ dài')}
+          >
+            {lengthPercent}
+          </output>
           <input
             className="rwa2-range"
             type="range"
@@ -192,7 +198,7 @@ export function ContextDeck({
             style={{ '--rwa2-range-fill': lengthFill + '%' }}
             aria-disabled={!config.lengthEnabled}
             aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
-            onChange={(event) => updateConfig({ lengthEnabled: true, lengthPct: parseInt(event.target.value, 10) })}
+            onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
             onMouseUp={keepFocus}
             onTouchEnd={keepFocus}
           />

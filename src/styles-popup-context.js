@@ -6,7 +6,7 @@ export const RWA_POPUP_CONTEXT_CSS = `
   align-items:stretch;
   gap:4px;
   margin:0;
-  padding:0 0 2px;
+  padding:0 0 1px;
   border:0;
   border-radius:0;
   background:transparent;
@@ -67,9 +67,9 @@ export const RWA_POPUP_CONTEXT_CSS = `
   position:relative;
   min-width:0;
   display:grid;
-  gap:4px;
+  gap:3px;
   overflow:visible;
-  padding:5px 7px 4px;
+  padding:4px 7px 3px;
   border:1px solid rgba(255,255,255,.10);
   border-radius:9px;
   background:linear-gradient(180deg,rgba(255,255,255,.016),rgba(255,255,255,.005)),rgba(18,20,25,.78);
@@ -113,7 +113,7 @@ export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-context-chip:disabled { opacity:.28; cursor:not-allowed; }
 
 .rwa2-context-adjust-row {
-  min-height:30px;
+  min-height:29px;
   display:grid;
   grid-template-columns:minmax(0,.76fr) minmax(0,1.24fr);
   align-items:center;
@@ -127,7 +127,7 @@ export const RWA_POPUP_CONTEXT_CSS = `
   grid-column:1;
   min-width:0;
   display:grid;
-  grid-template-columns:15px minmax(0,1fr) 43px;
+  grid-template-columns:15px minmax(0,1fr) 42px;
   align-items:center;
   gap:6px;
   color:var(--rwa2-text-2);
@@ -137,8 +137,8 @@ export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-adjust-icon { width:15px; height:15px; display:inline-grid; place-items:center; color:var(--rwa2-brand); }
 .rwa2-adjust-label { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rwa2-depth-stepper {
-  width:43px;
-  height:24px;
+  width:42px;
+  height:23px;
   display:grid;
   grid-template-columns:minmax(0,1fr) 14px;
   align-items:stretch;
@@ -191,11 +191,20 @@ export const RWA_POPUP_CONTEXT_CSS = `
   grid-column:2;
   min-width:0;
   display:grid;
-  grid-template-columns:auto minmax(58px,1fr) auto;
+  grid-template-columns:auto 36px minmax(58px,1fr) auto;
   align-items:center;
   gap:6px;
 }
 .rwa2-length-label { display:inline-flex; align-items:center; gap:5px; color:var(--rwa2-text-2); font-size:10.5px; font-weight:540; white-space:nowrap; }
+.rwa2-length-value {
+  min-width:36px;
+  color:var(--rwa2-brand);
+  font:650 9.5px/1 var(--rwa-host-font,system-ui,sans-serif);
+  font-variant-numeric:tabular-nums;
+  text-align:right;
+  white-space:nowrap;
+}
+.rwa2-context-length-off .rwa2-length-value { color:rgba(255,255,255,.42); }
 .rwa2-range {
   min-width:0;
   width:100%;
@@ -247,8 +256,8 @@ export const RWA_POPUP_CONTEXT_CSS = `
 
 .rwa2-length-toggle {
   appearance:none;
-  min-width:40px;
-  height:24px;
+  min-width:39px;
+  height:23px;
   padding:0 6px;
   border:1px solid var(--rwa2-border);
   border-radius:999px;
