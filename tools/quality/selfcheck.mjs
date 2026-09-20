@@ -393,7 +393,7 @@ ok('new installs use the requested layout and identity-assistance defaults witho
   assert.match(schema, /rows:\s*4/);
   assert.match(schema, /historyDepth:\s*5/);
   assert.match(schema, /historyContextEnabled:\s*true/);
-  assert.match(schema, /contextDepth:\s*1/);
+  assert.match(schema, /contextDepth:\s*3/);
   assert.match(schema, /injectChar:\s*false/);
   assert.match(schema, /injectUser:\s*false/);
   assert.match(schema, /injectLorebook:\s*false/);
