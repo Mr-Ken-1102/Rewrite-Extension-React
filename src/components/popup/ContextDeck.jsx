@@ -56,7 +56,10 @@ export function ContextDeck({
   const depth = clampDepth(config.contextDepth);
   const [depthDraft, setDepthDraft] = useState(String(depth));
   const lengthValue = Math.min(200, Math.max(-99, Number(config.lengthPct) || 0));
-  const lengthFill = ((lengthValue + 99) / 299) * 100;
+  const lengthZero = (99 / 299) * 100;
+  const lengthPosition = ((lengthValue + 99) / 299) * 100;
+  const lengthFillStart = Math.min(lengthZero, lengthPosition);
+  const lengthFillEnd = Math.max(lengthZero, lengthPosition);
   const lengthPercent = lengthValue > 0 ? `+${lengthValue}%` : `${lengthValue}%`;
 
   useEffect(() => {
@@ -181,6 +184,28 @@ export function ContextDeck({
             <span className="rwa2-adjust-icon"><LengthIcon /></span>
             <span>{text('Length', 'Độ dài')}</span>
           </div>
+          <span
+            className="rwa2-range-wrap"
+            style={{
+              '--rwa2-range-zero': lengthZero + '%',
+              '--rwa2-range-fill-start': lengthFillStart + '%',
+              '--rwa2-range-fill-end': lengthFillEnd + '%',
+            }}
+          >
+            <input
+              className="rwa2-range"
+              type="range"
+              min="-99"
+              max="200"
+              value={lengthValue}
+              disabled={!config.lengthEnabled}
+              aria-disabled={!config.lengthEnabled}
+              aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
+              onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
+              onMouseUp={keepFocus}
+              onTouchEnd={keepFocus}
+            />
+          </span>
           <output
             className="rwa2-length-value"
             aria-live="polite"
@@ -188,33 +213,20 @@ export function ContextDeck({
           >
             {lengthPercent}
           </output>
-          <input
-            className="rwa2-range"
-            type="range"
-            min="-99"
-            max="200"
-            value={lengthValue}
-            disabled={!config.lengthEnabled}
-            style={{ '--rwa2-range-fill': lengthFill + '%' }}
-            aria-disabled={!config.lengthEnabled}
-            aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
-            onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
-            onMouseUp={keepFocus}
-            onTouchEnd={keepFocus}
-          />
           <button
             type="button"
             className={'rwa2-length-toggle ' + (config.lengthEnabled ? 'rwa2-length-toggle-on' : 'rwa2-length-toggle-off')}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
-              updateConfig({ lengthEnabled: !config.lengthEnabled });
+              const nextEnabled = !config.lengthEnabled;
+              updateConfig({ lengthEnabled: nextEnabled, lengthPct: 0 });
               keepFocus();
             }}
             aria-pressed={config.lengthEnabled}
             title={config.lengthEnabled
-              ? text('Disable length adjustment', 'Tắt điều chỉnh độ dài')
-              : text('Enable length adjustment', 'Bật điều chỉnh độ dài')}
+              ? text('Disable and reset length adjustment', 'Tắt và đặt lại điều chỉnh độ dài')
+              : text('Enable length adjustment at 0%', 'Bật điều chỉnh độ dài ở 0%')}
           >
             {config.lengthEnabled ? 'ON' : 'OFF'}
           </button>
