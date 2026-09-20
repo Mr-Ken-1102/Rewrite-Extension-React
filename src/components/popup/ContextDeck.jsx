@@ -49,6 +49,11 @@ export function ContextDeck({
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const depth = clampDepth(config.contextDepth);
+  const sourceLabel = (source) => {
+    if (source.key === 'character') return vi ? 'Nhân vật' : 'Char';
+    if (source.key === 'surrounding') return vi ? 'Quanh' : 'Around';
+    return source.label;
+  };
 
   const setDepth = (value) => {
     updateConfig({ contextDepth: clampDepth(value) });
@@ -75,7 +80,7 @@ export function ContextDeck({
             }}
           >
             <span className="rwa2-context-chip-icon"><SourceIcon type={source.key} /></span>
-            <span className="rwa2-context-chip-label">{source.label}</span>
+            <span className="rwa2-context-chip-label">{sourceLabel(source)}</span>
           </button>
         ))}
       </div>
