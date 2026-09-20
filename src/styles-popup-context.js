@@ -191,20 +191,42 @@ export const RWA_POPUP_CONTEXT_CSS = `
   grid-column:2;
   min-width:0;
   display:grid;
-  grid-template-columns:auto 36px minmax(58px,1fr) auto;
+  grid-template-columns:auto minmax(76px,1fr) 36px 39px;
   align-items:center;
   gap:6px;
 }
 .rwa2-length-label { display:inline-flex; align-items:center; gap:5px; color:var(--rwa2-text-2); font-size:10.5px; font-weight:540; white-space:nowrap; }
 .rwa2-length-value {
+  width:36px;
   min-width:36px;
   color:var(--rwa2-brand);
   font:650 9.5px/1 var(--rwa-host-font,system-ui,sans-serif);
   font-variant-numeric:tabular-nums;
-  text-align:right;
+  text-align:center;
   white-space:nowrap;
 }
 .rwa2-context-length-off .rwa2-length-value { color:rgba(255,255,255,.42); }
+.rwa2-range-wrap {
+  position:relative;
+  min-width:0;
+  width:100%;
+  height:12px;
+  display:flex;
+  align-items:center;
+}
+.rwa2-range-wrap::after {
+  content:"";
+  position:absolute;
+  left:var(--rwa2-range-zero);
+  top:50%;
+  width:1px;
+  height:7px;
+  border-radius:99px;
+  background:rgba(255,255,255,.24);
+  transform:translate(-.5px,-50%);
+  pointer-events:none;
+}
+.rwa2-context-length-off .rwa2-range-wrap::after { opacity:.5; }
 .rwa2-range {
   min-width:0;
   width:100%;
@@ -221,7 +243,15 @@ export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-range::-webkit-slider-runnable-track {
   height:3px;
   border-radius:99px;
-  background:linear-gradient(90deg,rgba(226,161,59,.92) 0%,rgba(226,161,59,.92) var(--rwa2-range-fill,0%),rgba(255,255,255,.14) var(--rwa2-range-fill,0%),rgba(255,255,255,.14) 100%);
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,.14) 0%,
+    rgba(255,255,255,.14) var(--rwa2-range-fill-start),
+    rgba(226,161,59,.92) var(--rwa2-range-fill-start),
+    rgba(226,161,59,.92) var(--rwa2-range-fill-end),
+    rgba(255,255,255,.14) var(--rwa2-range-fill-end),
+    rgba(255,255,255,.14) 100%
+  );
 }
 .rwa2-range::-webkit-slider-thumb {
   width:10px;
@@ -238,13 +268,17 @@ export const RWA_POPUP_CONTEXT_CSS = `
   height:3px;
   border:0;
   border-radius:99px;
-  background:rgba(255,255,255,.14);
+  background:linear-gradient(
+    90deg,
+    rgba(255,255,255,.14) 0%,
+    rgba(255,255,255,.14) var(--rwa2-range-fill-start),
+    rgba(226,161,59,.92) var(--rwa2-range-fill-start),
+    rgba(226,161,59,.92) var(--rwa2-range-fill-end),
+    rgba(255,255,255,.14) var(--rwa2-range-fill-end),
+    rgba(255,255,255,.14) 100%
+  );
 }
-.rwa2-range::-moz-range-progress {
-  height:3px;
-  border-radius:99px;
-  background:rgba(226,161,59,.92);
-}
+.rwa2-range::-moz-range-progress { height:3px; background:transparent; }
 .rwa2-range::-moz-range-thumb {
   width:10px;
   height:10px;
