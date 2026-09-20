@@ -15,12 +15,12 @@ assert.match(
 );
 
 assert.match(a11y, /\.rwa2-token-trigger,[\s\S]*font-size:\s*11px !important/);
-assert.match(a11y, /\.rwa2-profile-name\s*\{[\s\S]*font-size:\s*11\.5px/);
-assert.match(context, /\.rwa2-context-chip\s*\{[\s\S]*min-height:30px/);
-assert.match(context, /\.rwa2-performance-item\s*\{[\s\S]*min-height:28px/);
-assert.match(base, /\.rwa2-token-trigger\s*\{[\s\S]*min-height:27px/);
-assert.match(base, /\.rwa2-status-row\s*\{[\s\S]*min-height:32px/);
-assert.match(context, /\.rwa2-tooltip-token\s*\{[\s\S]*width:\s*min\(286px/);
+assert.match(a11y, /\.rwa2-profile-name\s*\{[\s\S]*font-size:\s*10\.8px/);
+assert.match(context, /\.rwa2-context-chip\s*\{[\s\S]*min-height:28px/);
+assert.match(context, /\.rwa2-performance-item\s*\{[\s\S]*min-height:26px/);
+assert.match(base, /\.rwa2-token-trigger\s*\{[\s\S]*min-height:25px/);
+assert.match(base, /\.rwa2-status-row\s*\{[\s\S]*min-height:29px/);
+assert.match(context, /\.rwa2-tooltip-token\s*\{[\s\S]*width:\s*min\(254px/);
 assert.match(a11y, /:focus-visible/);
 assert.match(a11y, /prefers-contrast:\s*more/);
 assert.doesNotMatch(a11y, /font-size:\s*(?:[0-9](?:\.[0-9]+)?)px/);
