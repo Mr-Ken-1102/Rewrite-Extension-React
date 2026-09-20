@@ -1,13 +1,13 @@
 export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-performance-strip {
-  min-height:42px;
+  min-height:36px;
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   align-items:stretch;
   margin:0;
-  padding:4px 5px;
+  padding:3px 4px;
   border:1px solid rgba(226,161,59,.26);
-  border-radius:11px;
+  border-radius:9px;
   background:linear-gradient(180deg,rgba(226,161,59,.025),rgba(255,255,255,.006)),var(--rwa2-surface);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
 }
@@ -15,12 +15,12 @@ export const RWA_POPUP_CONTEXT_CSS = `
   appearance:none;
   position:relative;
   min-width:0;
-  min-height:32px;
+  min-height:28px;
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:5px;
-  padding:0 8px;
+  gap:4px;
+  padding:0 6px;
   border:0;
   background:transparent;
   color:var(--rwa2-muted);
@@ -44,11 +44,11 @@ export const RWA_POPUP_CONTEXT_CSS = `
   position:relative;
   min-width:0;
   display:grid;
-  gap:9px;
+  gap:5px;
   overflow:visible;
-  padding:10px;
+  padding:8px;
   border:1px solid rgba(255,255,255,.10);
-  border-radius:13px;
+  border-radius:9px;
   background:linear-gradient(180deg,rgba(255,255,255,.016),rgba(255,255,255,.005)),rgba(18,20,25,.78);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.02);
 }
@@ -65,12 +65,12 @@ export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-context-chip {
   appearance:none;
   min-width:0;
-  min-height:35px;
+  min-height:30px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:7px;
-  padding:0 8px;
+  gap:5px;
+  padding:0 6px;
   border:1px solid rgba(255,255,255,.10);
   border-radius:999px;
   background:rgba(255,255,255,.012);
@@ -83,18 +83,19 @@ export const RWA_POPUP_CONTEXT_CSS = `
 .rwa2-context-chip:hover:not(:disabled),
 .rwa2-context-chip:focus-visible { border-color:rgba(226,161,59,.35); background:rgba(226,161,59,.045); color:var(--rwa2-text); outline:none; }
 .rwa2-context-chip:active:not(:disabled) { transform:translateY(1px); }
-.rwa2-context-chip-icon { width:17px; height:17px; flex:0 0 17px; display:inline-grid; place-items:center; }
+.rwa2-context-chip-icon { width:16px; height:16px; flex:0 0 16px; display:inline-grid; place-items:center; }
+.rwa2-context-chip-label { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rwa2-context-chip-on { border-color:rgba(226,161,59,.48); background:rgba(226,161,59,.055); color:var(--rwa2-brand); box-shadow:inset 0 0 0 1px rgba(226,161,59,.025); }
 .rwa2-context-chip-off { color:rgba(255,255,255,.38); }
 .rwa2-context-chip:disabled { opacity:.28; cursor:not-allowed; }
 
 .rwa2-context-adjust-row {
-  min-height:54px;
+  min-height:44px;
   display:grid;
   grid-template-columns:minmax(0,.78fr) 1px minmax(0,1.22fr);
   align-items:center;
-  gap:10px;
-  padding:7px 10px;
+  gap:6px;
+  padding:5px 8px;
   border:1px solid rgba(255,255,255,.095);
   border-radius:11px;
   background:rgba(255,255,255,.008);
@@ -104,7 +105,7 @@ export const RWA_POPUP_CONTEXT_CSS = `
   grid-column:1;
   min-width:0;
   display:grid;
-  grid-template-columns:22px minmax(0,1fr) 54px;
+  grid-template-columns:18px minmax(0,1fr) 48px;
   align-items:center;
   gap:8px;
   color:var(--rwa2-text-2);
@@ -113,39 +114,60 @@ export const RWA_POPUP_CONTEXT_CSS = `
 }
 .rwa2-adjust-icon { width:20px; height:20px; display:inline-grid; place-items:center; color:var(--rwa2-brand); }
 .rwa2-adjust-label { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.rwa2-depth-select-wrap { position:relative; width:54px; }
-.rwa2-depth-input {
-  appearance:none;
-  -webkit-appearance:none;
-  width:54px;
-  min-width:54px;
-  height:31px;
-  margin:0;
-  padding:0 22px 0 11px;
+.rwa2-depth-stepper {
+  width:48px;
+  height:28px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 16px;
+  align-items:stretch;
+  overflow:hidden;
   border:1px solid var(--rwa2-border);
-  border-radius:9px;
-  outline:none;
+  border-radius:8px;
   background:var(--rwa2-surface);
   color:var(--rwa2-text);
-  font:640 10.5px/1 system-ui,sans-serif;
+}
+.rwa2-depth-value {
+  display:grid;
+  place-items:center;
+  font-size:10.5px;
+  font-weight:680;
+  font-variant-numeric:tabular-nums;
+}
+.rwa2-depth-step-buttons {
+  display:grid;
+  grid-template-rows:1fr 1fr;
+  border-left:1px solid rgba(255,255,255,.09);
+}
+.rwa2-depth-step {
+  appearance:none;
+  min-width:0;
+  min-height:0;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--rwa2-brand);
   cursor:pointer;
 }
-.rwa2-depth-input:focus { border-color:var(--rwa2-brand-border); }
-.rwa2-depth-chevron { position:absolute; right:9px; top:50%; transform:translateY(-52%); color:var(--rwa2-brand); font-size:10px; pointer-events:none; }
+.rwa2-depth-step + .rwa2-depth-step { border-top:1px solid rgba(255,255,255,.08); }
+.rwa2-depth-step:hover:not(:disabled),
+.rwa2-depth-step:focus-visible { background:rgba(226,161,59,.08); outline:none; }
+.rwa2-depth-step:disabled { opacity:.25; cursor:not-allowed; }
 
 .rwa2-context-length {
   grid-column:3;
   min-width:0;
   display:grid;
-  grid-template-columns:auto minmax(70px,1fr) auto;
+  grid-template-columns:auto minmax(64px,1fr) auto;
   align-items:center;
-  gap:9px;
+  gap:7px;
 }
 .rwa2-length-label { display:inline-flex; align-items:center; gap:7px; color:var(--rwa2-text-2); font-size:10.5px; font-weight:540; white-space:nowrap; }
 .rwa2-range {
   min-width:0;
   width:100%;
-  height:18px;
+  height:16px;
   margin:0;
   appearance:none;
   -webkit-appearance:none;
@@ -153,15 +175,17 @@ export const RWA_POPUP_CONTEXT_CSS = `
   cursor:pointer;
   outline:none;
 }
+.rwa2-range:disabled { opacity:.28; cursor:not-allowed; }
+.rwa2-context-length-auto .rwa2-length-label { opacity:.56; }
 .rwa2-range::-webkit-slider-runnable-track {
   height:5px;
   border-radius:99px;
   background:linear-gradient(90deg,rgba(226,161,59,.92),rgba(226,161,59,.92) 56%,rgba(255,255,255,.14) 56%,rgba(255,255,255,.14));
 }
 .rwa2-range::-webkit-slider-thumb {
-  width:14px;
-  height:14px;
-  margin-top:-4.5px;
+  width:12px;
+  height:12px;
+  margin-top:-3.5px;
   appearance:none;
   -webkit-appearance:none;
   border:1px solid rgba(255,255,255,.16);
@@ -171,9 +195,9 @@ export const RWA_POPUP_CONTEXT_CSS = `
 }
 .rwa2-length-auto {
   appearance:none;
-  min-width:47px;
-  height:31px;
-  padding:0 9px;
+  min-width:44px;
+  height:28px;
+  padding:0 8px;
   border:1px solid var(--rwa2-border);
   border-radius:999px;
   background:var(--rwa2-surface);

@@ -58,12 +58,13 @@ export const RWA_POPUP_RESPONSIVE_CSS = `
   .rwa2-brand-title { font-size:15px; }
   .rwa2-version { padding-inline:7px; }
   .rwa2-toolbar-actions { gap:4px; }
-  .rwa2-icon-button { width:31px; height:31px; }
+  .rwa2-icon-button { width:28px; height:28px; }
+  .rwa2-trim-button { min-width:50px; height:28px; padding-inline:7px; }
   .rwa2-performance-item { gap:4px; padding-inline:4px; }
   .rwa2-performance-key { letter-spacing:.03em; }
   .rwa2-profile-icon { width:18px; flex-basis:18px; }
-  .rwa2-popup .rwa2-profile-btn { gap:8px !important; padding-inline:10px !important; }
-  .rwa2-actionbar { grid-template-columns:58px 58px minmax(0,1fr) 40px; gap:5px; }
+  .rwa2-popup .rwa2-profile-btn { gap:7px !important; padding-inline:9px !important; }
+  .rwa2-actionbar { grid-template-columns:54px 54px minmax(0,1fr) 36px; gap:4px; }
   .rwa2-popup .rwa2-action { font-size:10px !important; gap:4px !important; padding-inline:6px !important; }
 }
 

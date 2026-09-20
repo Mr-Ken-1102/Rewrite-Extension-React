@@ -8,21 +8,22 @@ export const RWA_POPUP_A11Y_CSS = `
 
 .rwa2-performance-key { font-size:10px; }
 .rwa2-performance-meta { font-size:10px; }
-.rwa2-profile-name { font-size:12px; }
+.rwa2-profile-name { font-size:11.5px; }
 .rwa2-identity-chip { font-size:12px; }
-.rwa2-brand-title { font-size:17px; }
+.rwa2-brand-title { font-size:16px; }
 .rwa2-popup .rwa2-action { font-size:11px !important; }
 .rwa2-multi-notice { font-size:11px; }
 .rwa2-tooltip { font-size:11px; line-height:1.45; }
 
 .rwa2-popup :is(
   .rwa2-icon-button,
+  .rwa2-trim-button,
   .rwa2-profile-btn,
   .rwa2-performance-item,
   .rwa2-context-chip,
   .rwa2-token-trigger,
   .rwa2-action,
-  .rwa2-depth-input,
+  .rwa2-depth-step,
   .rwa2-length-auto
 ):focus-visible {
   outline:2px solid rgba(226,161,59,.72);
