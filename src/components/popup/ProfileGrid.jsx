@@ -11,23 +11,29 @@ const PROFILE_LABELS_VI = Object.freeze({
   active: 'Chủ động',
   diffwords: 'Diễn đạt mới',
   showdont: 'Thể hiện',
-  emotion: 'Chiều sâu cảm xúc',
-  transitions: 'Mượt chuyển ý',
+  emotion: 'Cảm xúc',
+  transitions: 'Mượt ý',
   noai: 'Tự nhiên hóa',
-  expdialogue: 'Đào sâu hội thoại',
-  romance: 'Sắc thái lãng mạn',
+  expdialogue: 'Hội thoại+',
+  romance: 'Lãng mạn',
   grammar: 'Trau chuốt',
 });
 
+const PROFILE_LABELS_EN = Object.freeze({
+  emotion: 'Emotion',
+  expdialogue: 'Dialogue+',
+  romance: 'Romantic',
+});
+
 function profileDisplayName(profile, language) {
-  if (language !== 'vi') return profile.name;
-  return PROFILE_LABELS_VI[profile.id] || profile.name;
+  if (language === 'vi') return PROFILE_LABELS_VI[profile.id] || profile.name;
+  return PROFILE_LABELS_EN[profile.id] || profile.name;
 }
 
 function PresetIcon({ id }) {
   const common = {
-    width: 20,
-    height: 20,
+    width: 18,
+    height: 18,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',

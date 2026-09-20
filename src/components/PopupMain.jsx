@@ -235,7 +235,6 @@ export const PopupMain = ({ onRewrite, onOpenSettings, onOpenCustom }) => {
           onDragStart={handleDragStart}
           onTrim={openTrim}
           onPinToggle={handlePinToggle}
-          onClose={() => useRuntimeStore.getState().setPopupPosition(null)}
         />
 
         <IdentityStatusRow

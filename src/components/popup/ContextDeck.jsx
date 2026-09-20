@@ -1,7 +1,7 @@
 function SourceIcon({ type }) {
   const common = {
-    width: 16,
-    height: 16,
+    width: 15,
+    height: 15,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
@@ -19,11 +19,23 @@ function SourceIcon({ type }) {
 }
 
 function StackIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></svg>;
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></svg>;
 }
 
 function LengthIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7" /></svg>;
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7" /></svg>;
+}
+
+function StepIcon({ direction }) {
+  return (
+    <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {direction === 'up' ? <path d="m3 7.5 3-3 3 3" /> : <path d="m3 4.5 3 3 3-3" />}
+    </svg>
+  );
+}
+
+function clampDepth(value) {
+  return Math.min(20, Math.max(1, Number(value) || 1));
 }
 
 export function ContextDeck({
@@ -36,6 +48,12 @@ export function ContextDeck({
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
+  const depth = clampDepth(config.contextDepth);
+
+  const setDepth = (value) => {
+    updateConfig({ contextDepth: clampDepth(value) });
+    keepFocus();
+  };
 
   return (
     <section className="rwa2-context-deck" aria-label={text('Context and rewrite controls', 'Ngữ cảnh và điều khiển viết lại')}>
@@ -57,31 +75,54 @@ export function ContextDeck({
             }}
           >
             <span className="rwa2-context-chip-icon"><SourceIcon type={source.key} /></span>
-            <span>{source.label}</span>
+            <span className="rwa2-context-chip-label">{source.label}</span>
           </button>
         ))}
       </div>
 
       <div className="rwa2-context-adjust-row">
-        <label className="rwa2-context-depth">
+        <div
+          className="rwa2-context-depth"
+          role="group"
+          aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
+          title={text('History depth', 'Độ sâu lịch sử')}
+        >
           <span className="rwa2-adjust-icon"><StackIcon /></span>
-          <span className="rwa2-adjust-label">{text('History depth', 'Độ sâu lịch sử')}</span>
-          <span className="rwa2-depth-select-wrap">
-            <select
-              className="rwa2-depth-input"
-              value={Math.max(1, Number(config.contextDepth) || 1)}
-              aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
-              onChange={(event) => updateConfig({ contextDepth: Math.max(1, parseInt(event.target.value, 10) || 1) })}
-            >
-              {Array.from({ length: 20 }, (_, index) => index + 1).map((value) => (
-                <option value={value} key={value}>{value}</option>
-              ))}
-            </select>
-            <span className="rwa2-depth-chevron" aria-hidden="true">▾</span>
-          </span>
-        </label>
+          <span className="rwa2-adjust-label">{text('Depth', 'Độ sâu')}</span>
+          <div className="rwa2-depth-stepper" aria-label={text('History depth value', 'Giá trị độ sâu lịch sử')}>
+            <span className="rwa2-depth-value" aria-live="polite">{depth}</span>
+            <span className="rwa2-depth-step-buttons">
+              <button
+                type="button"
+                className="rwa2-depth-step"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setDepth(depth + 1);
+                }}
+                disabled={depth >= 20}
+                aria-label={text('Increase history depth', 'Tăng độ sâu lịch sử')}
+              >
+                <StepIcon direction="up" />
+              </button>
+              <button
+                type="button"
+                className="rwa2-depth-step"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setDepth(depth - 1);
+                }}
+                disabled={depth <= 1}
+                aria-label={text('Decrease history depth', 'Giảm độ sâu lịch sử')}
+              >
+                <StepIcon direction="down" />
+              </button>
+            </span>
+          </div>
+        </div>
 
-        <div className="rwa2-context-length">
+        <div className={'rwa2-context-length ' + (!config.lengthEnabled ? 'rwa2-context-length-auto' : '')}>
           <div className="rwa2-length-label">
             <span className="rwa2-adjust-icon"><LengthIcon /></span>
             <span>{text('Length', 'Độ dài')}</span>
@@ -92,6 +133,8 @@ export function ContextDeck({
             min="-99"
             max="200"
             value={config.lengthEnabled ? (config.lengthPct || 0) : 0}
+            disabled={!config.lengthEnabled}
+            aria-disabled={!config.lengthEnabled}
             aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
             onChange={(event) => updateConfig({ lengthEnabled: true, lengthPct: parseInt(event.target.value, 10) })}
             onMouseUp={keepFocus}
@@ -103,11 +146,15 @@ export function ContextDeck({
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
-              updateConfig({ lengthEnabled: false, lengthPct: 0 });
+              updateConfig(config.lengthEnabled
+                ? { lengthEnabled: false, lengthPct: 0 }
+                : { lengthEnabled: true, lengthPct: 0 });
               keepFocus();
             }}
             aria-pressed={!config.lengthEnabled}
-            title={text('Use automatic length', 'Dùng độ dài tự động')}
+            title={config.lengthEnabled
+              ? text('Use automatic length', 'Dùng độ dài tự động')
+              : text('Switch to manual length adjustment', 'Chuyển sang điều chỉnh độ dài thủ công')}
           >
             {config.lengthEnabled ? ((config.lengthPct >= 0 ? '+' : '') + config.lengthPct + '%') : text('Auto', 'Auto')}
           </button>
