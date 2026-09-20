@@ -13,23 +13,23 @@ const ok = (name, fn) => {
 ok('popup geometry constants encode the balanced 488px / three-column-first contract', () => {
   const source = read('./src/popupGeometry.js');
   assert.match(source, /POPUP_DESKTOP_WIDTH = 488/);
-  assert.match(source, /POPUP_OUTER_PADDING_X = 12/);
+  assert.match(source, /POPUP_OUTER_PADDING_X = 10/);
   assert.match(source, /POPUP_GRID_COLUMNS = 12/);
   assert.match(source, /POPUP_GRID_GAP = 8/);
   assert.match(source, /POPUP_NORMAL_MIN_CELL = 110/);
-  assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 54/);
-  assert.match(source, /POPUP_PROFILE_ROW_GAP = 7/);
-  assert.match(source, /POPUP_FIXED_HEIGHT = 148/);
-  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 42/);
-  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 47/);
-  assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 38/);
-  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 66/);
+  assert.match(source, /POPUP_PROFILE_ROW_HEIGHT = 38/);
+  assert.match(source, /POPUP_PROFILE_ROW_GAP = 4/);
+  assert.match(source, /POPUP_FIXED_HEIGHT = 114/);
+  assert.match(source, /POPUP_PERFORMANCE_STRIP_HEIGHT = 27/);
+  assert.match(source, /POPUP_CONTEXT_SUMMARY_HEIGHT = 35/);
+  assert.match(source, /POPUP_CONTEXT_WRAP_EXTRA = 26/);
+  assert.match(source, /POPUP_CONTEXT_DETAIL_HEIGHT = 31/);
 });
 
 ok('popup geometry accounts for collapsed context, optional detail, and narrow stacking', () => {
   const source = read('./src/popupGeometry.js');
-  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 54/);
-  assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 34/);
+  assert.match(source, /POPUP_NARROW_CONTEXT_EXTRA = 36/);
+  assert.match(source, /POPUP_WRAPPED_ACTIONBAR_EXTRA = 27/);
   assert.match(source, /getResponsivePopupExtra/);
   assert.match(source, /contextOpen && width <= 459 \? POPUP_NARROW_CONTEXT_EXTRA : 0/);
   assert.match(source, /width <= 419 \? POPUP_WRAPPED_ACTIONBAR_EXTRA : 0/);
@@ -67,11 +67,11 @@ ok('preset card removes redundant Choose-a-style and style-count chrome', () => 
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
   assert.doesNotMatch(rewrite, /rwa2-section-head|rwa2-section-title|rwa2-section-meta/);
   assert.doesNotMatch(rewrite, /Choose a style|styles · scroll or type|kiểu · cuộn hoặc gõ để tìm/);
-  assert.match(rewrite, /<PerformanceStrip/);
+  assert.doesNotMatch(rewrite, /<PerformanceStrip/);
   assert.match(rewrite, /<ProfileGrid/);
 });
 
-ok('popup architecture follows the approved status → modes → presets → context → footer stack', () => {
+ok('popup architecture follows status → presets → unified controls → footer hierarchy', () => {
   const base = read('./src/styles-popup-base.js');
   const main = read('./src/components/PopupMain.jsx');
   const rewrite = read('./src/components/popup/RewriteSection.jsx');
@@ -84,8 +84,9 @@ ok('popup architecture follows the approved status → modes → presets → con
   assert.match(main, /<PopupFooter/);
   assert.match(status, /rwa2-status-row/);
   assert.match(status, /rwa2-token-trigger/);
-  assert.match(rewrite, /<PerformanceStrip/);
+  assert.doesNotMatch(rewrite, /<PerformanceStrip/);
   assert.match(performance, /rwa2-performance-strip/);
+  assert.match(context, /<PerformanceStrip/);
   assert.match(context, /rwa2-context-deck/);
   assert.match(context, /rwa2-context-adjust-row/);
   assert.match(base, /\.rwa2-status-row\s*\{/);
@@ -170,10 +171,10 @@ ok('popup positioning consumes shared geometry and reserves stable visual rows',
   assert.match(source, /multiMessage/);
   assert.match(source, /compact/);
   assert.doesNotMatch(source, /fastRewrite/);
-  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*42/);
-  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*47/);
-  assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*38/);
-  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*66/);
+  assert.match(geometry, /POPUP_PERFORMANCE_STRIP_HEIGHT\s*=\s*27/);
+  assert.match(geometry, /POPUP_CONTEXT_SUMMARY_HEIGHT\s*=\s*35/);
+  assert.match(geometry, /POPUP_CONTEXT_WRAP_EXTRA\s*=\s*26/);
+  assert.match(geometry, /POPUP_CONTEXT_DETAIL_HEIGHT\s*=\s*31/);
   assert.match(geometry, /\+ POPUP_PERFORMANCE_STRIP_HEIGHT/);
   assert.match(geometry, /\+ POPUP_CONTEXT_SUMMARY_HEIGHT/);
   assert.match(geometry, /contextSummaryCount > 5 \? POPUP_CONTEXT_WRAP_EXTRA : 0/);
@@ -220,10 +221,10 @@ ok('responsive context detail stacks controls without turning token details into
 });
 
 ok('three-mode performance strip makes Free, Fast Rewrite, and Streaming directly actionable', () => {
-  const rewrite = read('./src/components/popup/RewriteSection.jsx');
+  const context = read('./src/components/popup/ContextDeck.jsx');
   const strip = read('./src/components/popup/PerformanceStrip.jsx');
   const contextCss = read('./src/styles-popup-context.js');
-  assert.match(rewrite, /<PerformanceStrip/);
+  assert.match(context, /<PerformanceStrip/);
   assert.match(strip, /getProviderCapabilities/);
   assert.match(strip, /key:\s*'FREE MODE'/);
   assert.match(strip, /key:\s*'FAST REWRITE'/);
@@ -232,8 +233,9 @@ ok('three-mode performance strip makes Free, Fast Rewrite, and Streaming directl
   assert.match(strip, /updateConfig\(\{ fastRewrite: config\.fastRewrite === false \}\)/);
   assert.match(strip, /updateConfig\(\{ liveStreaming: config\.liveStreaming === false \}\)/);
   assert.match(strip, /aria-pressed=\{item\.active\}/);
-  assert.match(contextCss, /\.rwa2-performance-strip\s*\{[\s\S]*border:\s*1px solid/);
-  assert.match(contextCss, /\.rwa2-performance-item \+ \.rwa2-performance-item/);
+  assert.match(contextCss, /\.rwa2-performance-strip\s*\{[\s\S]*gap:4px;[\s\S]*border:0;[\s\S]*background:transparent/);
+  assert.match(contextCss, /\.rwa2-performance-on\s*\{[\s\S]*border-color:rgba\(226,161,59,\.24\)/);
+  assert.doesNotMatch(strip, /rwa2-performance-meta|rwa2-performance-divider/);
   assert.match(contextCss, /\.rwa2-performance-dot\s*\{/);
 });
 
@@ -245,12 +247,12 @@ ok('popup visual layer is low-paint and uses subdued amber', () => {
   assert.doesNotMatch(`${base}\n${context}`, /#ffb020/i);
 });
 
-ok('approved popup density uses full icon cards and readable toolbar controls', () => {
+ok('approved popup density compresses chrome while keeping readable controls', () => {
   const base = read('./src/styles-popup-base.js');
   const grid = read('./src/components/popup/ProfileGrid.jsx');
-  assert.match(base, /\.rwa2-toolbar\s*\{[\s\S]*min-height:\s*45px/);
-  assert.match(base, /rwa2-profile-btn,[\s\S]*min-height:\s*54px !important;[\s\S]*height:\s*54px !important/);
-  assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*39px !important;[\s\S]*height:\s*39px !important/);
+  assert.match(base, /\.rwa2-toolbar\s*\{[\s\S]*min-height:\s*32px/);
+  assert.match(base, /rwa2-profile-btn,[\s\S]*min-height:\s*38px !important;[\s\S]*height:\s*38px !important/);
+  assert.match(base, /rwa2-action\s*\{[\s\S]*min-height:\s*32px !important;[\s\S]*height:\s*32px !important/);
   assert.match(grid, /rwa2-profile-icon/);
   assert.match(grid, /rwa2-profile-placeholder/);
 });
@@ -261,12 +263,39 @@ ok('context deck uses five persistent icon toggles and always-visible History/Le
   const status = read('./src/components/popup/IdentityStatusRow.jsx');
   const presentation = read('./src/hooks/useContextPresentation.js');
   assert.match(css, /\.rwa2-context-chips\s*\{[\s\S]*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
-  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:minmax\(0,\.78fr\) 1px minmax\(0,1\.22fr\)/);
+  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*grid-template-columns:minmax\(0,\.76fr\) minmax\(0,1\.24fr\)/);
+  assert.match(css, /\.rwa2-context-adjust-row\s*\{[\s\S]*border:0;[\s\S]*background:transparent/);
+  assert.match(css, /\.rwa2-context-length\s*\{[\s\S]*grid-template-columns:auto minmax\(76px,1fr\) 36px 39px/);
+  assert.match(css, /\.rwa2-range-wrap::after\s*\{[\s\S]*left:var\(--rwa2-range-zero\)/);
+  assert.match(css, /\.rwa2-range::-webkit-slider-runnable-track\s*\{[\s\S]*var\(--rwa2-range-fill-start\)[\s\S]*var\(--rwa2-range-fill-end\)/);
+  assert.doesNotMatch(css, /\.rwa2-context-adjust-row::before/);
   assert.match(status, /kind: 'token'/);
   assert.match(status, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.match(context, /aria-pressed=\{source\.enabled\}/);
   assert.match(context, /onToggleContext\(source\.key, !source\.enabled\)/);
   assert.match(context, /History depth/);
+  assert.match(context, /rwa2-depth-stepper/);
+  assert.match(context, /className="rwa2-depth-input"/);
+  assert.match(context, /type="number"/);
+  assert.match(context, /min="1"/);
+  assert.match(context, /max="20"/);
+  assert.match(context, /commitDepth/);
+  assert.doesNotMatch(context, /<select/);
+  assert.match(context, /disabled=\{!config\.lengthEnabled\}/);
+  assert.match(context, /const lengthZero = \(99 \/ 299\) \* 100/);
+  assert.match(context, /const lengthPosition = \(\(lengthValue \+ 99\) \/ 299\) \* 100/);
+  assert.match(context, /const lengthFillStart = Math\.min\(lengthZero, lengthPosition\)/);
+  assert.match(context, /const lengthFillEnd = Math\.max\(lengthZero, lengthPosition\)/);
+  assert.match(context, /const lengthPercent = lengthValue > 0/);
+  assert.match(context, /className="rwa2-range-wrap"/);
+  assert.match(context, /className="rwa2-length-value"/);
+  assert.match(context, /--rwa2-range-zero/);
+  assert.match(context, /--rwa2-range-fill-start/);
+  assert.match(context, /--rwa2-range-fill-end/);
+  assert.match(context, /updateConfig\(\{ lengthEnabled: nextEnabled, lengthPct: 0 \}\)/);
+  assert.match(context, /rwa2-length-toggle/);
+  assert.match(context, /aria-pressed=\{config\.lengthEnabled\}/);
+  assert.match(context, /\{config\.lengthEnabled \? 'ON' : 'OFF'\}/);
   assert.match(context, /Rewrite length adjustment/);
   assert.match(context, /rwa2-context-chip-icon/);
   assert.doesNotMatch(context, /rwa2-context-toggle|rwa2-context-collapse|rwa2-token-popover/);
@@ -278,7 +307,7 @@ ok('context deck uses five persistent icon toggles and always-visible History/Le
 ok('footer matches the approved Undo / Redo / Custom Prompt / Settings composition', () => {
   const base = read('./src/styles-popup-base.js');
   const footer = read('./src/components/popup/PopupFooter.jsx');
-  assert.match(base, /\.rwa2-actionbar\s*\{[\s\S]*display:grid;[\s\S]*grid-template-columns:72px 72px minmax\(0,1fr\) 44px/);
+  assert.match(base, /\.rwa2-actionbar\s*\{[\s\S]*display:grid;[\s\S]*grid-template-columns:60px 60px minmax\(0,1fr\) 34px/);
   assert.match(base, /\.rwa2-popup \.rwa2-custom\s*\{[\s\S]*border-color:rgba\(226,161,59,\.48\)/);
   assert.match(footer, />\{text\('Undo', 'Hoàn tác'\)\}<\/span>/);
   assert.match(footer, />\{text\('Redo', 'Làm lại'\)\}<\/span>/);

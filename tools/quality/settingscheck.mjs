@@ -217,11 +217,11 @@ assert.match(providerCapabilities, /marinara:[\s\S]*fastRewrite:\s*true[\s\S]*li
 assert.match(providerCapabilities, /sidecar:[\s\S]*fastRewrite:\s*false[\s\S]*liveStreaming:\s*true/s);
 assert.match(providerCapabilities, /direct:[\s\S]*fastRewrite:\s*false[\s\S]*liveStreaming:\s*true/s);
 assert.match(providerCapabilities, /extender:[\s\S]*fastRewrite:\s*false[\s\S]*liveStreaming:\s*true/s);
-assert.match(schema, /cols:\s*3/);
-assert.match(schema, /rows:\s*5/);
-assert.match(schema, /historyDepth:\s*1/);
+assert.match(schema, /cols:\s*4/);
+assert.match(schema, /rows:\s*4/);
+assert.match(schema, /historyDepth:\s*5/);
 assert.match(schema, /historyContextEnabled:\s*true/);
-assert.match(schema, /contextDepth:\s*1/);
+assert.match(schema, /contextDepth:\s*3/);
 assert.match(schema, /speakerAware:\s*true/);
 assert.match(schema, /useExtenderMemory:\s*false/);
 assert.match(schema, /autoProfileEnabled:\s*false/);

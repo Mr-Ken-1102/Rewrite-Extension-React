@@ -34,8 +34,8 @@ export const DEFAULT_PROFILES = [
 
 export const DEFAULT_CONFIG = {
   uiLanguage: 'en',
-  cols: 3,
-  rows: 5,
+  cols: 4,
+  rows: 4,
   typewriter: true,
   showDiff: true,
   lengthEnabled: false,
@@ -43,7 +43,7 @@ export const DEFAULT_CONFIG = {
   autoApply: false,
   popupPos: 'auto',
   pinnedPos: null,
-  historyDepth: 1,
+  historyDepth: 5,
   compact: false,
   conciseSysPrompt: false,
   fastRewrite: true,
@@ -55,7 +55,7 @@ export const DEFAULT_CONFIG = {
   injectLorebook: false,
   freeMode: false,
   historyContextEnabled: true,
-  contextDepth: 1,
+  contextDepth: 3,
   onlyAltR: false,
   speakerAware: true,
   useExtenderMemory: false,

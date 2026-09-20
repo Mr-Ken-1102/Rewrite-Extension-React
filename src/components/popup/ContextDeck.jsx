@@ -1,7 +1,10 @@
+import { useEffect, useState } from 'react';
+import { PerformanceStrip } from './PerformanceStrip';
+
 function SourceIcon({ type }) {
   const common = {
-    width: 16,
-    height: 16,
+    width: 15,
+    height: 15,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
@@ -19,11 +22,23 @@ function SourceIcon({ type }) {
 }
 
 function StackIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></svg>;
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3" /><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></svg>;
 }
 
 function LengthIcon() {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7" /></svg>;
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 7h14M5 12h10M5 17h7" /></svg>;
+}
+
+function StepIcon({ direction }) {
+  return (
+    <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {direction === 'up' ? <path d="m3 7.5 3-3 3 3" /> : <path d="m3 4.5 3 3 3-3" />}
+    </svg>
+  );
+}
+
+function clampDepth(value) {
+  return Math.min(20, Math.max(1, Number(value) || 1));
 }
 
 export function ContextDeck({
@@ -33,12 +48,53 @@ export function ContextDeck({
   keepFocus,
   contextSources,
   onToggleContext,
+  onTooltip,
+  onTooltipLeave,
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
+  const depth = clampDepth(config.contextDepth);
+  const [depthDraft, setDepthDraft] = useState(String(depth));
+  const lengthValue = Math.min(200, Math.max(-99, Number(config.lengthPct) || 0));
+  const lengthZero = (99 / 299) * 100;
+  const lengthPosition = ((lengthValue + 99) / 299) * 100;
+  const lengthFillStart = Math.min(lengthZero, lengthPosition);
+  const lengthFillEnd = Math.max(lengthZero, lengthPosition);
+  const lengthPercent = lengthValue > 0 ? `+${lengthValue}%` : `${lengthValue}%`;
+
+  useEffect(() => {
+    setDepthDraft(String(depth));
+  }, [depth]);
+
+  const sourceLabel = (source) => {
+    if (source.key === 'character') return vi ? 'Nhân vật' : 'Char';
+    if (source.key === 'surrounding') return vi ? 'Quanh' : 'Around';
+    return source.label;
+  };
+
+  const setDepth = (value, restoreFocus = true) => {
+    const nextDepth = clampDepth(value);
+    setDepthDraft(String(nextDepth));
+    updateConfig({ contextDepth: nextDepth });
+    if (restoreFocus) keepFocus();
+  };
+
+  const commitDepth = (value) => {
+    const parsed = Number.parseInt(String(value).trim(), 10);
+    setDepth(Number.isFinite(parsed) ? parsed : depth);
+  };
 
   return (
-    <section className="rwa2-context-deck" aria-label={text('Context and rewrite controls', 'Ngữ cảnh và điều khiển viết lại')}>
+    <section className="rwa2-context-deck" aria-label={text('Rewrite controls', 'Điều khiển viết lại')}>
+      <PerformanceStrip
+        language={language}
+        config={config}
+        updateConfig={updateConfig}
+        keepFocus={keepFocus}
+        onTooltip={onTooltip}
+        onTooltipLeave={onTooltipLeave}
+      />
+
       <div className="rwa2-context-chips" role="group" aria-label={text('Default rewrite sources', 'Nguồn viết lại mặc định')}>
         {contextSources.map((source) => (
           <button
@@ -57,59 +113,122 @@ export function ContextDeck({
             }}
           >
             <span className="rwa2-context-chip-icon"><SourceIcon type={source.key} /></span>
-            <span>{source.label}</span>
+            <span className="rwa2-context-chip-label">{sourceLabel(source)}</span>
           </button>
         ))}
       </div>
 
       <div className="rwa2-context-adjust-row">
-        <label className="rwa2-context-depth">
+        <div
+          className="rwa2-context-depth"
+          role="group"
+          aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
+          title={text('History depth', 'Độ sâu lịch sử')}
+        >
           <span className="rwa2-adjust-icon"><StackIcon /></span>
-          <span className="rwa2-adjust-label">{text('History depth', 'Độ sâu lịch sử')}</span>
-          <span className="rwa2-depth-select-wrap">
-            <select
+          <span className="rwa2-adjust-label">{text('Depth', 'Độ sâu')}</span>
+          <div className="rwa2-depth-stepper">
+            <input
               className="rwa2-depth-input"
-              value={Math.max(1, Number(config.contextDepth) || 1)}
-              aria-label={text('History context depth', 'Độ sâu ngữ cảnh lịch sử')}
-              onChange={(event) => updateConfig({ contextDepth: Math.max(1, parseInt(event.target.value, 10) || 1) })}
-            >
-              {Array.from({ length: 20 }, (_, index) => index + 1).map((value) => (
-                <option value={value} key={value}>{value}</option>
-              ))}
-            </select>
-            <span className="rwa2-depth-chevron" aria-hidden="true">▾</span>
-          </span>
-        </label>
+              type="number"
+              min="1"
+              max="20"
+              step="1"
+              inputMode="numeric"
+              value={depthDraft}
+              aria-label={text('History depth value', 'Giá trị độ sâu lịch sử')}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === '' || /^\d{0,2}$/.test(value)) setDepthDraft(value);
+              }}
+              onBlur={(event) => commitDepth(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                commitDepth(event.currentTarget.value);
+              }}
+            />
+            <span className="rwa2-depth-step-buttons">
+              <button
+                type="button"
+                className="rwa2-depth-step"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setDepth((Number.parseInt(depthDraft, 10) || depth) + 1);
+                }}
+                disabled={depth >= 20}
+                aria-label={text('Increase history depth', 'Tăng độ sâu lịch sử')}
+              >
+                <StepIcon direction="up" />
+              </button>
+              <button
+                type="button"
+                className="rwa2-depth-step"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setDepth((Number.parseInt(depthDraft, 10) || depth) - 1);
+                }}
+                disabled={depth <= 1}
+                aria-label={text('Decrease history depth', 'Giảm độ sâu lịch sử')}
+              >
+                <StepIcon direction="down" />
+              </button>
+            </span>
+          </div>
+        </div>
 
-        <div className="rwa2-context-length">
+        <div className={'rwa2-context-length ' + (!config.lengthEnabled ? 'rwa2-context-length-off' : '')}>
           <div className="rwa2-length-label">
             <span className="rwa2-adjust-icon"><LengthIcon /></span>
             <span>{text('Length', 'Độ dài')}</span>
           </div>
-          <input
-            className="rwa2-range"
-            type="range"
-            min="-99"
-            max="200"
-            value={config.lengthEnabled ? (config.lengthPct || 0) : 0}
-            aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
-            onChange={(event) => updateConfig({ lengthEnabled: true, lengthPct: parseInt(event.target.value, 10) })}
-            onMouseUp={keepFocus}
-            onTouchEnd={keepFocus}
-          />
+          <span
+            className="rwa2-range-wrap"
+            style={{
+              '--rwa2-range-zero': lengthZero + '%',
+              '--rwa2-range-fill-start': lengthFillStart + '%',
+              '--rwa2-range-fill-end': lengthFillEnd + '%',
+            }}
+          >
+            <input
+              className="rwa2-range"
+              type="range"
+              min="-99"
+              max="200"
+              value={lengthValue}
+              disabled={!config.lengthEnabled}
+              aria-disabled={!config.lengthEnabled}
+              aria-label={text('Rewrite length adjustment', 'Điều chỉnh độ dài viết lại')}
+              onChange={(event) => updateConfig({ lengthPct: parseInt(event.target.value, 10) })}
+              onMouseUp={keepFocus}
+              onTouchEnd={keepFocus}
+            />
+          </span>
+          <output
+            className="rwa2-length-value"
+            aria-live="polite"
+            aria-label={text('Length adjustment value', 'Giá trị điều chỉnh độ dài')}
+          >
+            {lengthPercent}
+          </output>
           <button
             type="button"
-            className={'rwa2-length-auto ' + (config.lengthEnabled ? '' : 'rwa2-length-auto-active')}
+            className={'rwa2-length-toggle ' + (config.lengthEnabled ? 'rwa2-length-toggle-on' : 'rwa2-length-toggle-off')}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
-              updateConfig({ lengthEnabled: false, lengthPct: 0 });
+              const nextEnabled = !config.lengthEnabled;
+              updateConfig({ lengthEnabled: nextEnabled, lengthPct: 0 });
               keepFocus();
             }}
-            aria-pressed={!config.lengthEnabled}
-            title={text('Use automatic length', 'Dùng độ dài tự động')}
+            aria-pressed={config.lengthEnabled}
+            title={config.lengthEnabled
+              ? text('Disable and reset length adjustment', 'Tắt và đặt lại điều chỉnh độ dài')
+              : text('Enable length adjustment at 0%', 'Bật điều chỉnh độ dài ở 0%')}
           >
-            {config.lengthEnabled ? ((config.lengthPct >= 0 ? '+' : '') + config.lengthPct + '%') : text('Auto', 'Auto')}
+            {config.lengthEnabled ? 'ON' : 'OFF'}
           </button>
         </div>
       </div>

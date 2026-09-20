@@ -1,21 +1,21 @@
 export const POPUP_DESKTOP_WIDTH = 488;
 export const POPUP_VIEWPORT_GUTTER = 8;
-export const POPUP_OUTER_PADDING_X = 12;
+export const POPUP_OUTER_PADDING_X = 10;
 export const POPUP_GRID_COLUMNS = 12;
 export const POPUP_GRID_GAP = 8;
 export const POPUP_NORMAL_MIN_CELL = 110;
 export const POPUP_COMPACT_MIN_CELL = 92;
-export const POPUP_PROFILE_ROW_HEIGHT = 54;
+export const POPUP_PROFILE_ROW_HEIGHT = 38;
 export const POPUP_COMPACT_ROW_HEIGHT = 32;
-export const POPUP_PROFILE_ROW_GAP = 7;
-export const POPUP_FIXED_HEIGHT = 148;
-export const POPUP_TRANSIENT_ROW_HEIGHT = 34;
-export const POPUP_PERFORMANCE_STRIP_HEIGHT = 42;
-export const POPUP_CONTEXT_SUMMARY_HEIGHT = 47;
-export const POPUP_CONTEXT_WRAP_EXTRA = 38;
-export const POPUP_CONTEXT_DETAIL_HEIGHT = 66;
-export const POPUP_NARROW_CONTEXT_EXTRA = 54;
-export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 34;
+export const POPUP_PROFILE_ROW_GAP = 4;
+export const POPUP_FIXED_HEIGHT = 114;
+export const POPUP_TRANSIENT_ROW_HEIGHT = 28;
+export const POPUP_PERFORMANCE_STRIP_HEIGHT = 27;
+export const POPUP_CONTEXT_SUMMARY_HEIGHT = 35;
+export const POPUP_CONTEXT_WRAP_EXTRA = 26;
+export const POPUP_CONTEXT_DETAIL_HEIGHT = 31;
+export const POPUP_NARROW_CONTEXT_EXTRA = 36;
+export const POPUP_WRAPPED_ACTIONBAR_EXTRA = 27;
 
 export const POPUP_NORMAL_BREAKPOINTS = Object.freeze({
   fourToThree: 478,
@@ -32,7 +32,7 @@ export const POPUP_COMPACT_BREAKPOINTS = Object.freeze({
 });
 
 export function getProfileViewportHeight(rows, compact = false) {
-  const visibleRows = Math.max(1, Number(rows) || 5);
+  const visibleRows = Math.max(1, Number(rows) || 4);
   const rowHeight = compact ? POPUP_COMPACT_ROW_HEIGHT : POPUP_PROFILE_ROW_HEIGHT;
   return (visibleRows * rowHeight) + (Math.max(0, visibleRows - 1) * POPUP_PROFILE_ROW_GAP);
 }

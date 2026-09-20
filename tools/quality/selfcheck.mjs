@@ -389,11 +389,11 @@ ok('no persisted undo history in Zustand partialize', () => {
 
 ok('new installs use the requested layout and identity-assistance defaults without enabling broad context injection', () => {
   const schema = readFileSync('./src/store/persistence/schema.js', 'utf8');
-  assert.match(schema, /cols:\s*3/);
-  assert.match(schema, /rows:\s*5/);
-  assert.match(schema, /historyDepth:\s*1/);
+  assert.match(schema, /cols:\s*4/);
+  assert.match(schema, /rows:\s*4/);
+  assert.match(schema, /historyDepth:\s*5/);
   assert.match(schema, /historyContextEnabled:\s*true/);
-  assert.match(schema, /contextDepth:\s*1/);
+  assert.match(schema, /contextDepth:\s*3/);
   assert.match(schema, /injectChar:\s*false/);
   assert.match(schema, /injectUser:\s*false/);
   assert.match(schema, /injectLorebook:\s*false/);
@@ -1320,7 +1320,7 @@ ok('token preview stays compact beside identity and uses the shared right-side h
   assert.match(status, /'≈' \+ total\.toLocaleString\(\) \+ ' tok'/);
   assert.match(status, /Show token estimate details/);
   assert.match(status, /kind: 'token'/);
-  assert.match(status, /Estimate only — not the provider billing\/tokenizer count/);
+  assert.match(status, /Estimate only — provider billing may differ/);
   assert.match(status, /onMouseEnter=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.doesNotMatch(deck, /rwa2-token-popover|rwa2-context-toggle|rwa2-context-collapse/);
   assert.match(tooltip, /rwa2-tooltip-token/);

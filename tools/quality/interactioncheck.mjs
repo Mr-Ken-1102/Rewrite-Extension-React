@@ -61,7 +61,11 @@ ok('popup header keeps drag ownership except on explicit interactive controls', 
   const css = read('./src/styles-popup-base.js');
   assert.match(header, /<header className="rwa2-toolbar" onPointerDown=\{onDragStart\}>/);
   assert.doesNotMatch(header, /rwa2-toolbar-actions" onPointerDown=/);
-  assert.equal((header.match(/data-rwa-no-drag="true"/g) || []).length, 3);
+  assert.equal((header.match(/data-rwa-no-drag="true"/g) || []).length, 2);
+  assert.match(header, /className="rwa2-trim-button"/);
+  assert.doesNotMatch(header, />\{text\('Trim', 'Cắt'\)\}<\/span>/);
+  assert.match(header, /aria-label=\{multiCount > 1/);
+  assert.doesNotMatch(header, /onClose|Close popup|M5 5l14 14/);
   assert.match(drag, /closest\?\.\('\[data-rwa-no-drag="true"\], button, input, textarea, select, a, \[role="button"\]'\)/);
   assert.match(css, /\.rwa2-toolbar-actions\s*\{[\s\S]*flex:\s*0 1 auto/s);
 });
@@ -96,7 +100,7 @@ ok('non-modal popup exposes a localized named region without interfering with di
   assert.doesNotMatch(source, /className="rwa2-popup"[\s\S]*role="dialog"/);
 });
 
-ok('popup controls preserve switch semantics and named compact groups', () => {
+ok('popup controls preserve persistent mode semantics, editable Depth, and ON/OFF Length behavior', () => {
   const toggle = read('./src/components/ui/ToggleSwitch.jsx');
   const context = read('./src/components/popup/ContextDeck.jsx');
   const status = read('./src/components/popup/IdentityStatusRow.jsx');
@@ -112,6 +116,16 @@ ok('popup controls preserve switch semantics and named compact groups', () => {
   assert.match(context, /role="group"[\s\S]*Default rewrite sources/);
   assert.doesNotMatch(context, /Persistent context sources/);
   assert.match(context, /aria-pressed=\{source\.enabled\}/);
+  assert.match(context, /rwa2-depth-stepper/);
+  assert.match(context, /Increase history depth/);
+  assert.match(context, /Decrease history depth/);
+  assert.doesNotMatch(context, /<option|<select/);
+  assert.match(context, /disabled=\{!config\.lengthEnabled\}/);
+  assert.match(context, /const lengthZero = \(99 \/ 299\) \* 100/);
+  assert.match(context, /className="rwa2-range-wrap"/);
+  assert.match(context, /className="rwa2-length-value"/);
+  assert.match(context, /const nextEnabled = !config\.lengthEnabled/);
+  assert.match(context, /updateConfig\(\{ lengthEnabled: nextEnabled, lengthPct: 0 \}\)/);
   assert.match(status, /aria-label=\{text\('Show token estimate details'/);
   assert.match(status, /onFocus=\{\(event\) => onTooltip\?\.\(event, tokenTooltip\)\}/);
   assert.match(performance, /aria-pressed=\{item\.active\}/);

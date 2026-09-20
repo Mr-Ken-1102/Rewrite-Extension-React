@@ -1,7 +1,16 @@
 function BrandSparkle() {
   return (
-    <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path d="M12 1.8c.72 5.45 3.55 8.28 9 9-5.45.72-8.28 3.55-9 9-.72-5.45-3.55-8.28-9-9 5.45-.72 8.28-3.55 9-9Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function TrimIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 3v12.5A3.5 3.5 0 0 0 10.5 19H21" />
+      <path d="M3 7h12.5A3.5 3.5 0 0 1 19 10.5V21" />
     </svg>
   );
 }
@@ -13,14 +22,13 @@ export function PopupHeader({
   onDragStart,
   onTrim,
   onPinToggle,
-  onClose,
 }) {
   const vi = language === 'vi';
   const text = (en, viText) => (vi ? viText : en);
   const multiCount = Array.isArray(selection?.segments) ? selection.segments.length : 0;
   const iconProps = {
-    width: 18,
-    height: 18,
+    width: 14,
+    height: 14,
     viewBox: '0 0 24 24',
     fill: 'none',
     stroke: 'currentColor',
@@ -54,7 +62,7 @@ export function PopupHeader({
         <button
           type="button"
           data-rwa-no-drag="true"
-          className="rwa2-icon-button"
+          className="rwa2-trim-button"
           onClick={onTrim}
           disabled={multiCount > 1}
           title={multiCount > 1
@@ -64,17 +72,7 @@ export function PopupHeader({
             ? text('Trim unavailable for multi-message selection', 'Không thể cắt vùng chọn qua nhiều tin nhắn')
             : text('Trim selection before sending', 'Cắt vùng chọn trước khi gửi')}
         >
-          <svg {...iconProps}><path d="M5 12h14" /></svg>
-        </button>
-        <button
-          type="button"
-          data-rwa-no-drag="true"
-          className="rwa2-icon-button"
-          onClick={onClose}
-          title={text('Close popup', 'Đóng popup')}
-          aria-label={text('Close popup', 'Đóng popup')}
-        >
-          <svg {...iconProps}><path d="M5 5l14 14M19 5 5 19" /></svg>
+          <TrimIcon />
         </button>
       </div>
     </header>
